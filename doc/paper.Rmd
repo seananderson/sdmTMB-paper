@@ -99,4 +99,4 @@ Content:
 \clearpage
 \beginsupplement
 ```
-# Supplemetal Materials
+# Supplemental Materials
