@@ -1,0 +1,102 @@
+---
+title: Fast and Flexible Spatial and Spatiotemporal Generalized Linear Mixed-Effects Models with sdmTMB
+author: "|
+  Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca], Other authors\n| $^1$Pacific Biological Station Fisheries and Oceans Canada, \n| Nanaimo, BC, Canada\n|
+  $^2$Other addresses\n"
+output:
+    bookdown::pdf_document2:
+      toc: false
+      number_sections: false
+      fig_caption: true
+csl: mee.csl
+bibliography: refs.bib
+link-citations: yes
+header-includes:
+  \usepackage[left]{lineno}
+  \newcommand{\beginsupplement}{
+  \setcounter{equation}{0}
+  \renewcommand{\theequation}{S.\arabic{equation}}
+  \setcounter{table}{0}
+  \renewcommand{\thetable}{S\arabic{table}}
+  \setcounter{figure}{0}
+  \renewcommand{\thefigure}{S\arabic{figure}}}
+editor_options:
+  markdown:
+    wrap: sentence
+abstract: >
+  The sdmTMB package implements spatiotemporal predictive-process GLMMs (Generalized Linear Mixed Effect Models) using TMB, INLA, and Gaussian Markov random fields. One common application is for spatial or spatiotemporal species distribution models (SDMs). ...
+---
+
+```{r, echo = FALSE, include = FALSE, message = FALSE, warnings = FALSE}
+library(here)
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+```
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warnings = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Main body here.
+
+-   [@anderson2019]
+-   [@maureaud2021]
+-   [@anderson2020]
+-   [@osgood-zimmerman2021]
+-   [@breivik2021]
+-   [@monnahan2021]
+-   [@shelton2014]
+-   [@lindgren2011]
+-   [@latimer2009]
+
+Content:
+
+-   outline the general need for this type of modelling
+
+-   outline the need for this type of package to make the models accessible and rapid to iterate on
+
+-   emphasize the niche carved out: a fast, flexible, easy-to-use, predictive-process univariate spatial or spatiotemporal GLMM, scales from maximum likelihood to penalized likelihood to full Bayesian inference
+
+-   outline the philosophy and how the functions work together
+
+    -   modular
+    -   familiar (similar to glm, lme4, glmmTMB, mgcv, etc.)
+    -   separate fitting and predicting
+    -   avoid expensive calculations unless needed
+
+-   table comparison to related packages
+
+-   case studies
+
+    -   an SDM with time-varying depth?
+    -   an index calculation?
+    -   stitching surveys?
+
+-   how it achieves the steps Jim described [@thorson2019] in what a VAST-related package has to be able to do (and how VAST does it vs. how sdmTMB does it)
+
+-   speed comparisons (INLA [inlabru?], VAST, mgcv, glmmTMB without predictive process?)
+
+-   intended audience: ecology, but much broader too
+
+-   self simulation testing --- appendix
+
+-   package comparison fitting --- appendix
+
+\clearpage
+
+## References
+
+::: {#refs}
+:::
+
+```{=tex}
+\clearpage
+\beginsupplement
+```
+# Supplemetal Materials
