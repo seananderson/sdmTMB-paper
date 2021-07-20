@@ -24,7 +24,7 @@ sdat <- inla.stack(
 # h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
 h.spec <- list(theta = list(prior = 'normal', param = c(0, 1)))
 formulae <- y ~ 0 + year_factor + f(i, model = spde, group = i.group,
-  control.group = list(model = 'ar1', hyper = h.spec))
+  control.group = list(model = 'iid', hyper = h.spec))
 # PC prior on the autoreg. param.
 # prec.prior <- list(prior = 'pc.prec', param = c(1, 0.01))
 m_inla <- inla(formulae,
@@ -49,7 +49,7 @@ summary(m_inla)
 
 tictoc::tic("sdmTMB")
 m <- sdmTMB(present ~ 0 + as.factor(year), data = d, spde = mesh, time = "year",
-  fields = "AR1", include_spatial = FALSE, family = binomial(link = "logit"),
+  fields = "IID", include_spatial = FALSE, family = binomial(link = "logit"),
   reml = FALSE,
   priors = sdmTMBpriors(
     matern_st = pc_matern(range_gt = 5, range_prob = 0.05, sigma_lt = 5, sigma_prob = 0.05),

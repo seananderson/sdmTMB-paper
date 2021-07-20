@@ -16,4 +16,3 @@ AutoAppendNewline: Yes
 StripTrailingWhitespace: Yes
 
 MarkdownWrap: Sentence
-MarkdownCanonical: Yes
