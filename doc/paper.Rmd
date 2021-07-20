@@ -31,6 +31,9 @@ abstract: |
     | Point 4: identify the conclusions and the wider implications. \smallskip 
 ---
 
+
+<!-- # For submission to MEE as an Application paper -->
+
 <!-- # The sdmTMB package implements spatiotemporal predictive-process GLMMs (Generalized Linear Mixed Effect Models) using TMB, INLA, and Gaussian Markov random fields. One common application is for spatial or spatiotemporal species distribution models (SDMs). -->
 
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warnings = FALSE}
@@ -168,6 +171,24 @@ AB and CD conceived the ideas and designed methodology; CD and EF collected the 
 <!--
 To enable readers to locate archived data from papers, we require that authors list the database and the respective accession numbers or DOIs for all data from the manuscript that has been made publicly available. For example, “Data available from the Dryad Digital Repository http://dx.doi.org/10.5061/dryad.41qh7 (Kiere & Drummond 2016).” When a DOI is available for the data, the full data citation should also be given in the reference list (see below). For further information see our data archiving policy.
 -->
+
+# Tables
+
+1. Comparison to related software?
+
+- VAST
+- INLA
+- mgcv
+- glmmTMB
+- glmmfields?
+- other stuff on CRAN, spBayes etc.
+
+# Figures
+
+1. Flow diagram of functions? Not needed?
+1. Speed with various knots and/or spatial complexity in comparison to INLA + VAST + ...?
+1. Example application 1 - SDM, show mesh(?) and/or raw data, show predictions and SD in space,
+1. Example application 2 - population index with stitched survey?
 
 Content:
 
