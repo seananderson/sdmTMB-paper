@@ -214,6 +214,11 @@ Content:
     -   stitching surveys?
 
 -   how it achieves the steps Jim described [@thorson2019] in what a VAST-related package has to be able to do (and how VAST does it vs. how sdmTMB does it)
+    -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include."
+    -   Area weighting (check, helper functions to sum up weighted grid cells)
+    -   Distinct catchability and habitat covariates (check, decide what goes into `predict()`)
+    -   Condition on missing covariates (check, random fields)
+    -   Bridge between univariate and multivariate applications (no! should we?)
 
 -   speed comparisons (INLA [inlabru?], VAST, mgcv, glmmTMB without predictive process?)
 
