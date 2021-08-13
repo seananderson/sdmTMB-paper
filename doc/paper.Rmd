@@ -134,14 +134,33 @@ Conflict of Interest statement (required for all article types)
 # Materials and Methods
 
 # Description
+- maybe some overview of spatial models, either here in intro. Contrast with GAMs, and highlight explicit estimation of flexible spatial covariance functions
 
 # Model
 
+Highlights?
+- Basic spatial model structure and notation / INLA / SPDE / GMRF defined. Advantages of PC-priors [], though sdmTMB also allows priors on most parameters (e.g. fixed effects, obs error variances) 
+- Flexible extension of glmmTMB [Brooks et al. 2017] -- and includes non-spatial models for direct comparisons with glmmTMB [@osgood-zimmerman2021]
+- Spatiotemporal models (RW/AR v IID)
+- Time varying parameters
+- Non-linear effects (smooth splines, threshold/breakpoint functions)
+- Variance estimation and derived quantities (spatial range, area occupied etc)
+
 # Application Examples
 
+- Thinking of application with broad interest or a dataset that is pretty well known. Trawl surveys are great obv, and there's lots of examples worked out
+- gorillas dataset from spatstat/inlabru: https://rdrr.io/cran/spatstat.data/man/gorillas.html -- only prob is it's not time-varying
+- Spatial rainfall dataset from INLA? https://becarioprecario.bitbucket.io/spde-gitbook/ch-stapp.html
+- Simulating a dataset could be used to highlight sim() function 
+- 
 # Implementation and Availability
 
+- CRAN before?  
+- 
 # Performance
+
+- Probably some discussion of speed. Comparison of one of the models in the application above to INLA? Or other software, e.g. Stan -- though that's not as fair :)
+- Probably not extensive space for simulation testing, but could do some minimal example and point to vignettes
 
 # Discussion
 
