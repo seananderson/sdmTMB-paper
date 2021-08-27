@@ -138,6 +138,12 @@ Conflict of Interest statement (required for all article types)
 
 # Model
 
+Though `sdmTMB` has been developed with spatial modeling as a primary focus, all of the statistical models fall under the class of generalized linear mixed models (GLMMs). Non-spatial GLMMs are available in several widely used packages, including `glmmTMB` (Brooks et al. 2017) and `lme4` (Bates et al. 2015), and to allow comparison we also allow non-spatial models to be constructed with `sdmTMB`. The general form of a GLMM is  $g(\bf{\mu}) = \bf{Xb} + \bf{Zu}$, where the inverse link function $g(x)$ relating the mean $\bf{\mu}$ to fixed effect predictors in the design matrix $\mathbf{X}$ with estimated coefficients $\bf{b}$ and random effects with the design matrix $\bf{Z}$ with estimated coefficients $\bf{u}$. The matrix $\bf{Z}$ allows random effects to be structured (e.g. intercepts varying by group) or unstructured, with $\bf{u}$ representing random variation.
+
+For clarity, we partition the random effects $\bf{Zu}$ into a number of more interpretable components, each of which can optionally be included in the model. Using our notation, the full `sdmTMB` model can be written as $$g(\mu_{s,t}) = X_{s,t}\bf{b} + \omega_{s} + \epsilon_{s,t} + \bf{\alpha_{g}} + X_{s,t}\gamma_{t} + X_{s,t}\zeta_{s}$$. In this form, $\omega_{s}$ represents a random spatial component (spatial field with mean 0), $\epsilon_{s,t}$ represents a spatiotemporal component (spatial field with mean 0), $\alpha_{g}$ represents random intercepts by group $\alpha_{g}\sim N(0,\sigma_\alpha)$, $\gamma_{t}$ represents time-varying coefficients modeled as a random walk, $\gamma_{t} \sim N(\gamma_{t-1},\sigma_\gamma)$, and $\zeta_{s}$ represents spatially varying coefficients (modeled as a spatial field). All of the spatial fields in this model are constructed using Gaussian random fields, where the random effects are structured as multivariate normal: $\omega_s \sim MVN(\bf{0},\bf{\Sigma}_\omega)$, $\epsilon_{s,t} \sim MVN(\bf{0},\bf{\Sigma}_{\epsilon})$, and $\zeta_s \sim MVN(\bf{0},\bf{\Sigma}_\zeta)$. By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed; however, additional options in `sdmTMB` allow them to be modeled as a random walk or AR(1) process. Additional flexibility is included in relaxing assumptions about linear fixed effects $\bf{Xb}$; sdmTMB allows any covariates to be modeled as smooth functions using the same generalized additive model syntax in `mgcv` (Wood 2003), or modeled as threshold (e.g. hockey stick models; Barrowman et al. 2003).  
+
+[paragraph about spde and gaussian process / Matern covariance here]
+  
 Highlights?
 - Basic spatial model structure and notation / INLA / SPDE / GMRF defined. Advantages of PC-priors [], though sdmTMB also allows priors on most parameters (e.g. fixed effects, obs error variances) 
 - Flexible extension of glmmTMB [Brooks et al. 2017] -- and includes non-spatial models for direct comparisons with glmmTMB [@osgood-zimmerman2021]
@@ -148,18 +154,31 @@ Highlights?
 
 # Application Examples
 
-- Thinking of application with broad interest or a dataset that is pretty well known. Trawl surveys are great obv, and there's lots of examples worked out
-- gorillas dataset from spatstat/inlabru: https://rdrr.io/cran/spatstat.data/man/gorillas.html -- only prob is it's not time-varying
-- Spatial rainfall dataset from INLA? https://becarioprecario.bitbucket.io/spde-gitbook/ch-stapp.html
-- Simulating a dataset could be used to highlight sim() function 
-- 
+*EW: These are just placeholders -- not sure what order is best or what to highlight in very limited space*
+
+As a first example, we use a spatial dataset (`parana`) from the `geoR` package (Ribeiro Jr and Diggle 2018) that describes average May-June rainfall recorded at 143 stations in the state of Paraná, Brazil. This dataset is also well-known because it is used as an example of spatiotemporal modeling with INLA (cite INLA) book. Because the dataset doesn't include covariates and only includes a single year, we can model rainfall using an intercept and spatial component, $g(\mu_{s,t}) = b_{0} + \omega_{s}$. We assume the observation model for the rainfall data is normally distributed. The first step in fitting a model with `sdmTMB` is constructing the mesh to approximate the spatial process. This step can be done with the `make_mesh` function, which accepts the data (coordinates) and at minimum, the minimum allowed distance between points (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with INLA can also be passed in (additional examples of this are included in the SI). For example, an initial mesh with a cutoff distance of 0.1km could be made with
+
+```{r eval=FALSE, echo=TRUE}
+rain_spde = make_mesh(data = parana, c("east","north"), cutoff=0.1)
+```
+
+Second, we can fit the model using TMB with the `sdmTMB` function, whose formula syntax should be familiar to most R users,  
+
+```{r eval = FALSE, echo=TRUE}
+fit = sdmTMB(data ~ 1, data=parana, spde = rain_spde)
+```
+
+As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cranes (*Grus grus*) from England, UK (Soriano-Redondo et al. 2019). In the original analysis, Soriano-Redondo et al. 2019 used log Gaussian Cox process models to jointly model crane presence--absence and the spatiotemporal distribution of wetlands. We use this dataset as an example of modeling presence--absence data with sdmTMB, and only model the occurence of cranes given covariates. With any multi-year dataset, a common question of interest is often whether observations can be best described by spatial variation, or spatial and spatiotemporal variation. With two years of data, we fit two models with `sdmTMB`: a model with a spatial component but no spatiotemporal variation, and a model with only spatiotemporal variation (allowing each year to have a different spatial field). We included the same fixed effect covariates in both models: different intercepts by year, and two covariates found to be important by Soriano-Redondo et al. 2019 (wetland area, perimeter to area ratio). As a coarse comparison of data support, we compare the Akaike's Information Criterion (Akaike 1973) from each model. The model with a shared spatial field appeared to be more supported ($\Delta AIC$=25.23). The sdmTMB package allows for additional model comparisons, including k-fold cross validation with the `sdmTMB_cv` function.  
+
+Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance? 
+
 # Implementation and Availability
 
 - CRAN before?  
 - 
 # Performance
 
-- Probably some discussion of speed. Comparison of one of the models in the application above to INLA? Or other software, e.g. Stan -- though that's not as fair :)
+- Probably some discussion of speed. Comparison of one of the models in the application above to INLA? Or other software, e.g. Stan -- though that's not as fair :). [EW: at least for the rainfall example I found inlabru to be about twice as fast as sdmTMB]
 - Probably not extensive space for simulation testing, but could do some minimal example and point to vignettes
 
 # Discussion
