@@ -13,6 +13,7 @@ bibliography: refs.bib
 link-citations: yes
 header-includes:
   \usepackage[left]{lineno}
+  \usepackage{bm}
   \linenumbers
   \newcommand{\beginsupplement}{
   \setcounter{equation}{0}
@@ -138,13 +139,51 @@ Conflict of Interest statement (required for all article types)
 
 # Model
 
-Though `sdmTMB` has been developed with spatial modeling as a primary focus, all of the statistical models fall under the class of generalized linear mixed models (GLMMs). Non-spatial GLMMs are available in several widely used packages, including `glmmTMB` (Brooks et al. 2017) and `lme4` (Bates et al. 2015), and to allow comparison we also allow non-spatial models to be constructed with `sdmTMB`. The general form of a GLMM is  $g(\bf{\mu}) = \bf{Xb} + \bf{Zu}$, where the inverse link function $g(x)$ relating the mean $\bf{\mu}$ to fixed effect predictors in the design matrix $\mathbf{X}$ with estimated coefficients $\bf{b}$ and random effects with the design matrix $\bf{Z}$ with estimated coefficients $\bf{u}$. The matrix $\bf{Z}$ allows random effects to be structured (e.g. intercepts varying by group) or unstructured, with $\bf{u}$ representing random variation.
+Though `sdmTMB` has been developed with spatial or spatiotemporal modelling as a primary focus, all of the statistical models it fits fall under the class of generalized linear mixed models (GLMMs).
+GLMMs are available in several widely used packages, including `glmmTMB` (Brooks et al. 2017) and `lme4` (Bates et al. 2015), and to allow comparison we also allow non-spatial models to be constructed with `sdmTMB`.
 
-For clarity, we partition the random effects $\bf{Zu}$ into a number of more interpretable components, each of which can optionally be included in the model. Using our notation, the full `sdmTMB` model can be written as $$g(\mu_{s,t}) = X_{s,t}\bf{b} + \omega_{s} + \epsilon_{s,t} + \bf{\alpha_{g}} + X_{s,t}\gamma_{t} + X_{s,t}\zeta_{s}$$. In this form, $\omega_{s}$ represents a random spatial component (spatial field with mean 0), $\epsilon_{s,t}$ represents a spatiotemporal component (spatial field with mean 0), $\alpha_{g}$ represents random intercepts by group $\alpha_{g}\sim N(0,\sigma_\alpha)$, $\gamma_{t}$ represents time-varying coefficients modeled as a random walk, $\gamma_{t} \sim N(\gamma_{t-1},\sigma_\gamma)$, and $\zeta_{s}$ represents spatially varying coefficients (modeled as a spatial field). All of the spatial fields in this model are constructed using Gaussian random fields, where the random effects are structured as multivariate normal: $\omega_s \sim MVN(\bf{0},\bf{\Sigma}_\omega)$, $\epsilon_{s,t} \sim MVN(\bf{0},\bf{\Sigma}_{\epsilon})$, and $\zeta_s \sim MVN(\bf{0},\bf{\Sigma}_\zeta)$. By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed; however, additional options in `sdmTMB` allow them to be modeled as a random walk or AR(1) process. Additional flexibility is included in relaxing assumptions about linear fixed effects $\bf{Xb}$; sdmTMB allows any covariates to be modeled as smooth functions using the same generalized additive model syntax in `mgcv` (Wood 2003), or modeled as threshold (e.g. hockey stick models; Barrowman et al. 2003).  
+We use the notation of a bold capital letter to represent a matrix, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space (x and y and coordinates), and the index $t$ to represent a point in time.
+The general form of a GLMM is 
+$g(\bm{\mu}) = \bm{X \beta} + \bm{Z \psi}$,
+with the inverse link function $g(x)$ relating the mean $\bm{\mu}$ to fixed-effect predictors in the design matrix $\bm{X}$ with estimated coefficients $\bm{\beta}$ and random effects with the design matrix $\bm{Z}$ with estimated coefficients $\bm{\psi}$. 
+<!-- The matrix $\bm{Z}$ allows random effects to be structured (e.g., intercepts varying by group) or unstructured, with $\bm{u}$ representing random variation. -->
+For clarity, we partition the random effects $\bm{Z \psi}$ into a number of more interpretable components, each of which can optionally be included in the model. 
+The full `sdmTMB` model is
+$$
+g(\mu_{s,t}) = 
+\bm{X}_{1,\bm{s},t} \bm{\beta} + 
+\bm{\alpha}_g +
+\bm{X}_{2,\bm{s},t} \gamma_t + 
+\bm{X}_{3,\bm{s},t} \zeta_{\bm{s}} +
+\omega_{\bm{s}} + 
+\epsilon_{\bm{s},t},
+$$
+where
+
+* $\bm{X}_{1,\bm{s},t}$, $\bm{X}_{2,\bm{s},t}$, and $\bm{X}_{3,\bm{s},t}$ represent design matrices;
+* $\bm{\beta}$ represents a vector of fixed-effect coefficients;
+* $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
+* $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
+* $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
+* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
+* $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
+
+The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a \mbox{Mat\'ern} covariance function. 
+The \mbox{Mat\'ern} defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
+(\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
+<!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
+where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
+a scaling parameter that is estimated (REF). 
+The parameter $\nu$ controls the smoothness of the covariance function. 
+We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+
+By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed; however, additional options in `sdmTMB` allow them to be modelled as a random walk or first-order autoregressive (AR1) process.
+We include additional flexibility in specifying the linear fixed effect matrix $\bm{X \beta}$: `sdmTMB` allows covariates to be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in `mgcv` (Wood 2003), or to be modelled with threshold shapes (e.g., hockey stick models; Barrowman et al. 2003).  
 
 [paragraph about spde and gaussian process / Matern covariance here]
   
 Highlights?
+
 - Basic spatial model structure and notation / INLA / SPDE / GMRF defined. Advantages of PC-priors [], though sdmTMB also allows priors on most parameters (e.g. fixed effects, obs error variances) 
 - Flexible extension of glmmTMB [Brooks et al. 2017] -- and includes non-spatial models for direct comparisons with glmmTMB [@osgood-zimmerman2021]
 - Spatiotemporal models (RW/AR v IID)
