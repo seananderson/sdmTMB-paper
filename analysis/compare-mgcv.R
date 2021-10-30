@@ -25,3 +25,26 @@ tictoc::toc()
 p2 <- predict(m)
 
 plot(p1, p2$est);abline(a = 0, b = 1)
+
+
+mesh$mesh$n
+
+mesh2 <- inla.mesh.2d(
+  loc = d[,c("X", "Y")],
+  # boundary = boundary,
+  # offset = c(-0.05, -0.05),
+  # offset = c(-0.05, -0.05),
+  max.n = 100,
+  # max.n.strict = 5000,
+  cutoff = 5
+  # max.edge = c(100, 500)
+)
+plot(mesh2)
+
+library(INLA)
+fit <- gam(present ~ 0 + as.factor(year) + s(X, Y, bs = "spde", k = mesh2$n,
+  xt = list(mesh = mesh2)),
+  data = d,
+  family= binomial(),
+  method = "ML",
+  control =  gam.control(scalePenalty = FALSE))

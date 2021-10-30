@@ -48,9 +48,8 @@ summary(m_inla)
 # https://www.paulamoraga.com/book-geospatial/sec-inla.html
 
 tictoc::tic("sdmTMB")
-m <- sdmTMB(present ~ 0 + as.factor(year), data = d, spde = mesh, time = "year",
-  fields = "IID", include_spatial = FALSE, family = binomial(link = "logit"),
-  reml = FALSE,
+m <- sdmTMB(present ~ 0 + as.factor(year), data = d, mesh = mesh, time = "year",
+  spatiotemporal = "IID", spatial = "off", family = binomial(link = "logit"),
   priors = sdmTMBpriors(
     matern_st = pc_matern(range_gt = 5, range_prob = 0.05, sigma_lt = 5, sigma_prob = 0.05),
     ar1_rho = normal(0, 1),

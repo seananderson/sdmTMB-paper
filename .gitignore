@@ -12,3 +12,4 @@
 *.docx
 *.o
 *.so
+doc/paper_cache/latex/*

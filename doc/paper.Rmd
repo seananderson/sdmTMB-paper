@@ -130,6 +130,11 @@ Conflict of Interest statement (required for all article types)
 -   [@lindgren2011]
 -   [@latimer2009]
 
+Packages:
+
+spaMM: @rousset2014
+spNNGP: @finley2021
+
 # Examples of sections:
 
 # Materials and Methods
