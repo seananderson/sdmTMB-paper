@@ -12,6 +12,7 @@ csl: mee.csl
 bibliography: refs.bib
 link-citations: yes
 header-includes:
+  \usepackage{setspace}\onehalfspacing
   \usepackage[left]{lineno}
   \usepackage{bm}
   \linenumbers
@@ -120,6 +121,31 @@ Conflict of Interest statement (required for all article types)
 
 # Introduction
 
+*[quick draft outline of intro; may be too long]*
+
+Ecological data are often collected in space or in space repeatedly over time. For example... ? While such data are a rich source of information about ecological process, it is challenging to properly modelling them. Data points closer in space and time are usually more correlated to each other than those farther apart, both due to measured and unmeasured variables. While measured variables can be accounted for via predictors in a model, unmeasured ("latent") variables cause residual spatial/spatiotemporal correlation that (1) needs be accounted for valid statistical inference, (2) can improve predictions compared to ignoring it, and (3) can be of ecological interest in itself.
+
+Geostatistical GLMMs (Generalized Linear Mixed Effects Models) with spatially correlated random effects is a class of models appropriate for these data. Similarly to how random intercepts or slopes can account for correlation among groups (e.g., plants counted in plots of land), spatial/spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time. A common approach to modelling the random effects is via Gaussian Random fields (GRFs), where the random effects are assumed drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn. 
+
+While simple on the surface, such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data points. A number of solutions have been proposed, such as predictive processes (e.g., REF), NNGP (e.g., REF), and SPDE + GMRF (e.g., REF). These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian or maximum likelihood methods. This can make an enormous difference to computational efficiency (REFs). The SPDE approach is a solution popularized via INLA and an implementation in TMB (Template Model Builder) that partially relies on INLA. The SPDE… yada yada GMRF yada yada.
+
+INLA and TMB are template systems for specifying statistical models that can include the SPDE, but they are challenging to use for many applied ecologists and it can be slow to iterate on and experiment with many models when writing bespoke code. 
+Packages such as lme4 and glmmTMB let users quickly iterate and explore statistical models, evaluating fit and comparing models, but do not have built-in SPDE functionality. Packages such as VAST and inlabru are powerful user interfaces to spatial models that use the SPDE, but either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack some of the flexibility for the particular class of models discussed here. We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
+<!-- User interfaces through software such as VAST or inlabru can greatly reduce these challenges. VAST is built on TMB, and is extremely powerful (e.g., fitting many multivariate models not described here), but does not provide a simple, familiar, modular interface for users with basic spatial or spatiotemporal data. inlabru provides a somewhat more familiar interface to a large class of models including GRMF models, but is strictly Bayesian, lacks some flexibility for the particular class of models discussed here. It also relies on INLA, and at least for some problems, TMB can be much faster [@osgood-zimmerman2021]. We provide a more detailed comparison of related software packages in Table 1 and the discussion. -->
+
+<!-- User interfaces to classes of models fit by these template systems can greatly  -->
+
+<!-- reduce these challenges for the vast majority of models. -->
+
+<!-- keep the above even briefer? -->
+
+<!-- inlabru is "very good" but not entirely familiar to those used to `glm()`, lme4, glmmTMB, or mgcv; -->
+
+<!-- *TODO: the differences are many and more than can be listed here. Keep brief add Table or discussion later about differences and when to pick one over the other?* -->
+
+Here, we introduce our R package sdmTMB, which implements spatial and spatiotemporal GLMMs using TMB, INLA, and Gaussian Markov random fields. One common application is for species distribution models (SDMs), hence the package name. This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through X case studies, and concludes with a discussion of additional functionality and related software.
+
+
 -   [@anderson2019]
 -   [@maureaud2021]
 -   [@anderson2020]
@@ -226,7 +252,7 @@ fit <- sdmTMB(density ~ 0 + as.factor(year) + s(depth), data = pcod_2011,
 )
 ```
 
-```{r print-fit, echo = TRUE}
+```{r print-fit, echo = TRUE, cache=TRUE}
 print(fit)
 ```
 
@@ -280,7 +306,7 @@ pred_sims <- predict(fit, newdata = qcs_grid_2011, sims = 500)
 dim(pred_sims)
 ```
 
-```{r sims-cv-plot, cache=FALSE, fig.height=4, fig.width=4, out.width="3.5in", echo=TRUE}
+```{r sims-cv-plot, cache=TRUE, fig.height=4, fig.width=4, out.width="3.5in", echo=TRUE}
 qcs_grid_2011$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
 ggplot(subset(qcs_grid_2011, year == 2011), aes(X, Y, fill = cv)) +
     geom_raster() + facet_wrap(~year) +
