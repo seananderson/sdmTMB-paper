@@ -210,6 +210,15 @@ Two major functions included in sdmTMB but not INLA/inlabru are anisotropy and n
 We also think the sdmTMB interface will be more familiar than inlabru to users of `glm()`, lme4, mgcv, or glmmTMB and sdmTMB works with regular R data frames whereas inlabru works with `sp` class data objects. 
 However, inlabru fits additional model classes including log Gaussian Cox processes and may be particularly usable to those already familiar with INLA.
 
+mgcv, but, yikes, do we have space:
+
+- mgcv is capable of fitting with the SPDE (REF)
+- typical smoothers don't offer MVN interpretability
+- Tweedie is a big factor... must fix power 'p' to fit a GAMM.
+- Barrier approaches are different
+- doesn't have functionality built in for indexes/COG and uncertainty on such derived parameters
+- for this class of models, we think sdmTMB has advantages, but mgcv is an immensely powerful modelling package that extends well beyond spatial/spatiotemporal data.
+
 Final paragraph touching on other stuff possible in one paragraph: priors, Bayes, barrier meshes, randomized quantile residuals, simulation from joint precision, ...?
 
 # Acknowledgements
