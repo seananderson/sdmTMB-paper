@@ -139,6 +139,21 @@ if (file.exists(here::here("figs/diagram.pdf"))) {
 Spatial and spatiotemporal models constructed with sdmTMB may be viewed as spatially explicit models, in the sense that they estimate parameters of a user-specified spatial covariance function, and these estimates may be converted into interpretable quantities common in spatial statistics (spatial decay, range).
 We contrast these approaches with semi- and non-parametric approaches that do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], some smooths in mgcv [@wood2017a]). By default, sdmTMB implements the Matérn covariance function (REF) (cite Rue et al?)---this function can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in a latitudinal direction may be different than in the longitudinal direction).
 
+- high-level paragraph or two about what the model includes, referencing Fig 1
+- high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?)
+- high-level paragraph about simulation capabilities and + testing performed (reference supplement)
+- model selection/cross validation paragraph
+- derived quantities paragraph (or just put this in the examples?)
+
+- example 1 + figs
+- example 2 + figs
+
+- discussion
+    - take home, re-iterate
+    - how to pick among packages/tools including a bit outside the SPDE world? (table)
+    - touch on other stuff possible: priors, Bayes, barrier meshes, residuals, 
+      simulation from joint precision, ...?
+
 # Model
 
 <!-- Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs. -->
@@ -158,7 +173,7 @@ The predictive log-density is calculated for each fold and summarized across fol
 
 <!-- Paragraph on derived quantities here-->
 The results from a model fit with sdmTMB can be used to generate quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including fraction of area occupied (TODO?), 2-dimensional center of gravity (`sdmTMB::get_cog()`), and total population index (`sdmTMB::get_index()`).
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`sdmTMB::get_cog()`) and total population index (`sdmTMB::get_index()`).
 Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range (distance at which spatial correlation decays to $\sim$ 0.13).
 
 <!--
