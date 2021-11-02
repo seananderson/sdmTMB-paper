@@ -189,20 +189,20 @@ This paper describes the basic functionality of the R package and the underlying
 # Materials and Methods
 
 # Description
-- maybe some overview of spatial models, either here in intro. Contrast with GAMs, and highlight explicit estimation of flexible spatial covariance functions
+
+Spatial and spatiotemporal models constructed with `sdmTMB` may be viewed as spatially expicit models, in the sense that they estimate parameters of a user-specified spatial covariance function, and these estimates may be converted into interpretable quantities common in spatial statistics (spatial decay, range). We contrast these approaches with semi- and non-parametric approaches that do not estimate spatial covariance functions (e.g. `randomForest` [@liaw2002], `MaxEnt` [@phillips2006], some smooths in `mgcv`). By default, sdmTMB implements the Matérn covariance (kernel) (cite Rue et al?) -- this function can accomodate a range of shapes, but also be anisotropic (covariance in a latitudinal direction may be different than in longitudinal direction).
 
 # Model
 
 Though `sdmTMB` has been developed with spatial or spatiotemporal modelling as a primary focus, all of the statistical models it fits fall under the class of generalized linear mixed models (GLMMs).
-GLMMs are available in several widely used packages, including `glmmTMB` (Brooks et al. 2017) and `lme4` (Bates et al. 2015), and to allow comparison we also allow non-spatial models to be constructed with `sdmTMB`.
+GLMMs are available in several widely used packages, including `glmmTMB` (Brooks et al. 2017), `mgcv` [@wood2004], and `lme4` (Bates et al. 2015), and to allow comparison with these packages, `sdmTMB` allows for spatial and spatiotemporal effects to be removed.
 
 We use the notation of a bold capital letter to represent a matrix, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space (x and y and coordinates), and the index $t$ to represent a point in time.
 The general form of a GLMM is 
 $g(\bm{\mu}) = \bm{X \beta} + \bm{Z \psi}$,
 with the inverse link function $g(x)$ relating the mean $\bm{\mu}$ to fixed-effect predictors in the design matrix $\bm{X}$ with estimated coefficients $\bm{\beta}$ and random effects with the design matrix $\bm{Z}$ with estimated coefficients $\bm{\psi}$. 
 <!-- The matrix $\bm{Z}$ allows random effects to be structured (e.g., intercepts varying by group) or unstructured, with $\bm{u}$ representing random variation. -->
-For clarity, we partition the random effects $\bm{Z \psi}$ into a number of more interpretable components, each of which can optionally be included in the model. 
-The full `sdmTMB` model is
+For clarity, we partition the random effects $\bm{Z \psi}$ into a number of more interpretable components, each of which can optionally be included in the model. Though in practice it is rare to include all of these parameters, the full `sdmTMB` model is
 $$
 g(\mu_{\bm{s},t}) = 
 \bm{X}_{1,\bm{s},t} \bm{\beta} + 
@@ -223,6 +223,7 @@ where
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
 The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a \mbox{Mat\'ern} covariance function. 
+<!-- EW: Because of space limits, I might suggest moving all this to the SI -->
 The \mbox{Mat\'ern} defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
 (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
 <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
@@ -235,7 +236,14 @@ By default, we assume that if spatiotemporal fields are included, they are indep
 We include additional flexibility in specifying the linear fixed effect matrix $\bm{X \beta}$: `sdmTMB` allows covariates to be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in `mgcv` (Wood 2003), or to be modelled with threshold shapes (e.g., hockey stick models; Barrowman et al. 2003).  
 
 [paragraph about spde and gaussian process / Matern covariance here]
-  
+
+<!-- Paragraph on model selection here-->
+Following glmmTMB, we allow AIC to be calculated for each sdmTMB model (Akaike XXXX). Because of the well documented biases of AIC with hierarchical or mixed-effects models (can cite Vaida and Blanchard or another) we also provide functionality to perform estimation via k-fold  cross-validation. Our wrapper function `sdmTMB_cv` allows for any number of folds, with assignments being user-specified or chosen randomly. The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.  
+
+<!-- Paragraph on derived quantities here-->
+The results from a model fit with sdmTMB can be used to generate quantities of interest, especially relevant to population status. Estimated parameters from the Matérn covariance function can be used to describe the spatial variance and Matérn range (= $\sqrt{8} / \kappa$). We provide additional functionality for generating population-level summaries for each time slice; these metrics include the fraction of area occupied (?), 2-dimensional center of gravity (via our `get_cog()` function), and total population trend (via our `get_index()` function).    
+
+
 Highlights?
 
 - Basic spatial model structure and notation / INLA / SPDE / GMRF defined. Advantages of PC-priors [], though sdmTMB also allows priors on most parameters (e.g. fixed effects, obs error variances) 
