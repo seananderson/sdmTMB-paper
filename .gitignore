@@ -13,3 +13,10 @@
 *.o
 *.so
 doc/paper_cache/latex/*
+doc/paper_cache/docx/*
+doc/paper_files/*
+VAST_v*
+packageDesc*
+settings.txt
+doc/compile.R
+figs/
