@@ -208,7 +208,7 @@ g(\mu_{\bm{s},t}) =
 \bm{X}_{1,\bm{s},t} \bm{\beta} + 
 \bm{\alpha}_g +
 \bm{X}_{2,\bm{s},t} \gamma_t + 
-\bm{X}_{3,\bm{s},t} \zeta_{\bm{s}} +
+\bm{X}_{3,t} \zeta_{\bm{s}} +
 \omega_{\bm{s}} + 
 \epsilon_{\bm{s},t},
 $$
