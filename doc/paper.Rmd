@@ -150,7 +150,7 @@ We contrast these approaches with semi- and non-parametric approaches that do no
 
 - discussion
     - take home, re-iterate
-    - how to pick among packages/tools including a bit outside the SPDE world? (table)
+    - how to pick among packages/tools including a bit outside the SPDE world? (table; possibly in supp)
     - touch on other stuff possible: priors, Bayes, barrier meshes, residuals, 
       simulation from joint precision, ...?
 
@@ -188,6 +188,8 @@ Highlights?
 -->
 
 # Supporting Information
+
+## Model description
 
 We use the notation of a bold capital letter to represent a matrix, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space (x and y and coordinates), and the index $t$ to represent a point in time.
 The general form of a GLMM is
