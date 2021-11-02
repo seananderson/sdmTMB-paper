@@ -205,7 +205,7 @@ For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` met
 However, for users who require multivariate spatiotemporal models or the Poisson-link delta model (REF), there is no substitute for VAST.
 
 inlabru is similar to sdmTMB in design, but differs fundamentally in that fitting is achieved via INLA and approximate Bayesian computation.
-For some models, TMB/sdmTMB can be considerably faster than INLA/inlabru [@osgood-zimmerman2021], but in our experience, those differences will depend on many aspects of models specification (Supp fig?).
+For some models, TMB/sdmTMB can be considerably faster than INLA/inlabru [@osgood-zimmerman2021], but in our experience, those differences will depend on many aspects of the data, SPDE mesh, model, and fitting algorithm settings (Supp fig?).
 Two major functions included in sdmTMB but not INLA/inlabru are anisotropy and non-linear threshold covariates (TODO: actually true??).
 We also think the sdmTMB interface will be more familiar than inlabru to users of `glm()`, lme4, mgcv, or glmmTMB and sdmTMB works with regular R data frames whereas inlabru works with `sp` class data objects. 
 However, inlabru fits additional model classes including log Gaussian Cox processes and may be particularly usable to those already familiar with INLA.
