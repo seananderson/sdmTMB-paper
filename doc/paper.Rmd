@@ -147,12 +147,18 @@ We contrast these approaches with semi- and non-parametric approaches that do no
 
 - example 1 + figs
 - example 2 + figs
+      
+<!--     - perhaps a paragraph on how it achieves what Jim outlined @thorson2019 as necessary: -->
+<!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
+<!--         -   Area weighting (check, helper functions to sum up weighted grid cells) -->
+<!--         -   Distinct catchability and habitat covariates (check, decide what goes into `predict()`) -->
+<!--         -   Condition on missing covariates (check, random fields) -->
+<!--         -   Bridge between univariate and multivariate applications (no! should we? -->
 
-- discussion
-    - take home, re-iterate
-    - how to pick among packages/tools including a bit outside the SPDE world? (table; possibly in supp)
-    - touch on other stuff possible: priors, Bayes, barrier meshes, residuals, 
-      simulation from joint precision, ...?
+<!-- sdmTMB in its current form achieves 3 of the 4 design principles outlined by @thorson2019 for index standardization:  -->
+
+
+<!-- (e.g., 'catchability' and 'habitat' covariates in VAST merely depend on the values supplied to `predict()` in sdmTMB). -->
 
 # Model
 
@@ -186,6 +192,32 @@ Highlights?
 - Non-linear effects (smooth splines, threshold/breakpoint functions)
 - Variance estimation and derived quantities (spatial range, area occupied etc)
 -->
+
+# Discussion
+
+Take home, re-iterate paragraph?
+
+There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the two most closely related are VAST and inlabru. 
+VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality (e.g., VAST lacks penalized smoothers and the Matérn PC prior).
+The difference lies mainly in user interfaces and considerable additional functionality for multivariate response data and delta/hurdle models in VAST.
+Interface-wise, VAST is a less modular interface (e.g., automatically constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries index standardization perspective (e.g., splitting 'catchability' and 'habitat' covariates), and lacks some of the features that we think make sdmTMB more broadly usable by applied ecologists. 
+For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1`).
+However, for users who require multivariate spatiotemporal models or the Poisson-link delta model (REF), there is no substitute for VAST.
+
+inlabru is similar to sdmTMB in design, but differs fundamentally in that fitting is achieved via INLA and approximate Bayesian computation.
+For some models, TMB/sdmTMB can be considerably faster than INLA/inlabru [@osgood-zimmerman2021], but in our experience, those differences will depend on many aspects of models specification (Supp fig?).
+Two major functions included in sdmTMB but not INLA/inlabru are anisotropy and non-linear threshold covariates (TODO: actually true??).
+We also think the sdmTMB interface will be more familiar than inlabru to users of `glm()`, lme4, mgcv, or glmmTMB and sdmTMB works with regular R data frames whereas inlabru works with `sp` class data objects. 
+However, inlabru fits additional model classes including log Gaussian Cox processes and may be particularly usable to those already familiar with INLA.
+
+Final paragraph touching on other stuff possible in one paragraph: priors, Bayes, barrier meshes, randomized quantile residuals, simulation from joint precision, ...?
+
+# Acknowledgements
+
+# Conflict of Interest statement
+
+# Author Contributions
+
 
 # Supporting Information
 
@@ -319,27 +351,6 @@ ggplot(ind, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   ylab("Biomass (kg)")
 ```
-
-# Implementation and Availability
-
-- CRAN before?
--
-# Performance
-
-- Probably some discussion of speed. Comparison of one of the models in the application above to INLA? Or other software, e.g. Stan -- though that's not as fair :). [EW: at least for the rainfall example I found inlabru to be about twice as fast as sdmTMB]
-- Probably not extensive space for simulation testing, but could do some minimal example and point to vignettes
-
-# Discussion
-
-# Conclusion
-
-Optional
-
-# Acknowledgements
-
-# Conflict of Interest statement
-
-# Author Contributions
 
 <!--
 All submissions with more than one author must include an Authors’ contributions statement. All persons listed as authors on a paper are expected to meet ALL of the following criteria for authorship:
