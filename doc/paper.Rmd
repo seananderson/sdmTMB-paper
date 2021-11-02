@@ -200,10 +200,8 @@ We include additional flexibility in specifying the linear fixed effect matrix $
 [paragraph about spde and gaussian process / Matern covariance here]
 
 <!-- Paragraph on model selection here-->
-Following glmmTMB, we allow AIC to be calculated for each sdmTMB model (Akaike XXXX). 
-Because of well-documented biases of AIC with hierarchical or mixed-effects models (can cite Vaida and Blanchard or another), we also provide functionality to perform estimation via k-fold cross-validation. 
-Our function `sdmTMB_cv()` allows for any number of folds or 'blocks', with assignments being user-specified or chosen randomly. 
-The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.
+Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [@akaike1974]. Because of the well documented biases of AIC with hierarchical or mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold  cross-validation. Our wrapper function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.  
+
 
 <!-- Paragraph on derived quantities here-->
 The results from a model fit with sdmTMB can be used to generate quantities of interest, especially relevant to population status. 
@@ -248,15 +246,8 @@ where
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a \mbox{Mat\'ern} covariance function.
-<!-- EW: Because of space limits, I might suggest moving all this to the SI -->
-The \mbox{Mat\'ern} defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
-(\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
-<!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
-where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
-a scaling parameter that is estimated (REF).
-The parameter $\nu$ controls the smoothness of the covariance function.
-We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a \mbox{Mat\'ern} covariance function. Additional details are provided in the SI.
+
 
 # Application Examples
 
@@ -358,24 +349,6 @@ ggplot(ind, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   ylab("Biomass (kg)")
 ```
-
-*EW: These are just placeholders -- not sure what order is best or what to highlight in very limited space*
-
-As a first example, we use a spatial dataset (`parana`) from the `geoR` package (Ribeiro Jr and Diggle 2018) that describes average May-June rainfall recorded at 143 stations in the state of Paraná, Brazil. This dataset is also well-known because it is used as an example of spatiotemporal modeling with INLA (cite INLA) book. Because the dataset doesn't include covariates and only includes a single year, we can model rainfall using an intercept and spatial component, $g(\mu_{s,t}) = b_{0} + \omega_{s}$. We assume the observation model for the rainfall data is normally distributed. The first step in fitting a model with `sdmTMB` is constructing the mesh to approximate the spatial process. This step can be done with the `make_mesh` function, which accepts the data (coordinates) and at minimum, the minimum allowed distance between points (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with INLA can also be passed in (additional examples of this are included in the SI). For example, an initial mesh with a cutoff distance of 0.1km could be made with
-
-```{r eval=FALSE, echo=TRUE}
-rain_spde = make_mesh(data = parana, c("east","north"), cutoff=0.1)
-```
-
-Second, we can fit the model using TMB with the `sdmTMB` function, whose formula syntax should be familiar to most R users,
-
-```{r eval = FALSE, echo=TRUE}
-fit = sdmTMB(data ~ 1, data=parana, spde = rain_spde)
-```
-
-As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cranes (*Grus grus*) from England, UK (Soriano-Redondo et al. 2019). In the original analysis, Soriano-Redondo et al. 2019 used log Gaussian Cox process models to jointly model crane presence--absence and the spatiotemporal distribution of wetlands. We use this dataset as an example of modeling presence--absence data with sdmTMB, and only model the occurence of cranes given covariates. With any multi-year dataset, a common question of interest is often whether observations can be best described by spatial variation, or spatial and spatiotemporal variation. With two years of data, we fit two models with `sdmTMB`: a model with a spatial component but no spatiotemporal variation, and a model with only spatiotemporal variation (allowing each year to have a different spatial field). We included the same fixed effect covariates in both models: different intercepts by year, and two covariates found to be important by Soriano-Redondo et al. 2019 (wetland area, perimeter to area ratio). As a coarse comparison of data support, we compare the Akaike's Information Criterion (Akaike 1973) from each model. The model with a shared spatial field appeared to be more supported ($\Delta AIC$=25.23). The sdmTMB package allows for additional model comparisons, including k-fold cross validation with the `sdmTMB_cv` function.
-
-Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance?
 
 # Implementation and Availability
 
@@ -484,3 +457,34 @@ Content:
 ```
 
 # Supplemental Materials
+
+### Matern parameterization
+<!-- EW: Because of space limits, I might suggest moving all this to the SI -->
+The \mbox{Mat\'ern} defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
+(\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
+<!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
+where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
+a scaling parameter that is estimated (REF).
+The parameter $\nu$ controls the smoothness of the covariance function.
+We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+
+
+
+### Junk to delete
+*EW: These are just placeholders -- not sure what order is best or what to highlight in very limited space*
+
+As a first example, we use a spatial dataset (`parana`) from the `geoR` package (Ribeiro Jr and Diggle 2018) that describes average May-June rainfall recorded at 143 stations in the state of Paraná, Brazil. This dataset is also well-known because it is used as an example of spatiotemporal modeling with INLA (cite INLA) book. Because the dataset doesn't include covariates and only includes a single year, we can model rainfall using an intercept and spatial component, $g(\mu_{s,t}) = b_{0} + \omega_{s}$. We assume the observation model for the rainfall data is normally distributed. The first step in fitting a model with `sdmTMB` is constructing the mesh to approximate the spatial process. This step can be done with the `make_mesh` function, which accepts the data (coordinates) and at minimum, the minimum allowed distance between points (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with INLA can also be passed in (additional examples of this are included in the SI). For example, an initial mesh with a cutoff distance of 0.1km could be made with
+
+```{r eval=FALSE, echo=TRUE}
+rain_spde = make_mesh(data = parana, c("east","north"), cutoff=0.1)
+```
+
+Second, we can fit the model using TMB with the `sdmTMB` function, whose formula syntax should be familiar to most R users,
+
+```{r eval = FALSE, echo=TRUE}
+fit = sdmTMB(data ~ 1, data=parana, spde = rain_spde)
+```
+
+As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cranes (*Grus grus*) from England, UK (Soriano-Redondo et al. 2019). In the original analysis, Soriano-Redondo et al. 2019 used log Gaussian Cox process models to jointly model crane presence--absence and the spatiotemporal distribution of wetlands. We use this dataset as an example of modeling presence--absence data with sdmTMB, and only model the occurence of cranes given covariates. With any multi-year dataset, a common question of interest is often whether observations can be best described by spatial variation, or spatial and spatiotemporal variation. With two years of data, we fit two models with `sdmTMB`: a model with a spatial component but no spatiotemporal variation, and a model with only spatiotemporal variation (allowing each year to have a different spatial field). We included the same fixed effect covariates in both models: different intercepts by year, and two covariates found to be important by Soriano-Redondo et al. 2019 (wetland area, perimeter to area ratio). As a coarse comparison of data support, we compare the Akaike's Information Criterion (Akaike 1973) from each model. The model with a shared spatial field appeared to be more supported ($\Delta AIC$=25.23). The sdmTMB package allows for additional model comparisons, including k-fold cross validation with the `sdmTMB_cv` function.
+
+Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance?
