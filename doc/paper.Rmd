@@ -141,24 +141,25 @@ We contrast these approaches with semi- and non-parametric approaches that do no
 
 # Model
 
-Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs.
-GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted.
+<!-- Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs. -->
+<!-- GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted. -->
 
-By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed; however, additional options in sdmTMB allow them to be modelled as a random walk or first-order autoregressive, AR(1), process.
-We include additional flexibility in specifying the linear fixed effect matrix $\bm{X \beta}$: sdmTMB allows covariates to be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000].
+By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed (IID); however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram)).
+Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000] (Fig.\ \@ref(fig:diagram)).
 
 [paragraph about spde and gaussian process / Matern covariance here]
 
 <!-- Paragraph on model selection here-->
 Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [@akaike1974]. 
-Because of the well documented biases of AIC with hierarchical or mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold  cross-validation. 
-Our wrapper function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
-The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.  
+Because of well-documented biases of AIC with mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold cross-validation. 
+Our function `sdmTMB::sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
+The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. 
 
 <!-- Paragraph on derived quantities here-->
-The results from a model fit with sdmTMB can be used to generate quantities of interest, especially relevant to population status.
-Estimated parameters from the Matérn covariance function can be used to describe the spatial variance and Matérn range.
-We provide additional functionality for generating population-level summaries for each time slice; these metrics include the fraction of area occupied (TODO?), 2-dimensional center of gravity (`sdmTMB::get_cog()`), and total population index ( `sdmTMB::get_index()`).
+The results from a model fit with sdmTMB can be used to generate quantities of interest.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including fraction of area occupied (TODO?), 2-dimensional center of gravity (`sdmTMB::get_cog()`), and total population index (`sdmTMB::get_index()`).
+Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range (distance at which spatial correlation decays to $\sim$ 0.13).
 
 <!--
 Highlights?
