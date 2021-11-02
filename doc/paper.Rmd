@@ -33,9 +33,6 @@ abstract: |
     | Point 4: identify the conclusions and the wider implications. \smallskip
 ---
 
-
-<!-- # For submission to MEE as an Application paper -->
-
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
 library(here)
 library(ggplot2)
@@ -50,71 +47,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-```
-
-```{=html}
-<!--
-
-Application: Short (no more than 3000-4000 words total) descriptions of new software that are intended to describe and promote the software as well as act as a citeable resource for developers.
-Application papers are made free to access for all readers upon publication in order to encourage uptake of the methodologies they describe.
-Uploading a package to a site such as [**CRAN**](http://cran.r-project.org/) or [**sourceforge** ](http://sourceforge.net/)in advance is not considered prior publication and will not hinder your submission to MEE.
-View some example Applications [**here**](https://besjournals.onlinelibrary.wiley.com/hub/journal/2041210X/features/applicationpapers).
-
-<https://besjournals.onlinelibrary.wiley.com/hub/journal/2041210X/features/applicationpapers>
-
--   Single column, double line spaced
-
--   Within the word count (no more than 7000-8000 words for Standard Articles, 3000-4000 words for Applications and Practical Tools)
-
--   Continuous line and page numbering throughout
-
--   Clearly defined manuscript structure as standard: Author details, Abstract (must be numbered according to [**Manuscript Specifications**](https://besjournals.onlinelibrary.wiley.com/hub/journal/2041210x/author-guidelines#MS_spec)), Keywords, Introduction, Materials and Methods, Results, Discussion, Figures and Tables with captions
-
--   Figures and Tables can be embedded within the text where referenced to facilitate reviewing
-
--   Author Contributions ([[if \>1 author -- see Authorship Policy]{.ul}](https://besjournals.onlinelibrary.wiley.com/hub/editorial-policies#authorship)).
-
--   Statement of where you *intend* to [**archive your data**](https://besjournals.onlinelibrary.wiley.com/hub/data_archiving_policy)
-
-
-Title Page should include:
-
-A concise and informative title. Do not include the authorities for taxonomic names.
-A list of all authors' names with names and addresses of Institutions.
-The name, address and e-mail address of the correspondence author.
-A running headline of not more than 45 characters.
-
-Abstract
-
-The Abstract must not exceed 350 words and should list the main results and conclusions, using simple, factual, numbered statements:
-
-Key-words: A list in alphabetical order not exceeding eight words or short phrases. The most important key-words should appear in the title and the abstract as well as the key-word list. More advice on selecting good keywords can be found here.
-
-Introduction
-
-This should state the reason for doing the work, the nature of the hypothesis or hypotheses under consideration, and should outline the essential background.
-
-Materials and Methods
-
-Include sufficient details for the work to be repeated. Where specific equipment and materials are named, the manufacturer’s details (name, city and country) should be given so that readers can trace specifications by contacting the manufacturer. Where commercially available software has been used, details of the supplier should be given in brackets or the reference given in full in the reference list. Do not describe or refer to commonplace statistical tests in this section but allude to them briefly in Results.
-
-Results
-
-State the results and draw attention in the text to important details shown in tables and figures.
-
-Discussion
-
-This should point out the significance of the results in relation to the reasons for doing the work, and place them in the context of other work.
-
-Conclusions (optional)
-
-Acknowledgements (optional)
-
-A brief statement acknowledging collaborators and research assistants who do not meet the criteria for authorship described above, or acknowledging funding sources, providing relevant permit numbers (including institutional animal use permits), or giving recognition to nature reserves or other organizations that made the work possible.
-
-Conflict of Interest statement (required for all article types)
-
--->
 ```
 
 # Introduction
@@ -180,13 +112,31 @@ This paper describes the basic functionality of the R package and the underlying
 
 <!-- ecology has a latitude gradient: von Humboldt, A. (1808) Ansichten der Natur mit wissenschaftlichen Erlauterungen. J.G. Cotta, Tübingen, Germany. -->
 
+(ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
+An sdmTMB model can be built from any combination of these components.
+The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
+Notation:
+We refer to design matrices as $\bm{X}$.
+The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and 'group', respectively.
+The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
+All other symbols refer to the  described model components.
+Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
+
+```{r diagram, fig.cap="(ref:diagram-fig)"}
+if (file.exists(here::here("figs/diagram.pdf"))) {
+  knitr::include_graphics(here::here("figs/diagram.pdf"))
+} else {
+  plot(1, type = "n", main = "figs/diagram.pdf missing; will be synced when complete")
+}
+```
+
 # Examples of sections:
 
 # Materials and Methods
 
 # Description
 
-Spatial and spatiotemporal models constructed with sdmTMB may be viewed as spatially explicit models, in the sense that they estimate parameters of a user-specified spatial covariance function, and these estimates may be converted into interpretable quantities common in spatial statistics (spatial decay, range). 
+Spatial and spatiotemporal models constructed with sdmTMB may be viewed as spatially explicit models, in the sense that they estimate parameters of a user-specified spatial covariance function, and these estimates may be converted into interpretable quantities common in spatial statistics (spatial decay, range).
 We contrast these approaches with semi- and non-parametric approaches that do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], some smooths in mgcv [@wood2017a]). By default, sdmTMB implements the Matérn covariance function (REF) (cite Rue et al?)---this function can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in a latitudinal direction may be different than in the longitudinal direction).
 
 # Model
@@ -195,17 +145,19 @@ Although sdmTMB has been developed with spatial or spatiotemporal modelling as a
 GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted.
 
 By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed; however, additional options in sdmTMB allow them to be modelled as a random walk or first-order autoregressive, AR(1), process.
-We include additional flexibility in specifying the linear fixed effect matrix $\bm{X \beta}$: sdmTMB allows covariates to be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000B].
+We include additional flexibility in specifying the linear fixed effect matrix $\bm{X \beta}$: sdmTMB allows covariates to be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000].
 
 [paragraph about spde and gaussian process / Matern covariance here]
 
 <!-- Paragraph on model selection here-->
-Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [@akaike1974]. Because of the well documented biases of AIC with hierarchical or mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold  cross-validation. Our wrapper function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.  
-
+Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [@akaike1974]. 
+Because of the well documented biases of AIC with hierarchical or mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold  cross-validation. 
+Our wrapper function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
+The predictive log-density is calculated for each fold, and then summarized across folds for a total measure of the predictive accuracy of a model.  
 
 <!-- Paragraph on derived quantities here-->
-The results from a model fit with sdmTMB can be used to generate quantities of interest, especially relevant to population status. 
-Estimated parameters from the Matérn covariance function can be used to describe the spatial variance and Matérn range. 
+The results from a model fit with sdmTMB can be used to generate quantities of interest, especially relevant to population status.
+Estimated parameters from the Matérn covariance function can be used to describe the spatial variance and Matérn range.
 We provide additional functionality for generating population-level summaries for each time slice; these metrics include the fraction of area occupied (TODO?), 2-dimensional center of gravity (`sdmTMB::get_cog()`), and total population index ( `sdmTMB::get_index()`).
 
 <!--
