@@ -58,7 +58,7 @@ This residual correlation is ideally dealt with because doing so (1) results in 
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
 Similarly to how random intercepts can account for correlation among groups (e.g., plants counted in plots of land), spatial/spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
-A common approach to modelling such random effects is with Gaussian random fields (GRFs), where the random effects are assumed drawn from a multivariate normal distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle1998; @chiles1999].
+A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed drawn from a multivariate normal distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle1998; @chiles1999].
 
 While simple on the surface, such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data [e.g., @latimer2009].
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016].
@@ -147,7 +147,7 @@ We contrast these approaches with semi- and non-parametric approaches that do no
 
 - example 1 + figs
 - example 2 + figs
-      
+
 <!--     - perhaps a paragraph on how it achieves what Jim outlined @thorson2019 as necessary: -->
 <!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
 <!--         -   Area weighting (check, helper functions to sum up weighted grid cells) -->
@@ -181,6 +181,15 @@ The predictive log-density is calculated for each fold and summarized across fol
 The results from a model fit with sdmTMB can be used to generate quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`sdmTMB::get_cog()`) and total population index (`sdmTMB::get_index()`).
 Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range (distance at which spatial correlation decays to $\sim$ 0.13).
+
+<!-- Paragraph on advanced options here?
+Specifically, this could address
+- PC-priors -- and other penalized priors
+- Non-linear stuff / etc
+- Linkages to Rstan
+- Simulation
+-->
+
 
 <!--
 Highlights?
