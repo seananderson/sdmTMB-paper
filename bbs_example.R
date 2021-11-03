@@ -5,7 +5,7 @@ fetch_bbs_data() # takes a few minutes, run once
 stratified_data <- stratify(by = "latlong")
 # Pull out species of interest, e.g. Smith et al. PLoS
 # https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0130768
-
+route_strat = stratified_data$route_strat
 #Olive-sided Flycatcher in Quebec/BCR 12
 indx <- grep("Olive-sided Flycatcher", stratified_data$species_strat$english)
 
@@ -81,5 +81,48 @@ g2 = ggplot(pred,aes(Year,jday)) +
   geom_raster(aes(fill=p)) +
   ylab("Day of year")
 pdf("bbs_example.pdf")
+gridExtra::grid.arrange(g1,g2,nrow=1)
+dev.off()
+
+
+# Biodiversity example
+dat = route_strat
+
+dat = dplyr::filter(dat,Year >= 1970)
+
+library(sdmTMB)
+mesh = make_mesh(data = dat,
+                 xy_cols = c("Longitude","Latitude"),
+                 cutoff = 1)
+
+dat$date = paste0(dat$Month,"-",dat$Day,"-",dat$Year)
+dat$date = lubridate::parse_date_time(dat$date,orders="mdy")
+dat$jday = lubridate::yday(dat$date)
+
+
+fit <- sdmTMB(TotalSpp ~ -1 + s(Year,jday,k=10),
+              spde = mesh,
+              time="Year",
+              spatial_only = TRUE,
+              data=dat)
+
+newdata = dplyr::filter(dat,Year==2000)
+newdata$jday = 170
+pred <- predict(fit,newdata)
+
+g1 = ggplot(pred,aes(Longitude,Latitude)) +
+  geom_point(aes(col=est),size=0.1) +
+  ggtitle("Total BBS Species")
+
+newdata = expand.grid("Year"=as.integer(unique(dat$Year)),
+                      "jday"=150:190,
+                      "Longitude"=mean(dat$Longitude),
+                      "Latitude"=mean(dat$Latitude))
+pred <- predict(fit,newdata)
+g2 = ggplot(pred,aes(Year,jday)) +
+  geom_tile(aes(fill=est)) +
+  ggtitle("Total BBS Species")
+
+pdf("bbs_example_biodiv.pdf")
 gridExtra::grid.arrange(g1,g2,nrow=1)
 dev.off()
