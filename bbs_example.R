@@ -88,7 +88,7 @@ dev.off()
 # Biodiversity example
 dat = route_strat
 
-dat = dplyr::filter(dat,Year >= 1970)
+dat = dplyr::filter(dat,Year >= 1970, St_Abrev%in%c("AK","YT","NT")==FALSE)
 
 library(sdmTMB)
 mesh = make_mesh(data = dat,
@@ -106,12 +106,30 @@ fit <- sdmTMB(TotalSpp ~ -1 + s(Year,jday,k=10),
               spatial_only = TRUE,
               data=dat)
 
-newdata = dplyr::filter(dat,Year==2000)
-newdata$jday = 170
-pred <- predict(fit,newdata)
+# come up with grids for prediction
+step=1
+pred_grid = expand.grid(Longitude = seq(round(min(dat$Longitude)),
+                                        round(max(dat$Longitude)), by = step),
+                        Latitude = seq(round(min(dat$Latitude)),
+                                        round(max(dat$Latitude))), by = step)
+floor_dat = dplyr::mutate(dat,
+                          Latitude = floor(Latitude/step)*step,
+                          Longitude = floor(Longitude/step)*step,
+                          cell = paste0(Longitude,Latitude)) %>%
+  dplyr::group_by(cell) %>%
+  dplyr::summarise(Latitude = Latitude[1], Longitude = Longitude[1])
+floor_dat$obs = 1
 
-g1 = ggplot(pred,aes(Longitude,Latitude)) +
-  geom_point(aes(col=est),size=0.1) +
+pred_grid = dplyr::left_join(pred_grid, floor_dat)
+pred_grid$Year = as.integer(2000)
+pred_grid$jday=170
+
+pred <- predict(fit,pred_grid)
+pred_grid$est = pred$est
+pred_grid$est = pred_grid$est * pred_grid$obs
+g1 = ggplot(pred_grid,aes(Longitude,Latitude)) +
+  geom_raster(aes(fill=est)) +
+  scale_fill_gradient2(low="red",high="blue",midpoint=max(pred_grid$est,na.rm=TRUE)/2,na.value="grey90") +
   ggtitle("Total BBS Species")
 
 newdata = expand.grid("Year"=as.integer(unique(dat$Year)),
@@ -122,6 +140,10 @@ pred <- predict(fit,newdata)
 g2 = ggplot(pred,aes(Year,jday)) +
   geom_tile(aes(fill=est)) +
   ggtitle("Total BBS Species")
+
+g3 = dplyr::filter(pred, jday %in% c(150, 170, 190)) %>%
+  ggplot(aes(Year, est, group=jday,col=jday)) +
+  geom_line() + ylab("Species")
 
 pdf("bbs_example_biodiv.pdf")
 gridExtra::grid.arrange(g1,g2,nrow=1)
