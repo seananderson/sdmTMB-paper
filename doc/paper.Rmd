@@ -190,6 +190,8 @@ Specifically, this could address
 - Simulation
 -->
 
+While not of interest to all users, the sdmTMB package also implements several advanced options for model fitting. First, models can include penalized likelihoods via assigning priors to all model parameters. These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces. Following other recent SPDE approaches [@osgood-zimmerman2021; @simpson2017], these 'penalized complexity' priors may be particularly useful in assigning priors to the range and variance. Second, we allow non-linear effects of covariates to be modeled with penalized regression splines ("P-splines") [@eilers1996], in one or multiple dimensions, using the same `s(x)` syntax familiar to user of `mgcv`. Third, for users interested in Bayesian inference, we allow models constructed with `sdmTMB` to be passed to Stan (cite) via the package tmbstan [@monnahan2018].
+
 
 <!--
 Highlights?
