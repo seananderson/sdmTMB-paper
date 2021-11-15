@@ -1,0 +1,166 @@
+---
+title: "Annotated example of index standardization with sdmTMB"
+output:
+  pdf_document:
+    highlight: tango
+---
+
+```{r setup, include = FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.asp = 0.618,
+  cache = TRUE,
+  autodep = TRUE
+)
+```
+
+
+```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+theme_set(theme_minimal())
+```
+
+Let's perform index standardization with the built-in data for Pacific cod. The density units should be kg/km^2^. Here, X and Y are coordinates in UTM zone 9.
+
+First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations.
+The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between v vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`).
+Custom built meshes with `INLA` (including meshes with barriers limiting covariance across polygons) can also be passed in (examples included in `?make_mesh`).
+For example, a mesh with a cutoff distance of 10km can be made with
+
+```{r mesh, echo = TRUE, cache=FALSE}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+```
+
+```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+plot(mesh)
+```
+
+Let's fit a GLMM. We include `0 + as.factor(year)` so that there is a factor predictor that represents the mean estimate for each time slice. Setting `silent = FALSE` would give us optimization details as the model fits but clutter the Rmd output.
+
+```{r fit-pcod, warning=FALSE, message=FALSE}
+fit <- sdmTMB(density ~ 0 + as.factor(year), data = pcod,
+  time = "year", mesh = mesh, family = tweedie(link = "log"),
+  silent = TRUE
+)
+```
+
+Print the model:
+
+```{r print-fit}
+print(fit)
+```
+
+Extract the parameter estimates as a data frame:
+
+```{r tidy}
+tidy(fit, conf.int = TRUE)
+tidy(fit, effects = "ran_pars", conf.int = TRUE)
+```
+
+We can predict on the original data locations:
+
+```{r predict}
+pred <- predict(fit)
+```
+
+We can inspect randomized quantile residuals:
+
+```{r qqnorm, out.width="5in"}
+pred$resid <- residuals(fit)
+qqnorm(pred$resid)
+qqline(pred$resid)
+```
+
+```{r plot-resids}
+ggplot(pred, aes(X, Y, colour = resid)) +
+    geom_point() + facet_wrap(~year) +
+    coord_fixed() + scale_colour_gradient2()
+```
+
+Now we want to predict on a fine-scale grid over the entire survey domain. There is a grid built into the sdmTMB package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above.
+
+Now make the predictions on new data.
+
+```{r predict-newdata}
+pred_qcs <- predict(fit, newdata = qcs_grid)
+```
+
+Let's make a small function to make maps.
+
+```{r plot-map}
+plot_map <- function(dat, column) {
+  ggplot(dat, aes_string("X", "Y", fill = column)) +
+    geom_raster() +
+    facet_wrap(~year) +
+    coord_fixed()
+}
+```
+
+There are four kinds of predictions that we get out of the model. First we will show the predictions that incorporate all fixed effects and random effects:
+
+```{r plot-all-effects}
+plot_map(pred_qcs, "exp(est)") +
+  scale_fill_viridis_c(trans = "log10") +
+  ggtitle("Prediction (fixed effects + all random effects)")
+```
+
+We can also look at just the fixed effects, here year:
+
+```{r plot-fix-defects}
+plot_map(pred_qcs, "exp(est_non_rf)") +
+  ggtitle("Prediction (fixed effects only)") +
+  scale_fill_viridis_c(trans = "sqrt")
+```
+
+We can look at the spatial random effects that represent consistent deviations in space through time that are not accounted for by our fixed effects. In other words, these deviations represent consistent biotic and abiotic factors that are affecting biomass density but are not accounted for in the model.
+
+```{r plot-spatial-effects}
+plot_map(pred_qcs, "omega_s") +
+  ggtitle("Spatial random effects only") +
+  scale_fill_gradient2()
+```
+
+And finally we can look at the spatiotemporal random effects that represent deviation from the fixed effect predictions and the spatial random effect deviations. These represent biotic and abiotic factors that are changing through time and are not accounted for in the model.
+
+```{r plot-spatiotemporal-effects}
+plot_map(pred_qcs, "epsilon_st") +
+  ggtitle("Spatiotemporal random effects only") +
+  scale_fill_gradient2()
+```
+
+The fastest way to assess uncertainty on our spatial predictions is with simulation from the ...
+
+```{r sims}
+pred_sims <- predict(fit, newdata = qcs_grid, sims = 500)
+dim(pred_sims)
+```
+
+```{r sims-cv-plot}
+qcs_grid$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
+ggplot(qcs_grid, aes(X, Y, fill = cv)) +
+    geom_raster() + facet_wrap(~year) +
+    coord_fixed() + scale_fill_viridis_c(trans = "log10", option = "D")
+```
+
+```{r index, out.width="5in"}
+qcs_grid$area <- 4 # all 2 x 2km
+pred2 <- predict(
+  fit, newdata = qcs_grid, return_tmb_object = TRUE,
+  area = qcs_grid$area
+)
+ind <- get_index(pred2)
+ggplot(ind, aes(year, est/1000)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.4) +
+  ylab("Biomass (t)")
+```
+
+```{r index-sims, out.width="5in"}
+ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
+ggplot(ind, aes(year, est/1000)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.4) +
+  ylab("Biomass (t)")
+```
