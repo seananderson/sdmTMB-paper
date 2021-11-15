@@ -18,18 +18,18 @@ spde <- inla.spde2.pcmatern(mesh = mesh$mesh,
 
 # fit sdmtmb model
 fit_sdmtmb = sdmTMB(present ~ 0 + as.factor(year), data = d, spde = mesh, time = "year",
-              fields = "IID", include_spatial = FALSE, family = binomial(link = "logit"),
-              priors = sdmTMBpriors(
-                matern_st = pc_matern(range_gt = 10, range_prob = 0.05,
-                                      sigma_lt = 2, sigma_prob = 0.05)
-              ))
+                    fields = "IID", include_spatial = FALSE, family = binomial(link = "logit"),
+                    priors = sdmTMBpriors(
+                      matern_st = pc_matern(range_gt = 10, range_prob = 0.05,
+                                            sigma_lt = 2, sigma_prob = 0.05)
+                    ))
 
 constr <- FALSE
 # set this up so year effects are independent fixed effects. This first approach is similar
 # to this thread: https://githubmemory.com/repo/inlabru-org/inlabru/issues/87
 components_1 <- present ~ 0 +
   fac(main = year, model = "factor_full") +
-      #hyper = list(prec = list(fixed = TRUE))) +
+  #hyper = list(prec = list(fixed = TRUE))) +
   spatrf(main = coordinates,model = spde, group=year, ngroup=4,
          control.group = list(model = "iid"))
 
@@ -40,7 +40,7 @@ components_1 <- present ~ 0 +
 # as.factor(year)2015     0.18    0.45
 # as.factor(year)2017    -0.65    0.45
 fit_1 <- bru(components = components_1,
-           family = "binomial", data = pcod_2011)
+             family = "binomial", data = pcod_2011)
 #print(fit)
 
 # look at effects
