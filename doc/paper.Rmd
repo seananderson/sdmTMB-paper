@@ -222,21 +222,19 @@ head(pcod)
 #> 3  2003     0     220  449. 5802.
 ```
 
-We must then create a mesh object that contains matrices to apply the SPDE approach:
+We start by creating a mesh object that contains matrices to apply the SPDE approach:
 
 ```{r, echo=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
-Here, `cutoff` defines the minimum allowed distance between points.
+Here, `cutoff` defines the minimum allowed distance between points, here in km.
 Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh(mesh = ...)`. 
-We can then inspect our mesh object with the associated `plot()` method: `plot(mesh)` (see Fig. \@ref(fig:pcod-fig)a):
+We can then inspect our mesh object with the associated `plot()` method: `plot(mesh)` (see Fig. \@ref(fig:pcod-fig)a).
 
-```{r, eval=FALSE, echo=FALSE}
-plot(mesh)
-```
-
-And use our data frame and mesh to fit a spatial model:
+We can then fit a model with spatial random fields via the function `sdmTMB()`. 
+We use a penalized smoother for depth as a main effect via `mgcv::s()`.
+We specify the family as Tweedie to account for the positive continuous density values that also have zeros.
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE}
 fit <- sdmTMB(
@@ -244,7 +242,7 @@ fit <- sdmTMB(
   data = pcod,
   family = tweedie(link = "log"),
   mesh = mesh,
-  spatial = 'on'
+  spatial = "on"
 )
 ```
 
@@ -273,18 +271,17 @@ print(fit)
 #> ML criterion at convergence: 6402.136
 ```
 
-The output indicates our model was fit by (marginal) maximum likelihood ('ML').
+The output indicates our model was fit by (marginal) maximum likelihood (`'ML'`).
 We also see the formula, mesh, fitted data, and family.
-Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the \mbox{Mat\'ern} range distance, marginal spatial standard deviation, and the negative log likelihood at convergence.
+Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the \mbox{Mat\'ern} range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 
 We can make predictions with the `predict()` method; we will predict on new data with the `newdata` argument.
 The data frame `qcs_grid` is a grid that extends over the full studied domain and contains all predictors used in the model set at values we wish to predict at.
+We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)b--d.
 
 ```{r, echo=TRUE, eval=FALSE}
 p <- predict(fit, newdata = qcs_grid)
 ```
-
-We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)b--d.
 
 ```{r, echo=FALSE, eval=TRUE}
 p <- predict(fit, newdata = subset(qcs_grid, year == 2003))
@@ -292,20 +289,24 @@ p <- predict(fit, newdata = subset(qcs_grid, year == 2003))
 
 
 ```{r}
-g_pred <- ggplot(p, aes(X, Y, fill = exp(est))) + geom_raster() +
-  scale_fill_viridis_c(trans = "sqrt", option = "C") + coord_fixed() +
+g_pred <- ggplot(p, aes(X, Y, fill = exp(est))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt", option = "C") +
+  coord_fixed() +
   labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
-  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
+  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt"))
 ```
 
 ```{r, eval=FALSE}
 p3 <- predict(fit, newdata = subset(qcs_grid, year == 2003), sims = 500L)
 se <- apply(p3, 1, sd)
 p$se <- se
-g_pred_se <- ggplot(p, aes(X, Y, fill = se)) + geom_raster() +
-  scale_fill_viridis_c(trans = "log10", option = "C") + coord_fixed() +
+g_pred_se <- ggplot(p, aes(X, Y, fill = se)) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "log10", option = "C") +
+  coord_fixed() +
   labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
-  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
+  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt"))
 ```
 
 
@@ -348,12 +349,18 @@ g_mesh <- ggplot(pcod, aes(X, Y)) +
 ```
 
 ```{r}
-nd <- data.frame(depth =
-  seq(min(pcod$depth), max(pcod$depth), length.out = 300))
+nd <- data.frame(
+  depth =
+    seq(min(pcod$depth), max(pcod$depth), length.out = 300)
+)
 p_smooth <- predict(fit, newdata = nd, se_fit = TRUE, re_form = NA)
-g_smooth <- ggplot(p_smooth,
-  aes(depth, exp(est), ymin = exp(est - 1.96 * est_se),
-    ymax = exp(est + 1.96 * est_se))) +
+g_smooth <- ggplot(
+  p_smooth,
+  aes(depth, exp(est),
+    ymin = exp(est - 1.96 * est_se),
+    ymax = exp(est + 1.96 * est_se)
+  )
+) +
   geom_ribbon(fill = blues[2]) +
   geom_line(colour = blues[5], lwd = 1) +
   labs(x = "Depth (m)", y = "Density (units)") +
@@ -361,19 +368,11 @@ g_smooth <- ggplot(p_smooth,
   coord_fixed(expand = FALSE, ratio = 1.28)
 ```
 
-```{r, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=TRUE}
-fit2 <- sdmTMB(
-  density ~ s(depth), 
-  family = tweedie(link = "log"), data = pcod, mesh = mesh,
-  time = 'year', spatial = 'off', spatiotemporal = 'ar1'
-)
-```
-
 ```{r fit-pcod-st, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=FALSE}
 fit2 <- sdmTMB(
-  density ~ 0 + as.factor(year), 
+  density ~ 0 + as.factor(year),
   family = tweedie(link = "log"), data = sdmTMB::pcod, mesh = mesh,
-  time = 'year', spatial = 'on', spatiotemporal = 'iid', silent = TRUE
+  time = "year", spatial = "on", spatiotemporal = "iid", silent = TRUE
 )
 p2 <- predict(fit2, newdata = qcs_grid, sims = 500L)
 ind <- get_index_sims(p2)
@@ -411,10 +410,10 @@ cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto")
 
 We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured. Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
 
-```{r, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
   density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh
-  time = 'year', spatial = 'off', spatiotemporal = 'ar1'
+  time = "year", spatial = "off", spatiotemporal = "ar1"
 )
 ```
 
