@@ -202,16 +202,16 @@ While not of interest to all users, the sdmTMB package also implements several a
 An sdmTMB model is fit by supplying a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
 It usually makes sense to convert the spatial coordinates to UTMs such that distance remains constant throughout the study region.
 
-Here, we illustrate a simple spatial model fit to Pacific Cod (TODO) trawl survey data from Queen Charlotte Sound.
+Here, we illustrate a spatial model fit to Pacific Cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
-Our data frame `d` has a column `year` for the year of the survey, `density` for density of Pacific Cod in a given survey tow, `depth` for depth in m of that tow, and spatial coordinates X and Y, which are UTM coordinates in km:
+Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific Cod in a given survey tow, `depth` for depth in m of that tow, and spatial coordinates X and Y, which are UTM coordinates in km:
 
 ```{r, include=FALSE}
-dat <- dplyr::select(pcod, year, density, depth, X, Y)
+pcod <- dplyr::select(pcod, year, density, depth, X, Y)
 ```
 
 ```{r, echo=TRUE, eval=FALSE}
-head(dat)
+head(pcod)
 ```
 
 ```{}
@@ -225,12 +225,14 @@ head(dat)
 We must then create a mesh object that contains matrices to apply the SPDE approach:
 
 ```{r, echo=TRUE}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
-Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`. We can then inspect our mesh object with the associated `plot()` method (see Fig. \@ref(fig:pcod-fig)a):
+Here, `cutoff` defines the minimum allowed distance between points.
+Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh(mesh = ...)`. 
+We can then inspect our mesh object with the associated `plot()` method: `plot(mesh)` (see Fig. \@ref(fig:pcod-fig)a):
 
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=FALSE, echo=FALSE}
 plot(mesh)
 ```
 
@@ -239,7 +241,7 @@ And use our data frame and mesh to fit a spatial model:
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE}
 fit <- sdmTMB(
   density ~ s(depth),
-  data = dat,
+  data = pcod,
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = 'on'
@@ -259,7 +261,7 @@ print(fit)
 #> Spatiotemporal model fit by ML ['sdmTMB']
 #> Formula: density ~ s(depth)
 #> Mesh: mesh
-#> Data: d
+#> Data: pcod
 #> Family: tweedie(link = 'log')
 #>             coef.est coef.se
 #> (Intercept)     2.37    0.21
@@ -279,25 +281,64 @@ We can make predictions with the `predict()` method; we will predict on new data
 The data frame `qcs_grid` is a grid that extends over the full studied domain and contains all predictors used in the model set at values we wish to predict at.
 
 ```{r, echo=TRUE, eval=FALSE}
-p_new <- predict(fit, newdata = qcs_grid)
+p <- predict(fit, newdata = qcs_grid)
 ```
 
-We show a basic plot of spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)b--d.
+We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)b--d.
 
 ```{r, echo=FALSE, eval=TRUE}
-p_new <- predict(fit, newdata = subset(qcs_grid, year == 2003))
+p <- predict(fit, newdata = subset(qcs_grid, year == 2003))
 ```
 
+
 ```{r}
-g_pred <- ggplot(p_new, aes(X, Y, fill = exp(est))) + geom_raster() +
-  scale_fill_viridis_c(trans = "sqrt") + coord_fixed() +
+g_pred <- ggplot(p, aes(X, Y, fill = exp(est))) + geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt", option = "C") + coord_fixed() +
   labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
   theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
 ```
 
+```{r, eval=FALSE}
+p3 <- predict(fit, newdata = subset(qcs_grid, year == 2003), sims = 500L)
+se <- apply(p3, 1, sd)
+p$se <- se
+g_pred_se <- ggplot(p, aes(X, Y, fill = se)) + geom_raster() +
+  scale_fill_viridis_c(trans = "log10", option = "C") + coord_fixed() +
+  labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
+  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
+```
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library(sf)
+map_data <- rnaturalearth::ne_countries(
+  scale = "large",
+  returnclass = "sf", country = "canada")
+# Crop the polygon for plotting and efficiency:
+# st_bbox(map_data) # find the rough coordinates
+bc_coast <- suppressWarnings(suppressMessages(
+  st_crop(map_data,
+    c(xmin = -134, ymin = 46, xmax = -120, ymax = 57))))
+utm_zone9 <- 3156
+bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
+# ggplot(bc_coast_proj) + geom_sf()
+```
+
+```{r, eval=FALSE}
+ggplot(bc_coast_proj) + geom_sf() +
+  geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = exp(est))) +
+  xlim(230957.7 + 100000, 1157991 - 500000) +
+  ylim(5366427 + 200000, 6353456 - 500000) +
+  scale_fill_viridis_c() +
+  theme_light() +
+  labs(fill = "Predicted\ndensity") +
+  labs(x = "Longitude", y = "Latitude")
+```
+
 ```{r, echo=FALSE}
 blues <- RColorBrewer::brewer.pal(5, "Blues")
-g_mesh <- ggplot(dat, aes(X, Y)) +
+reds <- RColorBrewer::brewer.pal(5, "Reds")
+g_mesh <- ggplot(pcod, aes(X, Y)) +
   inlabru::gg(mesh$mesh, edge.color = "grey60") +
   geom_point(alpha = 0.6, mapping = aes(size = density), colour = blues[4]) +
   theme_minimal() + coord_fixed() +
@@ -308,33 +349,72 @@ g_mesh <- ggplot(dat, aes(X, Y)) +
 
 ```{r}
 nd <- data.frame(depth =
-  seq(min(dat$depth), max(dat$depth), length.out = 300))
+  seq(min(pcod$depth), max(pcod$depth), length.out = 300))
 p_smooth <- predict(fit, newdata = nd, se_fit = TRUE, re_form = NA)
 g_smooth <- ggplot(p_smooth,
   aes(depth, exp(est), ymin = exp(est - 1.96 * est_se),
     ymax = exp(est + 1.96 * est_se))) +
-  geom_ribbon(fill = "grey65") +
-  geom_line(colour = "grey10") +
+  geom_ribbon(fill = blues[2]) +
+  geom_line(colour = blues[5], lwd = 1) +
   labs(x = "Depth (m)", y = "Density (units)") +
-  xlim(min(dat$depth), 300) +
-  coord_fixed(expand = FALSE, ratio = 1.2)
+  xlim(min(pcod$depth), 300) +
+  coord_fixed(expand = FALSE, ratio = 1.28)
 ```
 
-```{r pcod-fig, fig.cap="example output", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
-g_omega <- ggplot(p_new, aes(X, Y, fill = omega_s)) +
+```{r, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=TRUE}
+fit2 <- sdmTMB(
+  density ~ s(depth), 
+  family = tweedie(link = "log"), data = pcod, mesh = mesh,
+  time = 'year', spatial = 'off', spatiotemporal = 'ar1'
+)
+```
+
+```{r fit-pcod-st, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=FALSE}
+fit2 <- sdmTMB(
+  density ~ 0 + as.factor(year), 
+  family = tweedie(link = "log"), data = sdmTMB::pcod, mesh = mesh,
+  time = 'year', spatial = 'on', spatiotemporal = 'iid', silent = TRUE
+)
+p2 <- predict(fit2, newdata = qcs_grid, sims = 500L)
+ind <- get_index_sims(p2)
+```
+
+```{r plot-ind, eval=FALSE}
+g_ind <- ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) + 
+  geom_ribbon(fill = blues[2]) +
+  geom_line(colour = blues[5], lwd = 1) +
+  ylim(0, max(ind$upr)) +
+  coord_fixed(expand = FALSE, ratio = 0.3) +
+  labs(x = "Year", y = "Biomass (units)")
+```
+
+(ref:pcod-fig-cap) Plots from the Pacific Cod spatial model example in Queen Charlotte Sound, BC, Canada.
+(a) The SPDE mesh (lines) combined with the trawl survey observations.
+Finer will be slower to fit.
+Circle area corresponds to density of Pacific Cod for individual trawls.
+(b) Conditional effect of depth modelled as a penalized smoother, `s(depth)`.
+Line indicates estimate and ribbon indicates a 95\% confidence interval (+/- 2 SEs).
+These predictions are made omitting the spatial random field.
+(c) The spatial random field:
+these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
+(d) The overall prediction: these estimates come from combining all fixed and random effect estimates.
+
+```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
+g_omega <- ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
-  scale_fill_gradient2(high = scales::muted("red"), low = scales::muted("blue")) + coord_fixed() +
+  # scale_fill_gradient2(high = scales::muted("red"), low = scales::muted("blue")) + coord_fixed() +
+  scale_fill_gradient2(high = reds[4], low = blues[4]) + coord_fixed() +
   labs(fill = "Spatial random\nfield deviations", x = "UTMs E (km)", y = "UTMs N (km)") +
   theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
 cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto")
 ```
 
-We could extend our model to a spatiotemporal one simply by supplying the `'year'` column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured. Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
+We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured. Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
 
 ```{r, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
-  density ~ s(depth), family = tweedie(link = "log"), data = dat, mesh = mesh
-  time = "year", spatial = 'off', spatiotemporal = 'ar1'
+  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh
+  time = 'year', spatial = 'off', spatiotemporal = 'ar1'
 )
 ```
 
