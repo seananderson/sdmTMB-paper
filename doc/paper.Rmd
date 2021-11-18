@@ -174,6 +174,8 @@ By default, we assume that if spatiotemporal fields are included, they are indep
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000] (Fig.\ \@ref(fig:diagram)).
 
+basic optimization details - random effects conditional...
+
 [paragraph about spde and gaussian process / Matern covariance here]
 
 <!-- Paragraph on model selection here-->
@@ -282,7 +284,8 @@ We also see the formula, mesh, fitted data, and family.
 Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 
 We can make predictions with the `predict()` method; we will predict on new data with the `newdata` argument.
-The data frame `qcs_grid` is a grid that extends over the full studied domain and contains all predictors used in the model set at values we wish to predict at.
+The data frame `qcs_grid` is a grid that extends over the full survey domain and contains all predictors used in the model set at values for which we we want to predict.
+The output of `predict()` is a data frame containing overall estimates, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
 We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)b--d.
 
 ```{r, echo=TRUE, eval=FALSE}
