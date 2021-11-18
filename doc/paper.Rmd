@@ -389,7 +389,7 @@ g_ind <- ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 
 (ref:pcod-fig-cap) Plots from the Pacific Cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (a) The SPDE mesh (lines) combined with the trawl survey observations.
-Finer will be slower to fit.
+Finer meshes will be slower to fit.
 Circle area corresponds to density of Pacific Cod for individual trawls.
 (b) Conditional effect of depth modelled as a penalized smoother, `s(depth)`.
 Line indicates estimate and ribbon indicates a 95\% confidence interval (+/- 2 SEs).
