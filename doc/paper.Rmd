@@ -57,13 +57,13 @@ knitr::opts_chunk$set(
 # Introduction
 
 Ecological data are often collected in space or in space repeatedly over time.
-While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [e.g., @cressie1993; @cressie2011].
+While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
-This residual correlation is ideally dealt with because doing so (1) allows for valid statistical inference [e.g., @legendre1989a], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @barnett2021].
+This residual correlation is ideally dealt with because doing so (1) allows for valid statistical inference [@legendre1989a], (2) can improve predictions compared to ignoring it [@shelton2014], and (3) can be of ecological interest itself [REFs, @barnett2021].
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
 Similarly to how random intercepts can account for correlation among groups (e.g., plants counted in plots of land), spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
-A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed drawn from a multivariate normal distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle1998; @chiles1999].
+A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle1998; @chiles1999].
 
 While simple on the surface, such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data [e.g., @latimer2009].
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016].
@@ -73,7 +73,7 @@ The SPDE approach is a solution popularized via the INLA R package [@rue2009; @l
 Details are beyond the scope of this paper, and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit GRFs to large spatial datasets [@lindgren2011].
 
 Template systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
-For example, TMB requires the user to program in a C++ like template and it can be slow to experiment with multiple models when writing bespoke model code.
+For example, TMB requires the user to program in a C++ template and it can be slow to experiment with multiple models when writing bespoke model code.
 Packages such as lme4 [@bates2015] and glmmTMB [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
 Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to spatial models that use the SPDE, but either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack some of the flexibility for the particular class of models discussed here.
 We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
@@ -92,7 +92,7 @@ We provide a more detailed comparison of related software packages in Table 1 an
 Here, we introduce our R package sdmTMB, which implements spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
 Our aim is not to replace any of the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface for a specific class of spatial and spatiotemporal models that should be familiar to users of lme4, glmmTMB, or mgcv [@wood2017a].
 One common application is for species distribution models (SDMs), hence the package name.
-This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through TODO case studies, and concludes with a discussion of additional functionality and related software.
+This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through TODO case studies, and concludes with a discussion of related software.
 
 <!-- -   [@anderson2019] -->
 <!-- -   [@maureaud2021] -->
@@ -235,7 +235,7 @@ We note this will be considerably slower to fit than with maximum likelihood and
 
 sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
-Following other recent SPDE implementations [@simpson2017; @osgood-zimmerman2021], penalized complexity priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
+Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
 
 ## Derived quantities of interest
 
@@ -310,6 +310,7 @@ fit <- sdmTMB(
 )
 ```
 
+Setting `silent = FALSE` would indicate optimization progress, which is helpful for larger models.
 We can get a summary of the fit with the `print()` method or extract parameter estimates as a data frame with the `tidy()` method (omitted for space):
 
 ```{r,eval=FALSE, echo=TRUE}
