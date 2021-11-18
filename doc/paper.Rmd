@@ -195,18 +195,24 @@ Specifically, this could address
 - Simulation
 -->
 
-While not of interest to all users, the sdmTMB package also implements several advanced options for model fitting. First, models can include penalized likelihoods via assigning priors to all model parameters. These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces. Following other recent SPDE approaches [@osgood-zimmerman2021; @simpson2017], these 'penalized complexity' priors may be particularly useful in assigning priors to the range and variance. Second, we allow non-linear effects of covariates to be modeled with penalized regression splines ("P-splines") [@eilers1996], in one or multiple dimensions, using the same `s(x)` syntax familiar to user of `mgcv`. Third, for users interested in Bayesian inference, we allow models constructed with `sdmTMB` to be passed to Stan (cite) via the package tmbstan [@monnahan2018].
+While not of interest to all users, sdmTMB also implements several advanced options for model fitting. 
+First, models can include penalized likelihoods via assigning priors to model parameters.
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces.
+Following other recent SPDE approaches [@simpson2017; @osgood-zimmerman2021], 'penalized complexity' priors may be particularly useful in assigning priors to the spatial range and variance.
+Second, we allow non-linear effects of covariates to be modeled with penalized regression splines ("P-splines") [@eilers1996], in one or multiple dimensions, using the same `s(x)` syntax familiar to users of `mgcv`.
+Third, for users interested in Bayesian inference, we allow models to be passed to Stan (cite) via the package tmbstan [@monnahan2018].
 
 # An introductory example
 
-An sdmTMB model is fit by supplying a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-It usually makes sense to convert the spatial coordinates to UTMs such that distance remains constant throughout the study region.
+At a minimum, an sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
+It usually makes sense to convert the spatial coordinates to UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
 
 Here, we illustrate a spatial model fit to Pacific Cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
-Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific Cod in a given survey tow, `depth` for depth in m of that tow, and spatial coordinates X and Y, which are UTM coordinates in km:
+Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific Cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometers:
 
 ```{r, include=FALSE}
+# simplify for paper
 pcod <- dplyr::select(pcod, year, density, depth, X, Y)
 ```
 
@@ -228,13 +234,13 @@ We start by creating a mesh object that contains matrices to apply the SPDE appr
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
-Here, `cutoff` defines the minimum allowed distance between points, here in km.
-Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh(mesh = ...)`. 
-We can then inspect our mesh object with the associated `plot()` method: `plot(mesh)` (see Fig. \@ref(fig:pcod-fig)a).
+Here, `cutoff` defines the minimum allowed distance between points in the units of `X` and `Y` (km).
+Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`. 
+We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)a).
 
 We can then fit a model with spatial random fields via the function `sdmTMB()`. 
-We use a penalized smoother for depth as a main effect via `mgcv::s()`.
-We specify the family as Tweedie to account for the positive continuous density values that also have zeros.
+We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
+We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE}
 fit <- sdmTMB(
@@ -271,9 +277,9 @@ print(fit)
 #> ML criterion at convergence: 6402.136
 ```
 
-The output indicates our model was fit by (marginal) maximum likelihood (`'ML'`).
+The output indicates our model was fit by maximum (marginal) likelihood (`'ML'`).
 We also see the formula, mesh, fitted data, and family.
-Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the \mbox{Mat\'ern} range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
+Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 
 We can make predictions with the `predict()` method; we will predict on new data with the `newdata` argument.
 The data frame `qcs_grid` is a grid that extends over the full studied domain and contains all predictors used in the model set at values we wish to predict at.
@@ -387,16 +393,16 @@ g_ind <- ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "Biomass (units)")
 ```
 
-(ref:pcod-fig-cap) Plots from the Pacific Cod spatial model example in Queen Charlotte Sound, BC, Canada.
-(a) The SPDE mesh (lines) combined with the trawl survey observations.
-Finer meshes will be slower to fit.
-Circle area corresponds to density of Pacific Cod for individual trawls.
-(b) Conditional effect of depth modelled as a penalized smoother, `s(depth)`.
-Line indicates estimate and ribbon indicates a 95\% confidence interval (+/- 2 SEs).
+(ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
+(a) SPDE mesh (lines) combined with the trawl survey observations (points).
+Finer meshes will be slower to fit but increase the accuracy of the SPDE approximation.
+The circle area corresponds to density of Pacific Cod for individual trawls.
+(b) Conditional effect of depth modelled as a penalized smoother.
+The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
 These predictions are made omitting the spatial random field.
-(c) The spatial random field:
+(c) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
-(d) The overall prediction: these estimates come from combining all fixed and random effect estimates.
+(d) Overall prediction: these estimates represent the combination of all fixed and random effects.
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
 g_omega <- ggplot(p, aes(X, Y, fill = omega_s)) +
@@ -408,7 +414,8 @@ g_omega <- ggplot(p, aes(X, Y, fill = omega_s)) +
 cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto")
 ```
 
-We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured. Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
+We could extend our model to a spatiotemporal model simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
+Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
 
 ```{r, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
@@ -492,7 +499,7 @@ where
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a \mbox{Mat\'ern} covariance function. Additional details are provided in the SI.
+The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a Matérn covariance function. Additional details are provided in the SI.
 
 
 # Application Examples
@@ -587,7 +594,7 @@ Content:
 
 ### Matern parameterization
 <!-- EW: Because of space limits, I might suggest moving all this to the SI -->
-The \mbox{Mat\'ern} defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
+The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
 (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
 <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
 where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
