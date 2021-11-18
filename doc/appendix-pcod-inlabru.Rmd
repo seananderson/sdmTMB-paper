@@ -1,0 +1,105 @@
+---
+title: "Annotated example of index standardization with inlabru"
+output:
+  pdf_document:
+    highlight: tango
+---
+
+```{r setup, include = FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.asp = 0.618,
+  cache = TRUE,
+  autodep = TRUE
+)
+```
+
+
+```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+library(INLA)
+library(inlabru)
+theme_set(theme_minimal())
+```
+
+This model is an extension of the same vignette using sdmTMB.
+
+```{r mesh, echo = TRUE, cache=FALSE}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
+spde <- inla.spde2.pcmatern(mesh = mesh$mesh,
+                            prior.range = c(10, 0.05), # P(range < 10) = 0.05
+                            prior.sigma = c(2, 0.05)) # P(sigma > 2) = 0.05
+```
+
+```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+plot(mesh)
+```
+
+There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work. In the first case, we can create a design matrix and add year effects individually to the formula.
+
+We can fit the model first with `sdmTMB`. Note that this is a model with only the fixed year effects and a single spatial field, with presence-absence as the response.  
+
+```{r}
+sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year), data = pcod,
+   time = "year", spde = mesh, 
+   family = binomial(link="logit"), 
+   spatial_only=TRUE,
+   priors = sdmTMBpriors(
+                      matern_st = pc_matern(range_gt = 10, range_prob = 0.05,
+                                            sigma_lt = 2, sigma_prob = 0.05)
+                    ))
+sdmtmb_coefs = tidy(sdmtmb_fit, effects="fixed")
+```
+
+Now we can set up the design matrix for `inlabru`  
+
+```{r fit-pcod, warning=FALSE, message=FALSE}
+m <- lm(present ~ -1 + as.factor(year), data = pcod)
+model_mat = model.matrix(m)
+colnames(model_mat) = paste0("x",unique(pcod$year))
+dat <- cbind(pcod, model_mat)
+```
+
+Next we set up the `components` object for the model. This includes a formula with fixed or random effects (here only fixed) and the design of the spatial random field. The name `spatrf` can be anything, but includes the coordinates, spde model, and how the year effects are shared. 
+
+```{r}
+components <- present ~ -1 + x2003 + x2004 + x2005 + x2007 +
+  x2009 + x2011 + x2013 + x2015 + x2017 +
+  spatrf(main = coordinates,model = spde) + 
+  #spatrf(main = coordinates,model = spde, group=year, ngroup=ncol(model_mat),
+  #       control.group = list(model = "iid"))
+
+fit <- bru(components = components,
+             family = "binomial", data = dat)
+bru_coefs <- fit$summary.fixed[,c("mean","sd")]
+```
+
+Comparing the fixed effects between `sdmTMB` and `inlabru` shows the estimates are correlated, but not perfectly so  
+
+```{r}
+plot(sdmtmb_coefs$estimate, bru_coefs$mean)
+```
+
+The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac`
+
+```{r}
+components <- present ~ 0 +
+  fac(main = year, model = "factor_full") + 
+  spatrf(main = coordinates,model = spde)
+
+fit2 <- bru(components = components,
+             family = "binomial", data = dat)
+bru_coefs2 <- fit2$summary.random$fac[,c("mean","sd")]
+```
+
+These estimates are perfectly correlated with the estimates above,
+
+```{r}
+plot(bru_coefs$mean, bru_coefs2$mean)
+```
+
