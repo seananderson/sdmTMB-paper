@@ -498,7 +498,7 @@ Highlights?
 
 # Discussion
 
-Take home, re-iterate paragraph?
+<!-- Take home, re-iterate paragraph? -->
 
 There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the two most closely related are VAST and inlabru. 
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
@@ -640,6 +640,7 @@ The parameter $\nu$ controls the smoothness of the covariance function.
 We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
 
 
+<!--
 
 ### Junk to delete
 *EW: These are just placeholders -- not sure what order is best or what to highlight in very limited space*
@@ -659,3 +660,4 @@ fit = sdmTMB(data ~ 1, data=parana, spde = rain_spde)
 As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cranes (*Grus grus*) from England, UK (Soriano-Redondo et al. 2019). In the original analysis, Soriano-Redondo et al. 2019 used log Gaussian Cox process models to jointly model crane presence--absence and the spatiotemporal distribution of wetlands. We use this dataset as an example of modeling presence--absence data with sdmTMB, and only model the occurence of cranes given covariates. With any multi-year dataset, a common question of interest is often whether observations can be best described by spatial variation, or spatial and spatiotemporal variation. With two years of data, we fit two models with `sdmTMB`: a model with a spatial component but no spatiotemporal variation, and a model with only spatiotemporal variation (allowing each year to have a different spatial field). We included the same fixed effect covariates in both models: different intercepts by year, and two covariates found to be important by Soriano-Redondo et al. 2019 (wetland area, perimeter to area ratio). As a coarse comparison of data support, we compare the Akaike's Information Criterion (Akaike 1973) from each model. The model with a shared spatial field appeared to be more supported ($\Delta AIC$=25.23). The sdmTMB package allows for additional model comparisons, including k-fold cross validation with the `sdmTMB_cv` function.
 
 Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance?
+-->
