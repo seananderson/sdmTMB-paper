@@ -134,24 +134,53 @@ if (file.exists(here::here("figs/diagram.pdf"))) {
 }
 ```
 
-# Examples of sections:
+# Model description
 
-# Materials and Methods
+sdmTMB fits spatially explicit geostatistical GLMMs to point data.
+Point data simply means the collected data have explicit spatial coordinates (vs. areal data that might represent polygons or grids).
+The process component of an sdmTMB model can be formed by any combination of main ('fixed') effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
+This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
 
-# Description
+Using the notation of a bold capital letter to represent a matrix, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space (x and y and coordinates), and the index $t$ to represent a point in time,
+the general form of a GLMM is
+$g(\bm{\mu}) = \bm{X \beta} + \bm{Z \psi}$,
+with the inverse link function $g(x)$ relating the mean $\bm{\mu}$ to fixed-effect predictors in the design matrix $\bm{X}$ with estimated coefficients $\bm{\beta}$ and random effects with the design matrix $\bm{Z}$ with estimated coefficients $\bm{\psi}$.
+<!-- The matrix $\bm{Z}$ allows random effects to be structured (e.g., intercepts varying by group) or unstructured, with $\bm{u}$ representing random variation. -->
+For clarity, we partition the random effects $\bm{Z \psi}$ into a number of more interpretable components, each of which can optionally be included in the model. 
+Although in practice it is rare to include all of these components, the full sdmTMB model is
+$$
+g(\mu_{\bm{s},t}) =
+\bm{X}_{1,\bm{s},t} \bm{\beta} +
+\bm{\alpha}_g +
+\bm{X}_{2,\bm{s},t} \gamma_t +
+\bm{X}_{3,t} \zeta_{\bm{s}} +
+\omega_{\bm{s}} +
+\epsilon_{\bm{s},t},
+$$
+where
+
+* $\bm{X}_{1,\bm{s},t}$, $\bm{X}_{2,\bm{s},t}$, and $\bm{X}_{3,\bm{s},t}$ represent design matrices;
+* $\bm{\beta}$ represents a vector of fixed-effect coefficients;
+* $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
+* $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
+* $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
+* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
+* $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
 Models constructed with sdmTMB may be viewed as spatially explicit models---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-We contrast these approaches with semi- and non-parametric approaches that do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], most smooths in mgcv [@wood2017a]).
-sdmTMB implements the Matérn covariance function [@matern1960], which can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction).
+In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], most smooths in mgcv [@wood2017a]).
+The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
+The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction).
+The Matérn standard deviations are estimated separately for the various components and the range can be shared or estimated separately.
 
-- high-level paragraph or two about what the model includes, referencing Fig 1
-- high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?)
-- high-level paragraph about simulation capabilities and + testing performed (reference supplement)
-- model selection/cross validation paragraph
-- derived quantities paragraph (or just put this in the examples?)
+<!-- - high-level paragraph or two about what the model includes, referencing Fig 1 -->
+<!-- - high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?) -->
+<!-- - high-level paragraph about simulation capabilities and + testing performed (reference supplement) -->
+<!-- - model selection/cross validation paragraph -->
+<!-- - derived quantities paragraph (or just put this in the examples?) -->
 
-- example 1 + figs
-- example 2 + figs
+<!-- - example 1 + figs -->
+<!-- - example 2 + figs -->
 
 <!--     - perhaps a paragraph on how it achieves what Jim outlined @thorson2019 as necessary: -->
 <!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
@@ -165,29 +194,49 @@ sdmTMB implements the Matérn covariance function [@matern1960], which can accom
 
 <!-- (e.g., 'catchability' and 'habitat' covariates in VAST merely depend on the values supplied to `predict()` in sdmTMB). -->
 
-# Model
+<!-- # Model -->
 
 <!-- Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs. -->
 <!-- GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted. -->
 
 By default, we assume that if spatiotemporal fields are included, they are independent and identically distributed (IID); however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram)).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, @barrowman2000] (Fig.\ \@ref(fig:diagram)).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey stick models, `breakpt()`, @barrowman2000] (Fig.\ \@ref(fig:diagram)).
 
-basic optimization details - random effects conditional...
+The sdmTMB model is fit by maximum marginal likelihood.
+Internally, a TMB model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the optimization routine `stats::nlminb()` in R (REF).
+Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation (REF).
 
-[paragraph about spde and gaussian process / Matern covariance here]
+<!-- [paragraph about spde and gaussian process / Matern covariance here] -->
 
 <!-- Paragraph on model selection here-->
+
+## Model selection
+
 Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [@akaike1974]. 
 Because of well-documented biases of AIC with mixed-effects models [@liang2008] we also provide functionality to perform estimation via k-fold cross-validation. 
-Our function `sdmTMB::sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
-The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. 
+Our function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
+The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model (ELPD; REF).
 
-<!-- Paragraph on derived quantities here-->
-The results from a model fit with sdmTMB can be used to generate quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`sdmTMB::get_cog()`) and total population index (`sdmTMB::get_index()`).
+## Quantities of interest
+
+The results from a model fit with sdmTMB can be used to generate various quantities of interest.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`).
 Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range (distance at which spatial correlation decays to $\sim$ 0.13).
+
+## Model evaluation
+
+Validation of mixed-effects models is non-trivial (that REF).
+
+We provide three tools to assist with model validation:
+
+1. The `residuals()` method returns randomized quantile residuals (e.g., as in DHARMa REF).
+These residuals are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximumize the likelihood conditional on the estimated fixed effects. These residuals have known statistical issues (REF). One-step-ahead residuals are also possible or residuals from a single MCMC draw, but both approaches are much slower.
+
+2. The `sdmTMB_simulate()` function can simulate new data, or simulate from a fitted model, to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+
+3. An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan (REF) to evaluate the accuracy of the Laplace approximation. 
+We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling (REF).
 
 <!-- Paragraph on advanced options here?
 Specifically, this could address
@@ -196,6 +245,8 @@ Specifically, this could address
 - Linkages to Rstan
 - Simulation
 -->
+
+## Advanced options
 
 While not of interest to all users, sdmTMB also implements several advanced options for model fitting. 
 First, models can include penalized likelihoods via assigning priors to model parameters.
@@ -206,9 +257,8 @@ Third, for users interested in Bayesian inference, we allow models to be passed 
 
 # An introductory example
 
-At a minimum, an sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
+An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
 It usually makes sense to convert the spatial coordinates to UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
-
 Here, we illustrate a spatial model fit to Pacific Cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific Cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometers:
@@ -475,38 +525,7 @@ Final paragraph touching on other stuff possible in one paragraph: priors, Bayes
 
 # Supporting Information
 
-## Model description
-
-We use the notation of a bold capital letter to represent a matrix, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space (x and y and coordinates), and the index $t$ to represent a point in time.
-The general form of a GLMM is
-$g(\bm{\mu}) = \bm{X \beta} + \bm{Z \psi}$,
-with the inverse link function $g(x)$ relating the mean $\bm{\mu}$ to fixed-effect predictors in the design matrix $\bm{X}$ with estimated coefficients $\bm{\beta}$ and random effects with the design matrix $\bm{Z}$ with estimated coefficients $\bm{\psi}$.
-<!-- The matrix $\bm{Z}$ allows random effects to be structured (e.g., intercepts varying by group) or unstructured, with $\bm{u}$ representing random variation. -->
-For clarity, we partition the random effects $\bm{Z \psi}$ into a number of more interpretable components, each of which can optionally be included in the model. Though in practice it is rare to include all of these parameters, the full `sdmTMB` model is
-$$
-g(\mu_{\bm{s},t}) =
-\bm{X}_{1,\bm{s},t} \bm{\beta} +
-\bm{\alpha}_g +
-\bm{X}_{2,\bm{s},t} \gamma_t +
-\bm{X}_{3,t} \zeta_{\bm{s}} +
-\omega_{\bm{s}} +
-\epsilon_{\bm{s},t},
-$$
-where
-
-* $\bm{X}_{1,\bm{s},t}$, $\bm{X}_{2,\bm{s},t}$, and $\bm{X}_{3,\bm{s},t}$ represent design matrices;
-* $\bm{\beta}$ represents a vector of fixed-effect coefficients;
-* $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
-* $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
-* $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
-* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
-* $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
-
-The random fields are constructed as Gaussian Markov random fields (GMRF), where the random effects are structured as MVN constrained by a Matérn covariance function. Additional details are provided in the SI.
-
-
 # Application Examples
-
 
 <!--
 All submissions with more than one author must include an Authors’ contributions statement. All persons listed as authors on a paper are expected to meet ALL of the following criteria for authorship:
