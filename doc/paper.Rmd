@@ -30,10 +30,10 @@ editor_options:
   markdown:
     wrap: sentence
 abstract: |
-    | \noindent Point 1: set the context for and purpose of the work; \smallskip
-    | Point 2: indicate the approach and methods; \smallskip
-    | Point 3: outline the main results; \smallskip
-    | Point 4: identify the conclusions and the wider implications. \smallskip
+    | \noindent Point 1: set the context for and purpose of the work;
+    | Point 2: indicate the approach and methods;
+    | Point 3: outline the main results;
+    | Point 4: identify the conclusions and the wider implications.
 ---
 
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
@@ -498,9 +498,9 @@ Highlights?
 - Variance estimation and derived quantities (spatial range, area occupied etc)
 -->
 
-```{r compare-table, results='asis'}
+```{r compare-table}
 library(kableExtra)
-d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)
+suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)))
 d <- t(d)
 d <- cbind(row.names(d), d)
 d[d == "1"] <- "\\checkmark"
@@ -510,7 +510,6 @@ d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
 names(d) <- d[1,]
 d <- d[-1,]
-head(d)
 names(d)[1] <- ""
 row.names(d) <- NULL
 d <- d[,c(1, 2, 3, 5, 6, 4)]
