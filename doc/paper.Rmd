@@ -498,6 +498,8 @@ Highlights?
 - Variance estimation and derived quantities (spatial range, area occupied etc)
 -->
 
+\clearpage 
+
 ```{r compare-table}
 library(kableExtra)
 suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)))
