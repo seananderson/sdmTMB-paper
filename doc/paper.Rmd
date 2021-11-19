@@ -387,7 +387,7 @@ bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
 ```{r}
 g_pred <- ggplot(bc_coast_proj) + geom_sf(
                                            # colour=NA, fill="white"
-                                           fill=NA, colour="gray30"
+                                           fill=NA, colour="gray30", lwd = 0.3
                                            # fill="gray70", colour=NA
                                           ) +
   geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = exp(est))) +
@@ -471,7 +471,7 @@ these values are shown in link (log) space and represent spatially correlated de
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
 g_omega <- ggplot(bc_coast_proj) + geom_sf(
                                            # colour=NA, fill="white"
-                                           fill=NA, colour="gray30"
+                                           fill=NA, colour="gray30", lwd = 0.3
                                            # fill="gray70", colour=NA
                                            ) +
   geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = omega_s)) +
