@@ -1,0 +1,24 @@
+---
+title: Detailed model description
+output:
+  bookdown::pdf_document2:
+  toc: false
+number_sections: false
+fig_caption: true
+highlight: "monochrome"
+csl: mee.csl
+bibliography: refs.bib
+---
+
+### Matern parameterization
+
+<!-- EW: Because of space limits, I might suggest moving all this to the SI -->
+  The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
+  (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
+  <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
+    where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
+  a scaling parameter that is estimated (REF).
+  The parameter $\nu$ controls the smoothness of the covariance function.
+  We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+  
+  
