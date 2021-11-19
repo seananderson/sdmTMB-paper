@@ -16,6 +16,8 @@ header-includes:
   \usepackage{setspace}\onehalfspacing
   \usepackage[left]{lineno}
   \usepackage{bm}
+  \usepackage{amssymb}
+  \usepackage{tablefootnote}
   \linenumbers
   \newcommand{\beginsupplement}{
   \setcounter{equation}{0}
@@ -495,6 +497,32 @@ Highlights?
 - Non-linear effects (smooth splines, threshold/breakpoint functions)
 - Variance estimation and derived quantities (spatial range, area occupied etc)
 -->
+
+```{r compare-table, results='asis'}
+library(kableExtra)
+d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)
+d <- t(d)
+d <- cbind(row.names(d), d)
+d[d == "1"] <- "\\checkmark"
+d[d == "1*"] <- "\\checkmark\\footnote{a}"
+d[d == "0"] <- "--"
+d[d == "0*"] <- "--\\footnote{a}"
+d <- as.data.frame(d)
+names(d) <- d[1,]
+d <- d[-1,]
+head(d)
+names(d)[1] <- ""
+row.names(d) <- NULL
+d <- d[,c(1, 2, 3, 5, 6, 4)]
+d <- d[!grepl("SPDE", d[,1]), ]
+knitr::kable(d, format = "latex", caption = "Title of the table", 
+  booktabs = TRUE, linesep = "", escape = FALSE, row.names = FALSE) %>%
+  kableExtra::kable_styling(font_size = 8) %>% 
+  kableExtra::footnote(
+    number = c("Footnote 1; ", "Footnote 2; ")
+  )
+```
+
 
 # Discussion
 
