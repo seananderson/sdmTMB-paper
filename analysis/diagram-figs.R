@@ -2,6 +2,7 @@ library(sdmTMB)
 library(dplyr)
 library(ggplot2)
 
+## spatial fields
 predictor_dat <- expand.grid(X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100))
 predictor_dat <- bind_rows(
   mutate(predictor_dat, year = 1L),
@@ -63,11 +64,81 @@ ggplot(filter(d, year == 4L), aes(X, Y, fill = epsilon_st)) +
 ggsave("figs/zeta_s.png", width = 3, height = 3)
 
 
-spde <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+## Main effects plots
+
+### linear
+sens <- readRDS("all-sensor-data-processed.rds") %>% select(year, X, Y,
+                                                            temp = temperature_c,
+                                                            do = do_mlpl) %>% unique()
+
+dat <- left_join(pcod, sens) %>% filter(year > 2008)
+dat <- na.omit(dat)
+hist(dat$do)
+plot(dat$do~dat$depth)
+plot(dat$do~dat$temp)
+
+dat <- mutate(dat,
+              do_mean = mean(log(do), na.rm = TRUE),
+              do_sd = sd(log(do), na.rm = TRUE),
+              do_scaled = (log(do) - do_mean[1]) / do_sd[1]
+)
+
+spde <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
 plot(spde)
-m <- sdmTMB(density ~ 1, time_varying = ~ 0 + depth_scaled + depth_scaled2, data = pcod, mesh = spde, time = "year", spatial = "on", spatiotemporal = "off")
-#
-# m
+
+nd <- data.frame(
+  do_scaled = seq(min(dat$do_scaled) + 0.2,
+                  max(dat$do_scaled) - 0.2, length.out = 100),
+  year = 2015 # a chosen year
+)
+
+m1 <- sdmTMB(present ~ 0 + as.factor(year) + (do_scaled), data = dat, mesh = spde, time = "year",
+            family = binomial(link = "logit"),
+            spatial = "on", spatiotemporal = "IID")
+# m1
+p1 <- predict(m1, newdata = nd, se_fit = TRUE, re_form = NA)
+
+(pp1 <- p1 %>%
+    ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+    geom_line() +
+    geom_ribbon(alpha = 0.1) +
+    theme_void())
+
+### gam
+
+m2 <- sdmTMB(present ~ 0 + as.factor(year) + s(do_scaled), data = dat, mesh = spde, time = "year",
+             family = binomial(link = "logit"),
+             spatial = "on", spatiotemporal = "IID")
+# m2
+p2 <- predict(m2, newdata = nd, se_fit = TRUE, re_form = NA)
+
+(pp2 <- p2 %>%
+  ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+  geom_line() +
+  geom_ribbon(alpha = 0.1) +
+  theme_void())
+
+### breakpoint
+
+m3 <- sdmTMB(present ~ 0 + as.factor(year) + breakpt(do_scaled),
+             data = dat, mesh = spde2, time = "year",
+             family = binomial(link = "logit"),
+             spatial = "on", spatiotemporal = "IID")
+# m3
+p3 <- predict(m3, newdata = nd, se_fit = TRUE, re_form = NA)
+
+(pp3 <- p3 %>%
+  ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+  geom_line() +
+  geom_ribbon(alpha = 0.1) +
+  theme_void())
+
+pp1 + pp2 + pp3 + patchwork::plot_layout(nrow = 1)
+
+ggsave("figs/fixed-effects-do.pdf", width = 1.5, height = 0.8)
+
+
+## time-varying
 
 x <- seq(-1, 1, length.out = 100)
 x2 <- x^2
@@ -92,3 +163,6 @@ ggplot(d, aes(x, exp(y), colour = group)) + geom_line(lwd = 2.5) +
   theme(legend.position = "none")
 
 ggsave("figs/time-varying.pdf", width = 3.5, height = 3)
+
+
+
