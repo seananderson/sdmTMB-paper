@@ -382,9 +382,9 @@ bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
 ```
 
 ```{r}
-g_pred <- ggplot(bc_coast_proj) + geom_sf(colour=NA, 
-                                          fill="white"
-                                          # fill="darkgray"
+g_pred <- ggplot(bc_coast_proj) + geom_sf(
+                                           # colour=NA, fill="white"
+                                           fill=NA, colour="gray30"
                                           ) +
   geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = exp(est))) +
   coord_sf(datum = st_crs(utm_zone9)) +
@@ -393,10 +393,12 @@ g_pred <- ggplot(bc_coast_proj) + geom_sf(colour=NA,
   ) +
   scale_y_continuous(limits = c(5366427 + 270000, 6353456 - 513000),
     labels = function(x) paste0(x/1000)
-  ) +  scale_fill_viridis_c(trans = "sqrt", option = "B", begin = 0.3) +
+  ) +  
+  scale_fill_viridis_c(trans = "sqrt", option = "C") +
+  # scale_fill_viridis_c(trans = "sqrt", option = "B", begin = 0.3) +
   labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
   theme(
-    panel.background = element_rect(fill = "slategray1", colour= "white"), 
+    # panel.background = element_rect(fill = "slategray1", colour= "white"), 
     legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt"))
 ```
 
@@ -463,9 +465,9 @@ these values are shown in link (log) space and represent spatially correlated de
 (d) Overall prediction: these estimates represent the combination of all fixed and random effects.
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
-g_omega <- ggplot(bc_coast_proj) + geom_sf(colour=NA, 
-                                           fill="white"
-                                           # fill="darkgray"
+g_omega <- ggplot(bc_coast_proj) + geom_sf(
+                                           # colour=NA, fill="white"
+                                           fill=NA, colour="gray30"
                                            ) +
   geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = omega_s)) +
   coord_sf(datum = st_crs(utm_zone9)) +
@@ -474,11 +476,11 @@ g_omega <- ggplot(bc_coast_proj) + geom_sf(colour=NA,
   ) +
   scale_y_continuous(limits = c(5366427 + 270000, 6353456 - 513000),
     labels = function(x) paste0(x/1000)) +
-  scale_fill_gradient2(high = reds[4], low = scales::muted("purple")) +
-  # scale_fill_gradient2(high = reds[4], low = blues[4]) + 
+  # scale_fill_gradient2(high = reds[4], low = scales::muted("purple")) +
+  scale_fill_gradient2(high = reds[4], low = blues[4]) +
   labs(fill = "Spatial random\nfield deviations", x = "UTMs E (km)", y = "UTMs N (km)") +
   theme(
-    panel.background = element_rect(fill = "slategray1", colour= "white"),
+    # panel.background = element_rect(fill = "slategray1", colour= "white"),
     legend.position = c(0.2, 0.2), legend.key.height = unit(10, 'pt'))
 
 
