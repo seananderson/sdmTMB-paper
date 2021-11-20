@@ -2,7 +2,8 @@ library(sdmTMB)
 library(dplyr)
 library(ggplot2)
 
-## spatial fields
+### spatial fields
+
 predictor_dat <- expand.grid(X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100))
 predictor_dat <- bind_rows(
   mutate(predictor_dat, year = 1L),
@@ -64,13 +65,12 @@ ggplot(filter(d, year == 4L), aes(X, Y, fill = epsilon_st)) +
 ggsave("figs/zeta_s.png", width = 3, height = 3)
 
 
-## Main effects plots
+### Main effects plots
 
-### linear
+## linear
 sens <- readRDS("all-sensor-data-processed.rds") %>% select(year, X, Y,
                                                             temp = temperature_c,
                                                             do = do_mlpl) %>% unique()
-
 dat <- left_join(pcod, sens) %>% filter(year > 2008)
 dat <- na.omit(dat)
 hist(dat$do)
@@ -82,6 +82,8 @@ dat <- mutate(dat,
               do_sd = sd(log(do), na.rm = TRUE),
               do_scaled = (log(do) - do_mean[1]) / do_sd[1]
 )
+
+dat$group <- as.factor(dat$year)
 
 spde <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
 plot(spde)
@@ -104,7 +106,8 @@ p1 <- predict(m1, newdata = nd, se_fit = TRUE, re_form = NA)
     geom_ribbon(alpha = 0.1) +
     theme_void())
 
-### gam
+
+## gam
 
 m2 <- sdmTMB(present ~ 0 + as.factor(year) + s(do_scaled), data = dat, mesh = spde, time = "year",
              family = binomial(link = "logit"),
@@ -118,7 +121,8 @@ p2 <- predict(m2, newdata = nd, se_fit = TRUE, re_form = NA)
   geom_ribbon(alpha = 0.1) +
   theme_void())
 
-### breakpoint
+
+## breakpoint
 
 m3 <- sdmTMB(present ~ 0 + as.factor(year) + breakpt(do_scaled),
              data = dat, mesh = spde2, time = "year",
@@ -138,7 +142,83 @@ pp1 + pp2 + pp3 + patchwork::plot_layout(nrow = 1)
 ggsave("figs/fixed-effects-do.pdf", width = 1.5, height = 0.8)
 
 
-## time-varying
+
+### IID random intercepts
+
+# these models co-opt year to stand in as a grouping factor with random intercepts
+
+d1 <- readRDS("~/github/dfo/sdmTMB-paper/dogfish-surv-sets-all.rds")
+d2 <- gfplot::tidy_survey_sets(d1, survey = c("SYN QCS", "SYN HS", "SYN WCVI"),
+                               years = unique(d1$year))
+d2$group <- as.factor(d2$year)
+d2 <- na.omit(d2)
+d2 <- mutate(d2,
+              depth_mean = mean(log(depth), na.rm = TRUE),
+              depth_sd = sd(log(depth), na.rm = TRUE),
+              depth_scaled = (log(depth) - depth_mean[1]) / depth_sd[1]
+)
+
+spde2 <- make_mesh(d2, xy_cols = c("X", "Y"), cutoff = 10)
+# plot(spde2)
+
+m4 <- sdmTMB(density ~ 1 + depth_scaled + (1|group),
+             data = d2, mesh = spde2,
+             family = tweedie(link = "log"),
+             spatial = "on",
+             spatiotemporal = "off"
+             )
+m4
+
+
+# worm plot
+
+b <- tidy(m4)
+
+nd2 <- expand.grid(
+  depth_scaled = 0,
+  group = unique(d2$group)
+)
+
+p4 <- predict(m4, newdata = nd2, se_fit = TRUE, re_form = NA)
+
+(pp4 <- p4 %>% mutate(group = forcats::fct_reorder(group, est)) %>%
+    ggplot(., aes(est, y = group, xmin = (est - 1.96 * est_se), xmax = (est + 1.96 * est_se)
+                  , colour = forcats::fct_shuffle(group)
+                  )) +
+    guides(colour="none") +
+    geom_vline(xintercept = b[b$term == "(Intercept)",2], linetype = "dashed", colour = "grey") +
+    geom_pointrange(size=0.4) +
+    theme_void())
+
+ggsave("figs/iid-random-intercepts-worm.pdf", width = 1.5, height = 2)
+
+
+# lines with random intercepts
+
+nd3 <- expand.grid(
+  depth_scaled = seq(min(dat$depth_scaled) + 0.2,
+                     max(dat$depth_scaled) - 0.2, length.out = 100),
+  group = unique(d2$group)
+)
+p5 <- predict(m4, newdata = nd3, se_fit = TRUE, re_form = NA)
+
+(pp5 <- p5 %>% mutate(group = forcats::fct_shuffle(group)) %>%
+    ggplot(., aes(depth_scaled, est
+                  , colour = group
+    )) +
+    geom_line(size=0.8, alpha=0.6) +
+    geom_abline(slope = b[b$term == "depth_scaled",2], intercept = b[b$term == "(Intercept)",2] , size=0.8) +
+    # scale_color_brewer(palette = "Paired") +
+    # scale_colour_discrete_qualitative(palette = "Cold") +
+    coord_cartesian(expand = F) +
+    guides(colour="none") +
+    theme_void())
+
+ggsave("figs/iid-random-intercepts.pdf", width = 1.5, height = 2)
+
+
+
+### time-varying effects
 
 x <- seq(-1, 1, length.out = 100)
 x2 <- x^2
