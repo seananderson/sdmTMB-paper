@@ -203,10 +203,12 @@ nd3 <- expand.grid(
 p5 <- predict(m4, newdata = nd3, se_fit = TRUE, re_form = NA)
 
 (pp5 <- p5 %>% mutate(group = forcats::fct_shuffle(group)) %>%
-    ggplot(., aes(depth_scaled, est
-                  , colour = group
+    ggplot(., aes(depth_scaled, est, group = group
+                  # , colour = group
     )) +
-    geom_line(size=0.8, alpha=0.6) +
+    geom_line(size=0.8,
+              colour="darkgray",
+              alpha=0.4) +
     geom_abline(slope = b[b$term == "depth_scaled",2], intercept = b[b$term == "(Intercept)",2] , size=0.8) +
     # scale_color_brewer(palette = "Paired") +
     # scale_colour_discrete_qualitative(palette = "Cold") +
