@@ -69,6 +69,17 @@ knitr::opts_chunk$set(
 <!--   pages = {245--266}, -->
 <!--   doi = {10.1146/annurev-statistics-060116-054155}, -->
 <!--   annotation = {\_eprint: https://doi.org/10.1146/annurev-statistics-060116-054155} -->
+
+<!-- @book{diggle2007, -->
+<!--   title = {Model-Based {{Geostatistics}}}, -->
+<!--   author = {Diggle, Peter and Ribeiro, Paulo Justiniano}, -->
+<!--   year = {2007}, -->
+<!--   publisher = {{Springer}}, -->
+<!--   googlebooks = {qCqOm39OuFUC}, -->
+<!--   isbn = {978-0-387-48536-2}, -->
+<!--   langid = {english} -->
+<!-- } -->
+
 <!-- } -->
 
 Ecological data are often collected in space or in space repeatedly over time.
@@ -154,6 +165,7 @@ knitr::include_graphics(f)
 
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
 Geostatistical data simply refers to data observed at specific spatial coordinates (vs. areal data that might represent polygons or grids).
+The data can be collected across discrete points in time.
 The process component of an sdmTMB model can be formed by any combination of main ('fixed') effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
 
@@ -562,16 +574,16 @@ d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
 names(d)[1] <- ""
 row.names(d) <- NULL
-d <- d[,c(1, 2, 3, 5, 6, 4)]
+d <- d[,c(1, 2, 3, 5, 6, 4, 7)]
 d <- d[!grepl("SPDE", d[,1]), ]
 names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
 
-knitr::kable(d, format = "latex", caption = "Comparison of functionality between five R packages that can fit SPDE-based geostatistical GLMMs.", 
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between six R packages that can fit geostatistical GLMMs.", 
   booktabs = TRUE, 
   linesep = c(
     rep('', 4), # coefs
     '\\addlinespace',
-    rep('', 3), # correlation stuff
+    rep('', 4), # correlation stuff
     '\\addlinespace',
     rep('', 10), # likelihood
     '\\addlinespace',
