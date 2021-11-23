@@ -541,15 +541,12 @@ Highlights?
 ```{r compare-table}
 library(kableExtra)
 suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)))
-d <- t(d)
-d <- cbind(row.names(d), d)
+d <- as.matrix(d)
 d[d == "1"] <- "\\checkmark"
 d[d == "1*"] <- "\\checkmark\\footnote{a}"
 d[d == "0"] <- "--"
 d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
-names(d) <- d[1,]
-d <- d[-1,]
 names(d)[1] <- ""
 row.names(d) <- NULL
 d <- d[,c(1, 2, 3, 5, 6, 4)]

@@ -1,6 +1,23 @@
-﻿,NB1 distribution,NB2 distribution,Zero-truncated distributions,Multivariate responses,Tweedie distribution,Offsets,GAMs (penalized),Weights,Threshold covariates,Matern PC priors,Priors/penalties,Poisson-link delta model,Bayes/optionally Bayes,SPDE-based (should this all be limited to SPDE-based?),Spatially varying coefficients,Time-varying coefficients,Maximum/marginal likelihood,Anisotropy,Correlation barriers,Separate range parameters for fields,Share range parameters across separate fields
-sdmTMB,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1
-VAST,0,1*,0,1,1,1,0,0,0,0,0,1,1,1,1,0*,1,1,1,?,1
-mgcv,1,1,0,0,1*,1,1,1,0,0,0,0,1,1*,1,1,1,1,1,?,?
-INLA,1,1,1,1,1,1,1,1,0,1,1,0*,1,1,1,1,0,0,1,1,0
-inlabru,1,1,1,1,1,1,1,1,1,1,1,0*,1,1,1,1,0,0,1,1,1
+﻿,sdmTMB,VAST,mgcv,INLA,inlabru
+NB1 distribution,1,0,1,1,1
+NB2 distribution,1,1*,1,1,1
+Zero-truncated distributions,1,0,0,1,1
+Multivariate responses,0,1,0,1,1
+Tweedie distribution,1,1,1*,1,1
+Offsets,1,1,1,1,1
+GAMs (penalized),1,0,1,1,1
+Weights,1,0,1,1,1
+Threshold covariates,1,0,0,0,1
+Matern PC priors,1,0,0,1,1
+Priors/penalties,1,0,0,1,1
+Poisson-link delta model,0,1,0,0*,0*
+Bayes/optionally Bayes,1,1,1,1,1
+SPDE-based (should this all be limited to SPDE-based?),1,1,1*,1,1
+Spatially varying coefficients,1,1,1,1,1
+Time-varying coefficients,1,0*,1,1,1
+Maximum/marginal likelihood,1,1,1,0,0
+Anisotropy,1,1,1,0,0
+Correlation barriers,1,1,1,1,1
+Separate range parameters for fields,1,?,?,1,1
+Share range parameters across separate fields,1,1,?,0,1
+log Gaussian Cox process,0,0,0,1,1
