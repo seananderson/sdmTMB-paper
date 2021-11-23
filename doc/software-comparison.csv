@@ -8,8 +8,8 @@ Offsets,1,1,1,1,1
 # Correlation stuff
 Anisotropy,1,1,1,0,0
 Correlation barriers,1,1,1,1,1
-Separate range parameters for fields,1,?,?,1,1
-Share range parameters across fields,1,1,?,0,1
+Separate range parameters for fields,1,?,1,1,1
+Share range parameters across fields,1,1,0,0,1
 # distribution stuff
 NB1 distribution,1,0,1,1,1
 NB2 distribution,1,1*,1,1,1
