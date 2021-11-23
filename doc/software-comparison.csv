@@ -1,23 +1,31 @@
-﻿,sdmTMB,VAST,mgcv,INLA,inlabru
-NB1 distribution,1,0,1,1,1
-NB2 distribution,1,1*,1,1,1
-Zero-truncated distributions,1,0,0,1,1
-Multivariate responses,0,1,0,1,1
-Tweedie distribution,1,1,1*,1,1
-Offsets,1,1,1,1,1
-GAMs (penalized),1,0,1,1,1
-Weights,1,0,1,1,1
-Threshold covariates,1,0,0,0,1
-Matern PC priors,1,0,0,1,1
-Priors/penalties,1,0,0,1,1
-Poisson-link delta model,0,1,0,0*,0*
-Bayes/optionally Bayes,1,1,1,1,1
-SPDE-based (should this all be limited to SPDE-based?),1,1,1*,1,1
+,sdmTMB,VAST,mgcv,INLA,inlabru
+# predictor stuff
 Spatially varying coefficients,1,1,1,1,1
 Time-varying coefficients,1,0*,1,1,1
-Maximum/marginal likelihood,1,1,1,0,0
+GAMs (penalized),1,0,1,1,1
+Threshold covariates,1,0,0,0,1
+Offsets,1,1,1,1,1
+# Correlation stuff
 Anisotropy,1,1,1,0,0
 Correlation barriers,1,1,1,1,1
 Separate range parameters for fields,1,?,?,1,1
-Share range parameters across separate fields,1,1,?,0,1
-log Gaussian Cox process,0,0,0,1,1
+Share range parameters across fields,1,1,?,0,1
+# distribution stuff
+NB1 distribution,1,0,1,1,1
+NB2 distribution,1,1*,1,1,1
+Zero-truncated distributions,1,0,0,1,1
+Tweedie distribution,1,1,1*,1,1
+Censored Poisson distribution,1,0,0,1,1
+# other likelihood stuff
+log Gaussian Cox processes,0,0,0,1,1
+Multivariate responses,0,1,0,1,1
+"Built-in joint models (e.g., delta/hurdle)",0,1,0,1,1
+Poisson-link delta model,0,1,0,0*,0*
+Likelihood weights,1,0,1,1,1
+Maximum/marginal likelihood,1,1,1,0,0
+# Bayes-like stuff
+Bayes/optionally Bayes,1,1,1,1,1
+Priors/penalties,1,0,0,1,1
+Matern PC priors,1,0,0,1,1
+# Additional stuff
+Built-in area-weighted index standardization,1,1,0,0,0

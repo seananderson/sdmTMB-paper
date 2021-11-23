@@ -540,7 +540,7 @@ Highlights?
 
 ```{r compare-table}
 library(kableExtra)
-suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)))
+suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
 d <- as.matrix(d)
 d[d == "1"] <- "\\checkmark"
 d[d == "1*"] <- "\\checkmark\\footnote{a}"
@@ -551,11 +551,32 @@ names(d)[1] <- ""
 row.names(d) <- NULL
 d <- d[,c(1, 2, 3, 5, 6, 4)]
 d <- d[!grepl("SPDE", d[,1]), ]
-knitr::kable(d, format = "latex", caption = "Title of the table", 
-  booktabs = TRUE, linesep = "", escape = FALSE, row.names = FALSE) %>%
+names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
+
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between five R packages that can fit SPDE-based geostatistical GLMMs.", 
+  booktabs = TRUE, 
+  linesep = c(
+    rep('', 4), # coefs
+    '\\addlinespace',
+    rep('', 3), # correlation stuff
+    '\\addlinespace',
+    rep('', 10), # likelihood
+    '\\addlinespace',
+    rep('', 2), # bayes
+    '\\addlinespace'
+  ),
+  escape = FALSE, row.names = FALSE) %>%
   kableExtra::kable_styling(font_size = 8) %>% 
   kableExtra::footnote(
-    number = c("Footnote 1; ", "Footnote 2; ")
+    number = c(
+      "SPDE approach as in Miller et al. (2019).",
+      "Technically possible but non-trivial.",
+      "Zero-inflated NB2 only.",
+      "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}.",
+      "Technically possible but non-trivial.",
+      "Technically possible but non-trivial."
+    ),
+    escape = FALSE
   )
 ```
 
