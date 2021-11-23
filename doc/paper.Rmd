@@ -574,18 +574,17 @@ d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
 names(d)[1] <- ""
 row.names(d) <- NULL
-d <- d[,c(1, 2, 3, 5, 6, 4, 7)]
-d <- d[!grepl("SPDE", d[,1]), ]
+d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
 names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
 
-knitr::kable(d, format = "latex", caption = "Comparison of functionality between six R packages that can fit geostatistical GLMMs.", 
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between eight R packages that can fit geostatistical GLMMs.", 
   booktabs = TRUE, 
   linesep = c(
     rep('', 4), # coefs
     '\\addlinespace',
-    rep('', 4), # correlation stuff
+    rep('', 5), # correlation stuff
     '\\addlinespace',
-    rep('', 10), # likelihood
+    rep('', 11), # likelihood
     '\\addlinespace',
     rep('', 2), # bayes
     '\\addlinespace'
