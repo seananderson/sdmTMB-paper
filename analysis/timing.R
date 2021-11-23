@@ -319,14 +319,14 @@ out_long <- tidyr::pivot_longer(
 clean_names <- tribble(
   ~model, ~model_clean,
   "sdmTMB", "sdmTMB",
-  "sdmTMB_norm", "sdmTMB normalized",
+  "sdmTMB_norm", "sdmTMB (normalize = TRUE)",
   "inlabru", "inlabru",
   "inlabru_eb", "inlabru EB",
   "INLA", "INLA",
   "INLA_eb", "INLA EB",
   "INLA_eb_nolike", "INLA EB no like()",
-  "mgcv_ml", "mgcv ML",
-  "mgcv_disc", "mgcv fREML disc"
+  # "mgcv_ml", "mgcv ML",
+  "mgcv_disc", "mgcv::bam() SPDE"
 )
 clean_names$model_clean <- factor(clean_names$model_clean, levels = clean_names$model_clean)
 out_long <- left_join(out_long, clean_names)
@@ -339,31 +339,35 @@ out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cut
 out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
   summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
 
-
-g <- out_long_sum %>% filter(model_clean != "mgcv ML") %>%
+g <- out_long_sum %>%
+  filter(model_clean != "mgcv ML") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, lwd = 0) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
   geom_line(lwd = 0.7) +
   scale_y_log10() +
-  # scale_x_log10() +
+  scale_x_log10(breaks = c(250, 500, 1000)) +
   ggsidekick::theme_sleek() +
   theme(panel.grid.major = element_line(colour = "grey90")) +
-  # scale_x_log10(breaks = unique(out_long$n_obs)) +
+  # scale_x_log10(breaks = unique(out_long_sum$mean_mesh_n)) +
   # scale_x_continuous(breaks = unique(out_long$n_obs)) +
   # facet_wrap(vars(mean_mesh_n), nrow = 1L) +
-  # facet_wrap(vars(n_obs), nrow = 1L) +
-  theme(legend.position = "bottom") +
+  # theme(legend.position = "bottom") +
+  theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
   coord_cartesian(expand = FALSE) +
-  theme(panel.spacing.x = unit(20, "pt"))
+  theme(panel.spacing.x = unit(20, "pt")) +
+  guides(
+    colour = guide_legend(nrow = 2, byrow = TRUE, title.theme = element_blank()),
+    fill = guide_legend(nrow = 2, byrow = TRUE, title.theme = element_blank()))
 g
-ggsave("figs/timing2.pdf", width = 5, height = 5)
+ggsave("figs/timing2-logx.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx.png", width = .width, height = .width / 1.3)
 
-# x <- 189^(3/2)
-# y <- 1165^(3/2)
-# ratio <- y / x
-#
-# 2.22*ratio
-# 0.673*ratio
+# group_by(out_long_sum, model_clean) %>%
+#   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
+#     max_n = max(mean_mesh_n)) %>%
+#   filter(!is.na(model_clean)) %>%
+#   mutate(ratio = max_t / min_t) %>%
+#   mutate(O_ratio = (max_n^(3/2)) / (min_n^(3/2)))
