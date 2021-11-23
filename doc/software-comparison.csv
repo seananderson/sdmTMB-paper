@@ -5,6 +5,7 @@ Time-varying coefficients,1,0*,1,1,1,1,0,0
 GAMs (penalized),1,0,1,1,1,0,0,0
 Threshold covariates,1,0,0,0,1,0,0,0
 Offsets,1,1,1,1,1,1,0,1
+Coefficients influenced by phylogeny,0,0,0,?,?,0,1,0
 # Correlation stuff
 Anisotropy,1,1,1,0,0,0,0,0
 Correlation barriers,1,1,1,1,1,0,0,0

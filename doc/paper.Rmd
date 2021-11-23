@@ -580,7 +580,7 @@ names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
 knitr::kable(d, format = "latex", caption = "Comparison of functionality between eight R packages that can fit geostatistical GLMMs.", 
   booktabs = TRUE, 
   linesep = c(
-    rep('', 4), # coefs
+    rep('', 5), # coefs
     '\\addlinespace',
     rep('', 5), # correlation stuff
     '\\addlinespace',
