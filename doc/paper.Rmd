@@ -497,8 +497,31 @@ Here we will turn off the spatial field and structure the spatiotemporal random 
 
 ```{r, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
-  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh
+  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh,
   time = "year", spatial = "off", spatiotemporal = "ar1"
+)
+```
+
+We could generate a standardized index from that fit with:
+
+```{r, eval=FALSE, echo=TRUE}
+p <- predict(fit_spatiotemporal, newdata = qcs_grid, return_tmb_object = TRUE)
+ind <- get_index(p)
+```
+
+As a third example, we could model presence/absence of Pacific cod (`present`) with a time-varying quadratic effect of depth, an independent mean each year, a spatial random field, and IID spatiotemporal fields:
+
+```{r, eval=TRUE, echo=FALSE}
+# restore 'present' column
+pcod <- sdmTMB::pcod
+```
+
+```{r, eval=FALSE, echo=TRUE}
+fit_spatiotemporal_tv <- sdmTMB(
+  present ~ 0 + as.factor(year), 
+  time_varying = ~ 0 + poly(depth, 2), 
+  family = binomial(), data = pcod, mesh = mesh,
+  time = "year", spatial = "on", spatiotemporal = "iid"
 )
 ```
 
@@ -539,7 +562,7 @@ knitr::kable(d, format = "latex", caption = "Title of the table",
   )
 ```
 
-## Speed comparison
+# Speed comparison
 
 We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing)).
 In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fastest.
