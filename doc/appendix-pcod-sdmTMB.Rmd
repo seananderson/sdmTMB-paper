@@ -12,7 +12,8 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.asp = 0.618,
   cache = TRUE,
-  autodep = TRUE
+  autodep = TRUE,
+  cache.comments = FALSE
 )
 ```
 
@@ -26,9 +27,7 @@ theme_set(theme_minimal())
 
 We will fit a geostatistical spatiotemporal model with sdmTMB for the purposes of index standardization. We will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound. The density units are kg/km^2^. Here, X and Y are coordinates in UTM zone 9.
 
-First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations.
-The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`).
-Custom built meshes with `INLA` (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
+First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with `INLA` (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
 For example, a mesh with a cutoff distance of 10 km can be made with
 
@@ -43,7 +42,8 @@ plot(mesh)
 Next we will fit a GLMM (generalized linear mixed effects model). For this example, we will include `0 + as.factor(year)` so that there is a factor predictor that represents the mean estimate for each time slice. Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output.
 
 ```{r fit-pcod, warning=FALSE, message=FALSE}
-fit <- sdmTMB(density ~ 0 + as.factor(year), data = pcod,
+fit <- sdmTMB(density ~ 0 + as.factor(year),
+  data = pcod,
   time = "year", mesh = mesh, family = tweedie(link = "log")
 )
 ```
@@ -77,8 +77,10 @@ qqline(pred$resid)
 
 ```{r plot-resids}
 ggplot(pred, aes(X, Y, colour = resid)) +
-    geom_point() + facet_wrap(~year) +
-    coord_fixed() + scale_colour_gradient2()
+  geom_point() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  scale_colour_gradient2()
 ```
 
 Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the sdmTMB package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`.
@@ -142,8 +144,10 @@ This returns a matrix with a row for each row of the `newdata` data frame and a 
 ```{r sims-cv-plot}
 qcs_grid$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
 ggplot(qcs_grid, aes(X, Y, fill = cv)) +
-    geom_raster() + facet_wrap(~year) +
-    coord_fixed() + scale_fill_viridis_c(trans = "log10", option = "D")
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  scale_fill_viridis_c(trans = "log10", option = "D")
 ```
 
 We can calculate our standardized population index by predicting on our survey domain grid and setting `return_tmb_object = TRUE`. This returns the TMB objective function, which is required to pass the output to `get_index()`.
@@ -151,12 +155,14 @@ We can calculate our standardized population index by predicting on our survey d
 ```{r index, out.width="5in"}
 qcs_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
-  fit, newdata = qcs_grid, return_tmb_object = TRUE,
+  fit,
+  newdata = qcs_grid, return_tmb_object = TRUE,
   area = qcs_grid$area
 )
 ind <- get_index(pred2)
-ggplot(ind, aes(year, est/1000)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.4) +
+ggplot(ind, aes(year, est / 1000)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
   ylab("Biomass (t)")
 ```
 
@@ -166,7 +172,8 @@ As an alternative, we can use the output from the joint precision matrix simulat
 
 ```{r index-sims, out.width="5in"}
 ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
-ggplot(ind, aes(year, est/1000)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.4) +
+ggplot(ind, aes(year, est / 1000)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
   ylab("Biomass (t)")
 ```
