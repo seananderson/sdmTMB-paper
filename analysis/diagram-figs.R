@@ -2,6 +2,20 @@ library(sdmTMB)
 library(dplyr)
 library(ggplot2)
 
+x <- seq(-3.5, 3.5, length.out = 300)
+d <- data.frame(x = x, y = dnorm(x))
+ggplot(d, aes(x, y)) + geom_line(lwd = 2) +
+  theme_void()
+ggsave("figs/dnorm.pdf", width = 1.5, height = 1.5)
+
+r <- MASS::rnegbin(1e5, mu = 2, theta = 10)
+y <- table(r)
+d <- data.frame(x = as.numeric(names(y)), y = as.numeric(y))
+ggplot(d, aes(x, y)) + geom_col(width = 0.5) +
+  theme_void()
+ggsave("figs/nb.pdf", width = 1.5, height = 1.5)
+
+
 ### spatial fields
 
 predictor_dat <- expand.grid(X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100))
