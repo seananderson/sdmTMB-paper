@@ -58,10 +58,34 @@ knitr::opts_chunk$set(
 
 # Introduction
 
+<!-- TODO: cite:  -->
+<!-- @article{gelfand2017, -->
+<!--   title = {Bayesian Modeling and Analysis of Geostatistical Data}, -->
+<!--   author = {Gelfand, Alan E. and Banerjee, Sudipto}, -->
+<!--   year = {2017}, -->
+<!--   journal = {Annual Review of Statistics and Its Application}, -->
+<!--   volume = {4}, -->
+<!--   number = {1}, -->
+<!--   pages = {245--266}, -->
+<!--   doi = {10.1146/annurev-statistics-060116-054155}, -->
+<!--   annotation = {\_eprint: https://doi.org/10.1146/annurev-statistics-060116-054155} -->
+
+<!-- @book{diggle2007, -->
+<!--   title = {Model-Based {{Geostatistics}}}, -->
+<!--   author = {Diggle, Peter and Ribeiro, Paulo Justiniano}, -->
+<!--   year = {2007}, -->
+<!--   publisher = {{Springer}}, -->
+<!--   googlebooks = {qCqOm39OuFUC}, -->
+<!--   isbn = {978-0-387-48536-2}, -->
+<!--   langid = {english} -->
+<!-- } -->
+
+<!-- } -->
+
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
-This residual correlation is ideally dealt with because doing so (1) allows for valid statistical inference [@legendre1989a], (2) can improve predictions compared to ignoring it [@shelton2014], and (3) can be of ecological interest itself [REFs, @barnett2021].
+This residual correlation is ideally dealt with because doing so (1) allows for valid statistical inference [@legendre1989a], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @thorson2019d, @barnett2021].
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
 Similarly to how random intercepts can account for correlation among groups (e.g., plants counted in plots of land), spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
@@ -71,10 +95,10 @@ While simple on the surface, such models quickly become computationally limiting
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian or maximum likelihood methods.
 This can make an enormous difference to computational efficiency [@heaton2017].
-The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA [e.g., @osgood-zimmerman2021].
+The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
 Details are beyond the scope of this paper, and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit GRFs to large spatial datasets [@lindgren2011].
 
-Template systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
+Systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
 For example, TMB requires the user to program in a C++ template and it can be slow to experiment with multiple models when writing bespoke model code.
 Packages such as lme4 [@bates2015] and glmmTMB [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
 Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to spatial models that use the SPDE, but either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack some of the flexibility for the particular class of models discussed here.
@@ -91,7 +115,7 @@ We provide a more detailed comparison of related software packages in Table 1 an
 
 <!-- *TODO: the differences are many and more than can be listed here. Keep brief add Table or discussion later about differences and when to pick one over the other?* -->
 
-Here, we introduce our R package sdmTMB, which implements spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
+Here, we introduce our R package sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
 Our aim is not to replace any of the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface for a specific class of spatial and spatiotemporal models that should be familiar to users of lme4, glmmTMB, or mgcv [@wood2017a].
 One common application is for species distribution models (SDMs), hence the package name.
 This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through TODO case studies, and concludes with a discussion of related software.
@@ -119,7 +143,7 @@ This paper describes the basic functionality of the R package and the underlying
 <!-- ecology has a latitude gradient: von Humboldt, A. (1808) Ansichten der Natur mit wissenschaftlichen Erlauterungen. J.G. Cotta, Tübingen, Germany. -->
 
 (ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
-An sdmTMB model can be built from any combination of these components.
+An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
 The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
 Notation:
 We refer to design matrices as $\bm{X}$.
@@ -139,12 +163,13 @@ knitr::include_graphics(f)
 
 # Model description
 
-sdmTMB fits spatially explicit geostatistical GLMMs to point data.
-Point data simply means the data have explicit spatial coordinates (vs. areal data that might represent polygons or grids).
+sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
+Geostatistical data simply refers to data observed at specific spatial coordinates (vs. areal data that might represent polygons or grids).
+The data can be collected across discrete points in time.
 The process component of an sdmTMB model can be formed by any combination of main ('fixed') effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
 
-Using the notation of a bold capital letter to represent a data vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time,
+Using the notation of a bold capital letter to represent a data matrix or vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time,
 the general form of a GLMM is
 $g(\bm{\mu}) = \bm{X \beta} + \bm{Z \psi}$,
 with the inverse link function $g(x)$ relating the mean $\bm{\mu}$ to fixed-effect predictors in the design matrix $\bm{X}$ with estimated coefficients $\bm{\beta}$ and random effects with the design matrix $\bm{Z}$ with estimated coefficients $\bm{\psi}$.
@@ -540,25 +565,42 @@ Highlights?
 
 ```{r compare-table}
 library(kableExtra)
-suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE)))
-d <- t(d)
-d <- cbind(row.names(d), d)
+suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
+d <- as.matrix(d)
 d[d == "1"] <- "\\checkmark"
 d[d == "1*"] <- "\\checkmark\\footnote{a}"
 d[d == "0"] <- "--"
 d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
-names(d) <- d[1,]
-d <- d[-1,]
 names(d)[1] <- ""
 row.names(d) <- NULL
-d <- d[,c(1, 2, 3, 5, 6, 4)]
-d <- d[!grepl("SPDE", d[,1]), ]
-knitr::kable(d, format = "latex", caption = "Title of the table", 
-  booktabs = TRUE, linesep = "", escape = FALSE, row.names = FALSE) %>%
+d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
+names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
+
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between eight R packages that can fit geostatistical GLMMs.", 
+  booktabs = TRUE, 
+  linesep = c(
+    rep('', 5), # coefs
+    '\\addlinespace',
+    rep('', 5), # correlation stuff
+    '\\addlinespace',
+    rep('', 11), # likelihood
+    '\\addlinespace',
+    rep('', 2), # bayes
+    '\\addlinespace'
+  ),
+  escape = FALSE, row.names = FALSE) %>%
   kableExtra::kable_styling(font_size = 8) %>% 
   kableExtra::footnote(
-    number = c("Footnote 1; ", "Footnote 2; ")
+    number = c(
+      "SPDE approach as in Miller et al. (2019).",
+      "Technically possible but non-trivial.",
+      "Zero-inflated NB2 only.",
+      "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}.",
+      "Technically possible but non-trivial.",
+      "Technically possible but non-trivial."
+    ),
+    escape = FALSE
   )
 ```
 
@@ -595,12 +637,12 @@ knitr::include_graphics(f)
 
 <!-- Take home, re-iterate paragraph? -->
 
-There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the two most closely related are VAST and inlabru. 
+There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
 The difference lies mainly in the user interfaces and considerable additional functionality for multivariate response data (REF) and delta/hurdle models (REF) in VAST.
-Interface-wise, VAST is a less modular interface (e.g., automatically constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries index standardization perspective (e.g., splitting 'catchability' and 'habitat' covariates), and lacks some of the features that we think make sdmTMB more broadly usable by applied ecologists. 
+Interface-wise, VAST is a less modular interface (e.g., by default automatically constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries index standardization perspective (e.g., splitting 'catchability' and 'habitat' covariates), and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
-sdmTMB achieves 3 of the 4 design principles outlined in Thorson (REF) for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
+sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
 Unlike VAST, however, sdmTMB does not currently extend to multivariate applications.
 
 <!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
@@ -617,7 +659,7 @@ Furthermore, we think the sdmTMB interface will be more familiar than inlabru to
 On the other hand, inlabru fits additional model classes including log Gaussian Cox processes and may be particularly usable to those already familiar with INLA.
 
 mgcv can fit many similar models to sdmTMB either with various flavours of splines or even with the SPDE approximation to random fields [@miller2019]; however, there are some notable advantages of sdmTMB for the specific class of models discussed here.
-First, the smoothers typically used with mgcv (thin plate splines, ...), while capable of making equivalent predictions [@miller2019; @pedersen2019] do not offer the ecological interpretability of a spatially explicit random field model (spatial range and variance).
+First, the smoothers typically used with mgcv (e.g., thin plate splines), while capable of making equivalent predictions [@miller2019; @pedersen2019], do not offer the ecological interpretability of a spatially explicit random field model (spatial range and variance estimates).
 Second, the implementation of the Tweedie distribution in mgcv requires the power parameter to be fixed in a mixed effects model.
 Third, mgcv does not have built-in functionality to calculate derived values with uncertainty such as population indexes or center of gravity.
 Despite these sdmTMB advantages for the models discussed here, mgcv is an immensely powerful modelling package that extends well beyond spatial random field models.
