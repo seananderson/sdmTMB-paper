@@ -31,7 +31,7 @@ To specify the mesh used to approximate the spatial process, which is used in th
 
 For this example, we will include a factor predictor that represents the mean estimate for each time slice. Settings used for index standardization are specified partially by specifying `purpose = "index2"` but we also explicitly provide arguments for these and other key settings here.
  
-```{r, echo = TRUE}
+```{r config, echo = TRUE}
 FieldConfig <- matrix(c("IID", "IID", "IID", "IID", "IID", "IID"),
   ncol = 2, nrow = 3,
   dimnames = list(
@@ -39,6 +39,7 @@ FieldConfig <- matrix(c("IID", "IID", "IID", "IID", "IID", "IID"),
     c("Component_1", "Component_2")
   )
 )
+FieldConfig
 RhoConfig <- c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 ```
 
@@ -143,3 +144,12 @@ if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
   knitr::include_graphics(here("doc", "appendix-VAST", "Index.png"))
 }
 ```
+
+This document was built using:
+
+```{r, echo=TRUE}
+R.Version()$version.string
+packageVersion("VAST")
+packageVersion("FishStatsUtils")
+```
+
