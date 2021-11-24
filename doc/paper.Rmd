@@ -153,6 +153,7 @@ All other symbols refer to the  described model components.
 Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
 
 ```{r diagram, fig.cap="(ref:diagram-fig)"}
+dir.create("figs", showWarnings = FALSE)
 f <- here::here("figs", "diagram.pdf")
 if (!file.exists(f)) {
   download.file("https://www.dropbox.com/s/j8km3hv8xz9b63k/diagram.pdf?dl=1", 
