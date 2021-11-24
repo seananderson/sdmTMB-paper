@@ -92,8 +92,8 @@ Next we will fit a GLMM (generalized linear mixed effects model).
 dir.create(paste0(here("doc", "appendix-VAST")), showWarnings = FALSE)
 
 # effort is 1 when using CPUE instead of observed weight as the response:
-pcod$effort <- as.numeric(1) 
-
+pcod$effort <- 1
+pcod <- as.data.frame(pcod) # ensure not a tibble
 fit <- fit_model(
   settings = settings,
   Lat_i = pcod[, "lat"],
