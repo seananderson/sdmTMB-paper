@@ -79,9 +79,9 @@ settings <- make_settings(n_x = 205,
 Next we will fit a GLMM (generalized linear mixed effects model).
 
 ```{r fit, echo = TRUE, results = 'hide'}
-dir.create(paste0(here::here("doc", "appendix-VAST"))) # create folder for saved output
+dir.create(paste0(here::here("doc", "appendix-VAST")), showWarnings = FALSE) # create folder for saved output
 
-pcod$effort = 1 # effort is 1 when using CPUE instead of observed weight as the response
+pcod$effort <- as.numeric(1) # effort is 1 when using CPUE instead of observed weight as the response
 
 fit <- fit_model(settings = settings, 
                  Lat_i = pcod[,'lat'], 
