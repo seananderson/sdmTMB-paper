@@ -56,6 +56,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r rnaturalearthhires, include=FALSE, echo=FALSE}
+if (!require("rnaturalearthhires", quietly = TRUE)) {
+  stop("Please install 'rnaturalearthhires'.\n",
+  "`remotes::install_github('ropensci/rnaturalearthhires')`")
+}
+```
+
 # Introduction
 
 <!-- TODO: cite:  -->
@@ -105,16 +112,6 @@ Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user 
 We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
 <!-- User interfaces through software such as VAST or inlabru can greatly reduce these challenges. VAST is built on TMB, and is extremely powerful (e.g., fitting many multivariate models not described here), but does not provide a simple, familiar, modular interface for users with basic spatial or spatiotemporal data. inlabru provides a somewhat more familiar interface to a large class of models including GRMF models, but is strictly Bayesian, lacks some flexibility for the particular class of models discussed here. It also relies on INLA, and at least for some problems, TMB can be much faster [@osgood-zimmerman2021]. We provide a more detailed comparison of related software packages in Table 1 and the discussion. -->
 
-<!-- User interfaces to classes of models fit by these template systems can greatly  -->
-
-<!-- reduce these challenges for the vast majority of models. -->
-
-<!-- keep the above even briefer? -->
-
-<!-- inlabru is "very good" but not entirely familiar to those used to `glm()`, lme4, glmmTMB, or mgcv; -->
-
-<!-- *TODO: the differences are many and more than can be listed here. Keep brief add Table or discussion later about differences and when to pick one over the other?* -->
-
 Here, we introduce our R package sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
 Our aim is not to replace any of the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface for a specific class of spatial and spatiotemporal models that should be familiar to users of lme4, glmmTMB, or mgcv [@wood2017a].
 One common application is for species distribution models (SDMs), hence the package name.
@@ -135,7 +132,6 @@ This paper describes the basic functionality of the R package and the underlying
 <!-- spaMM: @rousset2014 -->
 <!-- spNNGP: @finley2021 -->
 
-
 <!-- millard1985: Space–Time Correlation and Its Effects on Methods for Detecting Aquatic Ecological Change "In practice, spatial correlation is more likely to be a problem than is temporal correlation, given typical monitoring frequencies." -->
 
 <!-- legendre1989a: "Spatial pattern and ecological analysis": "We can expect the spatial approach to ecological problems to bring about a quantum jump for ecologists and population geneticists who had learned a type of statistics where one had to hide space or time structures. It is now possible to use these structures and to integrate them into our analyses as fully-fledged controlled variables." -->
@@ -153,6 +149,7 @@ All other symbols refer to the  described model components.
 Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
 
 ```{r diagram, fig.cap="(ref:diagram-fig)"}
+dir.create("figs", showWarnings = FALSE)
 f <- here::here("figs", "diagram.pdf")
 if (!file.exists(f)) {
   download.file("https://www.dropbox.com/s/j8km3hv8xz9b63k/diagram.pdf?dl=1", 
@@ -201,28 +198,7 @@ The random fields in sdmTMB are structured as MVN constrained by a Matérn covar
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) (REF).
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim$ 0.13 (REF)---can be shared or estimated separately.
 
-<!-- - high-level paragraph or two about what the model includes, referencing Fig 1 -->
 <!-- - high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?) -->
-<!-- - high-level paragraph about simulation capabilities and + testing performed (reference supplement) -->
-<!-- - model selection/cross validation paragraph -->
-<!-- - derived quantities paragraph (or just put this in the examples?) -->
-
-<!-- - example 1 + figs -->
-<!-- - example 2 + figs -->
-
-<!--     - perhaps a paragraph on how it achieves what Jim outlined @thorson2019 as necessary: -->
-<!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
-<!--         -   Area weighting (check, helper functions to sum up weighted grid cells) -->
-<!--         -   Distinct catchability and habitat covariates (check, decide what goes into `predict()`) -->
-<!--         -   Condition on missing covariates (check, random fields) -->
-<!--         -   Bridge between univariate and multivariate applications (no! should we? -->
-
-<!-- sdmTMB in its current form achieves 3 of the 4 design principles outlined by @thorson2019 for index standardization:  -->
-
-
-<!-- (e.g., 'catchability' and 'habitat' covariates in VAST merely depend on the values supplied to `predict()` in sdmTMB). -->
-
-<!-- # Model -->
 
 <!-- Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs. -->
 <!-- GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted. -->
@@ -234,10 +210,6 @@ We include additional flexibility in specifying the linear fixed effect matrix: 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
-
-<!-- [paragraph about spde and gaussian process / Matern covariance here] -->
-
-<!-- Paragraph on model selection here-->
 
 ## Model selection
 
@@ -270,14 +242,6 @@ Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`).
 Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
-
-<!-- Paragraph on advanced options here?
-Specifically, this could address
-- PC-priors -- and other penalized priors
-- Non-linear stuff / etc
-- Linkages to Rstan
-- Simulation
--->
 
 <!-- ## Advanced options -->
 
@@ -623,7 +587,6 @@ inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could
 All platforms were restricted to one core and could be faster with parallel computation.
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
-
 ```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
 f <- here::here("figs", "timing2-logx.pdf")
 if (!file.exists(f)) {
@@ -644,13 +607,6 @@ Interface-wise, VAST is a less modular interface (e.g., by default automatically
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
 sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
 Unlike VAST, however, sdmTMB does not currently extend to multivariate applications.
-
-<!--         -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include." -->
-<!--         -   Area weighting (check, helper functions to sum up weighted grid cells) -->
-<!--         -   Distinct catchability and habitat covariates (check, decide what goes into `predict()`) -->
-<!--         -   Condition on missing covariates (check, random fields) -->
-<!--         -   Bridge between univariate and multivariate applications (no! should we? -->
-<!-- However, VAST can fit multivariate spatiotemporal models (REF) and Poisson-link delta model (REF), whereas sdmTMB cannot. -->
 
 inlabru is similar to sdmTMB in design, but differs fundamentally in that fitting is achieved via INLA and approximate Bayesian computation.
 For some models, TMB/sdmTMB can be considerably faster than INLA/inlabru, but those differences depend on the SPDE mesh, model, algebra libraries, and fitting algorithm settings [Fig. \@ref(fig:timing), @osgood-zimmerman2021].
@@ -692,31 +648,7 @@ AB and CD conceived the ideas and designed methodology; CD and EF collected the 
 To enable readers to locate archived data from papers, we require that authors list the database and the respective accession numbers or DOIs for all data from the manuscript that has been made publicly available. For example, “Data available from the Dryad Digital Repository http://dx.doi.org/10.5061/dryad.41qh7 (Kiere & Drummond 2016).” When a DOI is available for the data, the full data citation should also be given in the reference list (see below). For further information see our data archiving policy.
 -->
 
-
 <!--
-# Tables
-
-1. Comparison to related software?
-
-- VAST
-- INLA
-- mgcv
-- glmmTMB
-- glmmfields?
-- other stuff on CRAN, spBayes etc.
-
-# Figures
-
-1. Flow diagram of functions? Not needed?
-1. Speed with various knots and/or spatial complexity in comparison to INLA + VAST + ...?
-1. Example application 1 - SDM, show mesh(?) and/or raw data, show predictions and SD in space,
-1. Example application 2 - population index with stitched survey?
-
-Content:
-
--   outline the general need for this type of modelling
-
--   outline the need for this type of package to make the models accessible and rapid to iterate on
 
 -   emphasize the niche carved out: a fast, flexible, easy-to-use, predictive-process univariate spatial or spatiotemporal GLMM, scales from maximum likelihood to penalized likelihood to full Bayesian inference
 
@@ -727,20 +659,11 @@ Content:
     -   separate fitting and predicting
     -   avoid expensive calculations unless needed
 
--   table comparison to related packages
-
 -   case studies
 
     -   an SDM with time-varying depth?
     -   an index calculation?
     -   stitching surveys?
-
--   how it achieves the steps Jim described [@thorson2019] in what a VAST-related package has to be able to do (and how VAST does it vs. how sdmTMB does it)
-    -   "VAST represents four main design principles. Although there are many other implementation details that distinguish VAST from previous index-standardization methods, I believe that these four design principles represent the features that any future replacement should include."
-    -   Area weighting (check, helper functions to sum up weighted grid cells)
-    -   Distinct catchability and habitat covariates (check, decide what goes into `predict()`)
-    -   Condition on missing covariates (check, random fields)
-    -   Bridge between univariate and multivariate applications (no! should we?)
 
 -   speed comparisons (INLA [inlabru?], VAST, mgcv, glmmTMB without predictive process?)
 
@@ -763,7 +686,6 @@ Content:
 \clearpage
 \beginsupplement
 ```
-
 
 <!--
 

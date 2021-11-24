@@ -12,17 +12,17 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.asp = 0.618,
   cache = TRUE,
-  autodep = TRUE
+  autodep = TRUE,
+  cache.comments = FALSE
 )
 ```
 
-
 ```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
-library(TMB)               
+library(TMB)
 library(VAST)
 library(sp)
 library(sdmTMB)
-library(magick)
+library(here)
 ```
 
 We will fit a geostatistical spatiotemporal model with VAST for the purposes of index standardization, following the sdmTMB example. We will use a data set built into the sdmTMB package: trawl survey data for Pacific Cod in Queen Charlotte Sound. The density units are kg/km^2^. Here, X and Y are coordinates in UTM zone 9.
@@ -31,67 +31,79 @@ To specify the mesh used to approximate the spatial process, which is used in th
 
 For this example, we will include a factor predictor that represents the mean estimate for each time slice. Settings used for index standardization are specified partially by specifying `purpose = "index2"` but we also explicitly provide arguments for these and other key settings here.
  
-```{r, echo = TRUE}
-FieldConfig = matrix(c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3, 
-                     dimnames = list(c("Omega","Epsilon","Beta"),
-                                     c("Component_1","Component_2")))
-RhoConfig = c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
+```{r config, echo = TRUE}
+FieldConfig <- matrix(c("IID", "IID", "IID", "IID", "IID", "IID"),
+  ncol = 2, nrow = 3,
+  dimnames = list(
+    c("Omega", "Epsilon", "Beta"),
+    c("Component_1", "Component_2")
+  )
+)
+FieldConfig
+RhoConfig <- c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 ```
 
-Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the function 'fit_model' and thus we need to specify the prediction grid (referred to as the "extrapolation grid" in VAST).  Several options are built in, for commonly-used regions, but in this example we'll need to format the Queen Charlotte Sound grid in sdmTMB to be used in VAST and specify `Region = "User"` in make_setting and `"input_grid"=input_grid` in `fit_model`.
+Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the function 'fit_model' and thus we need to specify the prediction grid (referred to as the "extrapolation grid" in VAST).  Several options are built in, for commonly-used regions, but in this example we'll need to format the Queen Charlotte Sound grid in sdmTMB to be used in VAST and specify `Region = "User"` in make_setting and `"input_grid" = input_grid` in `fit_model()`.
 
 
 ```{r settings, echo = TRUE}
-# get coordinates in geographic coordinates from utm projection, after changing units to m
+# get coordinates in geographic coordinates from UTM projection, after changing units to m
 qcs_grid_ll <- qcs_grid
 qcs_grid_ll$Y <- qcs_grid_ll$Y * 1000
 qcs_grid_ll$X <- qcs_grid_ll$X * 1000
 
-# with sp
-coordinates(qcs_grid_ll) = ~X + Y
+# with sp:
+coordinates(qcs_grid_ll) <- ~ X + Y
 proj4string(qcs_grid_ll) <- CRS("+proj=utm +zone=9")
 qcs_grid_ll <- as.data.frame(spTransform(qcs_grid_ll, CRS("+proj=longlat +datum=WGS84")))
 
-## or with sf
-# qcs_grid_ll <- st_as_sf(x = qcs_grid_ll,
-#                         coords = c("X", "Y"),
-#                         crs = "+proj=utm +zone=9")
-# qcs_grid_ll <- st_transform(qcs_grid_ll, crs = "+proj=longlat +datum=WGS84")
+# or with sf:
+# qcs_grid_ll <- sf::st_as_sf(
+#   x = qcs_grid_ll,
+#   coords = c("X", "Y"),
+#   crs = "+proj=utm +zone=9"
+# )
+# qcs_grid_ll <- sf::st_transform(qcs_grid_ll, crs = "+proj=longlat +datum=WGS84")
 
 # remove replicate locations for each year and format for VAST
-qcs_grid_ll <- dplyr::filter(qcs_grid_ll, year == min(qcs_grid_ll$year))
+qcs_grid_ll <- subset(qcs_grid_ll, year == min(qcs_grid_ll$year))
 input_grid <- cbind(Lat = qcs_grid_ll$Y, Lon = qcs_grid_ll$X, Area_km2 = 4)
 
-settings <- make_settings(n_x = 205,
-                          Region = "User", 
-                          purpose = "index2", 
-                          fine_scale = TRUE, 
-                          zone = 9,
-                          FieldConfig = FieldConfig,
-                          RhoConfig = RhoConfig,
-                          ObsModel = c(2,0), # this is for conventional logit-linked delta-gamma; c(10,2) for Tweedie
-                          bias.correct = FALSE,
-                          use_anisotropy = FALSE,
-                          max_cells = Inf, # or set higher or lower to predict to greater/fewer locations
-                          knot_method = "grid") # or "samples"
+settings <- make_settings(
+  n_x = 205, # number of vertices in the SPDE mesh
+  Region = "User",
+  purpose = "index2", # index of abundance with Gamma for positive catches
+  fine_scale = TRUE, # use bilinear interpolation from the INLA 'A' matrix
+  zone = 9,
+  FieldConfig = FieldConfig,
+  RhoConfig = RhoConfig,
+  ObsModel = c(2, 0), # this is for conventional logit-linked delta-Gamma; c(10, 2) for Tweedie
+  bias.correct = FALSE,
+  use_anisotropy = FALSE,
+  max_cells = Inf, # use all grid cells from the extrapolation grid
+  knot_method = "grid" # or "samples"
+)
 ```
 
 Next we will fit a GLMM (generalized linear mixed effects model).
 
 ```{r fit, echo = TRUE, results = 'hide'}
-dir.create(paste0(here::here("doc", "appendix-VAST")), showWarnings = FALSE) # create folder for saved output
+ # create folder for saved output:
+dir.create(paste0(here("doc", "appendix-VAST")), showWarnings = FALSE)
 
-pcod$effort <- as.numeric(1) # effort is 1 when using CPUE instead of observed weight as the response
-
-fit <- fit_model(settings = settings, 
-                 Lat_i = pcod[,'lat'], 
-                 Lon_i = pcod[,'lon'], 
-                 t_i = pcod[,'year'], 
-                 b_i = pcod[,'density'], 
-                 a_i = pcod[,'effort'], 
-                 input_grid = input_grid,
-                 working_dir = paste0(here::here("doc", "appendix-VAST"), "/"))
-
+# effort is 1 when using CPUE instead of observed weight as the response:
+pcod$effort <- 1
+pcod <- as.data.frame(pcod) # ensure not a tibble
+fit <- fit_model(
+  settings = settings,
+  Lat_i = pcod[, "lat"],
+  Lon_i = pcod[, "lon"],
+  t_i = pcod[, "year"],
+  b_i = pcod[, "density"],
+  a_i = pcod[, "effort"],
+  input_grid = input_grid,
+  working_dir = paste0(here("doc", "appendix-VAST"), "/")
+)
 ```
 
 We can look at parameter estimates and their standard errors.
@@ -103,28 +115,41 @@ fit$parameter_estimates$SD
 While making custom plots of individual elements requires a fair bit of work to extract and reformat the necessary components of each output, VAST has a wrapper function that generates the typical plots one may want. While here we stick with the default set of plots, where `plot_set = 3`, one can specify different standard plots to make by changing the setting of this argument (see `?FishStatsUtils::plot_maps`).
 
 ```{r save-plots, echo = TRUE, warning = FALSE}
-plot(fit, 
-     check_residuals = FALSE,
-     working_dir = paste0(here::here("doc", "appendix-VAST"), "/"))
+plot(
+  fit,
+  check_residuals = FALSE,
+  working_dir = paste0(here("doc", "appendix-VAST"), "/")
+)
 ```
 
 The saved plots can be perused by browsing the exported image files in the working directory, but here we will read in some key plots as an example. We can start by looking at the location of samples and knots.
 
 ```{r plot-knots, echo = TRUE}
-knots <- magick::image_read(paste0(here::here("doc", "appendix-VAST"), "/", "Data_and_knots.png"))
-plot(knots)
+knitr::include_graphics(here("doc", "appendix-VAST", "Data_and_knots.png"))
 ```
 
 Then we can look at maps of the predicted population densities (here on the log scale).
 
 ```{r plot-density, echo = TRUE}
-density <- magick::image_read(paste0(here::here("doc", "appendix-VAST"), "/", "ln_density-predicted.png"))
-plot(density)
+knitr::include_graphics(here("doc", "appendix-VAST", "ln_density-predicted.png"))
 ```
 
 And finally the biomass index.
 
-```{r plot-index, echo = TRUE}
-index <- magick::image_read(paste0(here::here("doc", "appendix-VAST"), "/", "Index-Biomass.png"))
-plot(index)
+```{r plot-index, echo = TRUE, out.width="3in"}
+if (file.exists(here("doc", "appendix-VAST", "Index-Biomass.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST", "Index-Biomass.png"))
+}
+if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST", "Index.png"))
+}
 ```
+
+This document was built using:
+
+```{r, echo=TRUE}
+R.Version()$version.string
+packageVersion("VAST")
+packageVersion("FishStatsUtils")
+```
+
