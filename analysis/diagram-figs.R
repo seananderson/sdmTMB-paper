@@ -155,7 +155,8 @@ d2 <- na.omit(d2)
 d2 <- mutate(d2,
               depth_mean = mean(log(depth), na.rm = TRUE),
               depth_sd = sd(log(depth), na.rm = TRUE),
-              depth_scaled = (log(depth) - depth_mean[1]) / depth_sd[1]
+              depth_scaled = (log(depth) - depth_mean[1]) / depth_sd[1],
+              depth_scaled2 = depth_scaled^2
 )
 
 spde2 <- make_mesh(d2, xy_cols = c("X", "Y"), cutoff = 10)
@@ -247,4 +248,40 @@ ggplot(d, aes(x, exp(y), colour = group)) + geom_line(lwd = 2.5) +
 ggsave("figs/time-varying.pdf", width = 3.5, height = 3)
 
 
+# time-varying depth
 
+# of for pcod
+d3 <- pcod
+
+spde3 <- make_mesh(d3, xy_cols = c("X", "Y"), cutoff = 10)
+plot(spde3)
+
+m5 <- sdmTMB(density ~ 0 + as.factor(year),
+             time_varying = ~ 0 + depth_scaled + depth_scaled2,
+             time = "year",
+             data = d3, mesh = spde3,
+             family = tweedie(link = "log"),
+             spatial = "on",
+             spatiotemporal = "IID"
+)
+m5
+
+nd5 <- expand.grid(
+  depth_scaled = seq(min(d3$depth_scaled) + 0.2,
+                     max(d3$depth_scaled) - 0.2, length.out = 100),
+  year = unique(d3$year)
+)
+nd5$depth_scaled2 <- nd5$depth_scaled^2
+
+p6 <- predict(m5, newdata = nd5, se_fit = TRUE, re_form = NA)
+
+(pp6 <- p6 %>%
+    ggplot(., aes(depth_scaled, exp(est), colour = year, group = as.factor(year)
+    )) +
+    geom_line(size=0.8, alpha=0.6) +
+    scale_color_viridis_c() +
+    # coord_cartesian(expand = F) +
+    guides(colour="none") +
+    theme_void())
+
+ggsave("figs/time-varying-pcod.pdf", width = 1.5, height = 1.5)
