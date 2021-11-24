@@ -135,7 +135,7 @@ knitr::include_graphics(here("doc", "appendix-VAST", "ln_density-predicted.png")
 
 And finally the biomass index.
 
-```{r plot-index, echo = TRUE}
+```{r plot-index, echo = TRUE, out.width="3in"}
 if (file.exists(here("doc", "appendix-VAST", "Index-Biomass.png"))) {
   knitr::include_graphics(here("doc", "appendix-VAST", "Index-Biomass.png"))
 }
