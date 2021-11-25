@@ -11,13 +11,14 @@ library(tidyverse)
 sdat <- readRDS("owls/SNOW_data.rds")
 
 # length(unique(sdat$CBCID))
+ggplot(sdat, aes(year, count)) + geom_point() + geom_smooth()
 
 
 #### spatially varying model ####
 
 library(sdmTMB)
 
-mesh <- make_mesh(sdat, xy_cols = c("X", "Y"), cutoff = 1)
+mesh <- make_mesh(sdat, xy_cols = c("X", "Y"), cutoff = 1.5)
 plot(mesh)
 mesh$mesh$n
 
@@ -25,49 +26,84 @@ m0 <- sdmTMB(count ~ 1 + nao + (1|year_f),
              time = "year",
              spatial_varying = ~ 0 + nao,
              family = poisson(link = "log"),
-             control = sdmTMBcontrol(normalize = TRUE),
+             # control = sdmTMBcontrol(normalize = TRUE),
              spatial = "on", spatiotemporal = "IID",
              data = sdat, mesh = mesh)
 m0
-saveRDS(m0, "owls/snow_w_main_effect_0.rds")
+saveRDS(m0, "owls/snow_w_main_effect_0_150km.rds")
 
 m1 <- sdmTMB(count ~ 1 + nao + (1|year_f),
             time = "year",
             spatial_varying = ~ 0 + nao,
             family = nbinom1(link = "log"),
-            control = sdmTMBcontrol(normalize = TRUE),
+            # control = sdmTMBcontrol(normalize = TRUE),
             spatial = "on", spatiotemporal = "IID",
             data = sdat, mesh = mesh)
 m1
-saveRDS(m1, "owls/snow_w_main_effect_1.rds")
+saveRDS(m1, "owls/snow_w_main_effect_1_150km.rds")
+
 
 m <- sdmTMB(count ~ 1 + nao + (1|year_f),
-            time = "year",
-            # time_varying = ~ 1,
-            spatial_varying = ~ 0 + nao,
-            family = nbinom2(link = "log"),
-            control = sdmTMBcontrol(normalize = TRUE),
-            # this helps estimate ranges by constraining complexity/preventing ranges getting too small
-            # share_range = F,
-            # priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 1, sigma_lt = 3),
-            #                       matern_st = pc_matern(range_gt = 5, sigma_lt = 1)),
-            spatial = "on", spatiotemporal = "IID",
-            # silent = F,
-            data = sdat, mesh = mesh)
+              time = "year",
+              # time_varying = ~ 1,
+              spatial_varying = ~ 0 + nao,
+              family = nbinom2(link = "log"),
+              # control = sdmTMBcontrol(normalize = TRUE),
+              spatial = "on", spatiotemporal = "IID",
+              # silent = F,
+              reml = T,
+              data = sdat, mesh = mesh)
 m
 
-saveRDS(m, "owls/snow_w_main_effect_T.rds")
+saveRDS(m, "owls/snow_w_main_effect_150km_reml.rds")
+
+# mf <- sdmTMB(count ~ 1 + nao + (1|year_f),
+#               time = "year",
+#               # time_varying = ~ 1,
+#               spatial_varying = ~ 0 + nao,
+#               family = nbinom2(link = "log"),
+#               control = sdmTMBcontrol(normalize = TRUE),
+#               share_range = F, # tried without priors first and results used to inform priors
+#               spatial = "on", spatiotemporal = "IID",
+#               # silent = F,
+#               data = sdat, mesh = mesh)
+# mf
+#
+# saveRDS(mf, "owls/snow_w_diff_ranges_150km.rds")
+
+
+# mf3 <- sdmTMB(count ~ 1 + nao + (1|year_f),
+#             time = "year",
+#             # time_varying = ~ 1,
+#             spatial_varying = ~ 0 + nao,
+#             family = nbinom2(link = "log"),
+#             # control = sdmTMBcontrol(normalize = TRUE),
+#             share_range = F, # tried without priors first and results used to inform priors
+#             # this helps estimate ranges by constraining complexity/preventing ranges getting too small
+#             priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 2, sigma_lt = 2),
+#                                   matern_st = pc_matern(range_gt = 10, sigma_lt = 1)),
+#             spatial = "on", spatiotemporal = "IID",
+#             # silent = F,
+#             reml = T,
+#             data = sdat, mesh = mesh)
+# mf3
+#
+# saveRDS(mf3, "owls/snow_w_reml_priors_150km.rds")
 
 ## without filtering for TotalSpecies == T when after 1997
 # mr <- readRDS("owls/snow_w_main_effect.rds")
 # mr
 
+m2 <- readRDS( "owls/snow_w_main_effect_150km.rds")
 
-AIC(m0, m1, m)
+AIC(m0, m1, m2)
 
+m <- mf3
 
-tidy(m0, "fixed", conf.int = T)
-tidy(m0, "ran_pars", conf.int = T)
+m <- readRDS( "owls/snow_w_main_effect_150km_reml.rds")
+
+tidy(mf2, "fixed", conf.int = T)
+tidy(m, "ran_pars", conf.int = T)
 
 
 # check residuals
@@ -79,6 +115,16 @@ qqnorm(sdat$residuals0)
 
 sdat$residuals1 <- residuals(m1)
 qqnorm(sdat$residuals1);abline(a = 0, b = 1)
+
+
+
+library(rstan)
+library(tmbstan)
+s <- tmbstan(m$tmb_obj, iter = 200, chains = 1, warmup = 199)
+pstan <- predict(m, tmbstan_model = s)
+resid <- as.numeric(pstan) - m$data$observed
+# or do any PIT residuals randomization here...
+qqnorm(resid);qqline(resid) # should be right
 
 # # try model with SOI for comparison -- a little worse
 # m2 <- sdmTMB(count ~ 1 + soi, time = "year",
@@ -148,13 +194,17 @@ lakes <- lakes %>% sf::st_transform(crs = proj)
 # log10 scale
 # name
 
-p <- droplevels(p)
+# p <- droplevels(p)
 p_proj <- p %>% mutate(x = X, y = Y) %>% st_as_sf(., coords = c("x", "y"), crs = proj)
 
-p_mean <- p %>% group_by(CBCID) %>% summarise(X = mean(X), Y= mean(Y),est = mean(est), zeta_s = mean(zeta_s))
+# p_mean <- p %>% group_by(CBCID) %>% summarise(X = mean(X), Y= mean(Y),est = mean(est), zeta_s = mean(zeta_s))
 
 b <- tidy(m)
-b[b$term == "nao",2]
+p_mean <- p %>% group_by(CBCID) %>% summarise(
+  X = mean(X), Y= mean(Y),
+  mean_est_count = exp(mean(est)),
+  nao_effect = exp(b[b$term == "nao", 2] + mean(zeta_s))
+)
 
 # mean(p_mean$zeta_s)
 ggplot(data = p_proj) +
@@ -163,7 +213,7 @@ ggplot(data = p_proj) +
   geom_point(
     # data = filter(p, year == 2020),
     data = p_mean,
-             aes(X,Y, colour = exp(zeta_s + b[b$term == "nao",2]), size = exp(est)), alpha = 0.5) +
+             aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
   geom_sf(data = coast2, colour = "gray23", fill = NA, lwd = 0.35) +
   geom_sf(data = lakes, colour = "gray23", fill = NA, lwd = 0.35) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
@@ -186,7 +236,7 @@ ggplot(data = p_proj) +
     # legend.position = "bottom",
     axis.title = element_blank())
 
-ggsave("owls/nao_effect_w_main_effect.png", width = 5.5, height = 3.1)
+ggsave("owls/nao_effect_w_main_effect_150_reml.png", width = 5.5, height = 3.1)
 # ggsave("snow_nao_zeta_s_grid.png", width = 6, height = 3)
 
 ggplot(data = p_proj) +
@@ -196,7 +246,8 @@ ggplot(data = p_proj) +
   geom_sf(data = coast2, colour = "gray23", fill = NA, lwd = 0.35) +
   geom_sf(data = lakes, colour = "gray23", fill = NA, lwd = 0.35) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
-  scale_colour_viridis_c(option = "turbo", begin = 0.2,
+  scale_colour_viridis_c(
+    # option = "turbo", begin = 0.2,
     guide = guide_colourbar(direction = "horizontal", title.vjust = 1,
                             title.position = "top", label.position = "bottom")) +
   labs(x= "Longitude", y = "Latitude") +
@@ -210,7 +261,7 @@ ggplot(data = p_proj) +
     # legend.position = "bottom",
     axis.title = element_blank())
 
-ggsave("snow_nao_omega.png", width = 5.5, height = 3.1)
+ggsave("snow_nao_omega_150_reml.png", width = 5.5, height = 3.1)
 
 ggplot(data = filter(p_proj, year > 1995)) +
   # geom_sf(data = land2, fill = "white", colour = "gray23", lwd = 0.35) +
@@ -229,6 +280,6 @@ ggplot(data = filter(p_proj, year > 1995)) +
   # geom_text(data = pred, aes(label = year, x = -15*100000, y = 0)) + # add titles using geom_text()
   facet_wrap(~year_f, drop=TRUE)
 
-ggsave("snow_nao_annual_p_est_1996.png", width = 9, height = 6.5)
+ggsave("snow_nao_annual_p_est_post1996_150.png", width = 9, height = 6.5)
 
 glimpse(p)
