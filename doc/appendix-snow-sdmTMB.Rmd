@@ -22,7 +22,9 @@ knitr::opts_chunk$set(
 library(ggplot2)
 library(dplyr)
 library(sdmTMB)
-theme_set(theme_minimal())
+# library(sf)
+theme_set(theme_bw())
+# theme_set(theme_minimal())
 ```
 
 This illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
@@ -31,6 +33,7 @@ This citizen science survey is organized by the by the National Audubon Society 
 Each survey is conducted between December 14 to January 5 in 24.14 kilometre diameter circle. 
 Circle locations are chosen by local volunteers and therefore reflect both locations of higher human densities and known bird watching locations.
 Each circle (given a unique "CBCID") is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
+While these locations are not random, the consistent sampling through time still make them useful for exploring spatiotemporal processes. 
 
 Snow Owls are an arctic breeding species is an irruptive migrant meaning that the number of individuals choosing to migrate varies dramatically from year to year. 
 The reasons for this variation are still not well understood, but seem to be at least partially related to very high abundances of food during the breeding season and therefore higher productivity [@robillard2016]. 
@@ -40,49 +43,50 @@ For this analysis, we have defined survey year as the year prior to/ending durin
 For these years, we have retrieved mean annual climate indices from the University of East Anglia's [Climatic Research Unit](https://crudata.uea.ac.uk/cru/data/nao/). 
 Because both productivity and the choice of wintering location could be influenced by climate, we will test for a spatially variable effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution and the only portion well surveyed by CBCs. 
 
-
 ```{r load-data, cache=FALSE} 
-dat <- readRDS(here::here("owls/SNOW_data.rds"))
-glimpse(dat)
+snow <- readRDS(here::here("owls/SNOW_data.rds"))
+glimpse(snow)
 ```
+
 Here, X and Y are coordinates in Albers projection for North America and divided by 100000 to give units of 100 km. 
 
 ```{r proj, echo=TRUE}
-proj <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+proj <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 
++datum=NAD83 +units=m +no_defs"
 ```
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
 ```{r mesh, echo=TRUE, cache=FALSE}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 1.5)
+mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 ```
 
-```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+```{r plot-mesh, fig.asp=0.9, out.width="6in"}
 plot(mesh)
 ```
+
 The result is a mesh with `r mesh$mesh$n` knots. 
 
-Next, we will plot the counts through time to see if there is an obvious overall trend, or relationship with NAO. 
+Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. 
 
-```{r explore, fig.width = 8}
-ggplot(dat, aes(year, log(count+1), colour = nao)) + 
+```{r explore, fig.asp=0.4, fig.width = 6}
+ggplot(snow, aes(year, count, colour = nao)) + 
   geom_jitter(alpha = 0.5) + 
   scale_colour_viridis_c()
 ```
 
-Because there does not appear to be much correlation between years, year will be included as a random factor: `(1|year_f)`. 
+# Model fitting
 
-We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "IID"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
-The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 
-If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`. 
+First, we will try fitting GLMMs (generalized linear mixed effects models) with a few different distributions appropriate for count data. 
+<!-- We will use `normalize = TRUE` to speed up optimization.  -->
+Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output.
 
 Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. 
 Therefore, effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
-
-First, we will try fitting GLMMs (generalized linear mixed effects models) with a few different distributions appropriate for count data. 
-We will use `normalize = TRUE` to speed up optimization. 
-Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output.
-
+Because there does not appear to be much correlation between years, year will be included as a random factor: `(1|year_f)`. 
+We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "IID"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
+The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 
+If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`. 
 
 ```{r fit-poisson, echo=TRUE, eval=FALSE}
 m0 <- sdmTMB(count ~ 1 + nao + (1|year_f),
@@ -91,8 +95,7 @@ m0 <- sdmTMB(count ~ 1 + nao + (1|year_f),
              spatial = "on", 
              spatiotemporal = "IID",
              family = poisson(link = "log"),
-             control = sdmTMBcontrol(normalize = TRUE),
-             data = dat, mesh = mesh)
+             data = snow, mesh = mesh)
 ```
 
 ```{r fit-negb1, echo=TRUE, eval=FALSE}
@@ -102,8 +105,7 @@ m1 <- sdmTMB(count ~ 1 + nao + (1|year_f),
             spatial = "on", 
             spatiotemporal = "IID",
             family = nbinom1(link = "log"),
-            control = sdmTMBcontrol(normalize = TRUE),
-            data = dat, mesh = mesh)
+            data = snow, mesh = mesh)
 ```
 
 ```{r fit-negb2, echo=TRUE, eval=FALSE}
@@ -113,24 +115,22 @@ m2 <- sdmTMB(count ~ 1 + nao + (1|year_f),
             spatial = "on", 
             spatiotemporal = "IID",
             family = nbinom2(link = "log"),
-            control = sdmTMBcontrol(normalize = TRUE),
-            data = dat, mesh = mesh)
+            data = snow, mesh = mesh)
 ```
 
 ```{r load-models, warning=FALSE, message=FALSE, echo=FALSE}
-# m0 <- readRDS(here::here("owls/snow_w_main_effect_0_150km.rds"))
-# m1 <- readRDS(here::here("owls/snow_w_main_effect_1_150km.rds"))
-# m2 <- readRDS(here::here("owls/snow_w_main_effect_150km.rds"))
+m0 <- readRDS(here::here("owls/snow_w_main_effect_0_150km.rds"))
+m1 <- readRDS(here::here("owls/snow_w_main_effect_1_150km.rds"))
+m2 <- readRDS(here::here("owls/snow_w_main_effect_150km.rds"))
 m <- readRDS(here::here("owls/snow_w_main_effect_150km_reml.rds"))
 ```
 
 ```{r aic, echo=TRUE, cache=TRUE}
-# AIC(m0,m1,m2)
+AIC(m0,m1,m2)
 ```
 
 The `nbinom2` distribution appears to have the best fit. 
 We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model and then check our residuals. 
-This method of checking residuals is not guarenteed to be accurate, so an additional step using STAN could be added.
 
 ```{r fit-negb2-reml, echo=TRUE, eval=FALSE}
 m <- sdmTMB(count ~ 1 + nao + (1|year_f),
@@ -140,35 +140,38 @@ m <- sdmTMB(count ~ 1 + nao + (1|year_f),
             spatiotemporal = "IID",
             family = nbinom2(link = "log"),
             reml = TRUE,
-            data = dat, mesh = mesh)
+            data = snow, mesh = mesh)
 ```
 
-We can predict on the original data locations:
+Print the model to inspect the fit:
 
-```{r predict}
+```{r print-fit, message=FALSE}
+print(m)
+```
+
+View the confidence intervals on both fixed and random parameter estimates using `tidy()`.
+
+```{r tidy}
+tidy(m, conf.int = TRUE)
+tidy(m, effects = "ran_pars", conf.int = TRUE)
+```
+
+We can also renerate predictions and residuals for the original data locations:
+
+```{r predict, message=FALSE}
 pred <- predict(m)
 ```
 
-We can inspect randomized quantile residuals:
+We can inspect randomized quantile residuals, although this method of checking residuals is not guaranteed to be accurate. 
+An additional step using STAN could be added.
 
-```{r qqnorm, out.width="5in"}
+```{r qqnorm, fig.asp=0.9, out.width="3in"}
 pred$resid <- residuals(m)
 qqnorm(pred$resid)
 qqline(pred$resid)
 ```
 
-```{r}
-library(tmbstan)
-s <- tmbstan(m$tmb_obj, iter = 200, chains = 1, warmup = 199)
-pstan <- predict(m, tmbstan_model = s)
-resid <- as.numeric(pstan) - m$data$observed
-# or do any PIT residuals randomization here...
-qqnorm(resid);qqline(resid) # should be right
-```
-
-
-
-```{r plot-resids}
+```{r plot-resids, fig.width = 7}
 ggplot(pred, aes(X, Y, colour = resid)) +
   geom_point(size = 0.5) +
   facet_wrap(~year) +
@@ -176,23 +179,13 @@ ggplot(pred, aes(X, Y, colour = resid)) +
   scale_colour_gradient2()
 ```
 
-Print the model to inspect the fit:
+# Plotting spatial predictions
 
-```{r print-fit}
-print(m)
-```
+In order to produce pretty maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an sf object so that the plot axis will appear in latitude and longitude. 
 
-Extract the parameter estimates as a data frame:
+```{r proj-p, echo=TRUE, eval=T}
+library(sf)
 
-```{r tidy}
-tidy(m, conf.int = TRUE)
-tidy(m, effects = "ran_pars", conf.int = TRUE)
-```
-
-In order to produce pretty maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and reproject. 
-One can also get continental coastlines from the package rnaturalearth and outlines of the great lakes from   http://www.naturalearthdata.com/downloads/10m-physical-vectors/ and transform them to the correct projection using `sf::st_transform(crs = proj)`.
-
-```{r proj-p, echo=TRUE, eval=FALSE}
 p <- pred %>% mutate(
   X = X * 100000,
   Y = Y * 100000
@@ -201,14 +194,23 @@ p <- pred %>% mutate(
 p_proj <- p %>% mutate(x = X, y = Y) %>% st_as_sf(., coords = c("x", "y"), crs = proj)
 ```
 
+One can also get continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http://www.naturalearthdata.com/) and transform them to the correct projection using `sf::st_transform(crs = proj)`.
 
+```{r shapes, echo=FALSE, message=FALSE}
+library("rnaturalearth")
+library("rnaturalearthdata")
+coast <- ne_coastline(scale = "medium", returnclass = "sf") %>% 
+  sf::st_transform(crs = proj)
+lakes <- sf::st_read(here::here("owls/ne_10m_lakes"))
+lakes <- lakes[lakes$scalerank==0,] %>% sf::st_transform(crs = proj) # only large lakes
+```
 
+## Spatially varying effect
 
-
-We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO. 
+We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO.
 First, we extract the overall coefficients using the `b <- tidy(m)` and add them together with the spatially varying coefficients `zeta_s`.
 
-```{r p-mean, echo=TRUE, eval=FALSE}
+```{r p-mean, message=FALSE, echo=TRUE, eval=T}
 b <- tidy(m)
 
 p_mean <- p %>% group_by(CBCID) %>% summarise(
@@ -218,86 +220,106 @@ p_mean <- p %>% group_by(CBCID) %>% summarise(
   )
 ```
 
-```{r plot-map, echo=TRUE, eval=FALSE}
+```{r plot-map, echo=TRUE, eval=T}
 ggplot(data = p_proj) +
-  geom_point(data = p_mean, aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
+  geom_point(data = p_mean, 
+     aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
   geom_sf(data = coast, fill = NA) +
   geom_sf(data = lakes, fill = NA) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), # adjust buffers slightly
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000),# adjusts space on sides
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
-  scale_colour_viridis_c(
-    guide = guide_colourbar(direction = "horizontal", title.position = "top", label.position = "bottom")) +
-  guides(size = "none") + labs(colour = "NAO effect\non Snowy Owl count") +
+  scale_colour_viridis_c(guide = guide_colourbar(
+    direction = "horizontal", title.position = "top", label.position = "bottom")) +
+  guides(size = "none") + 
+  labs(colour = "NAO effect\non Snowy Owl count") +
   theme_bw() + theme(
     legend.key.height = unit(0.3, "cm"),
     legend.position = c(0.25,0.13),
     axis.title = element_blank())
 ```
 
-There are four other kinds of predictions that we get out of the model. 
-We can plot our predictions of winter owl counts that incorporate all fixed effects and random effects:
+## Predicted counts
 
-```{r plot-all-effects, echo=TRUE, eval=FALSE}
+These are the predictions of winter owl counts that incorporate all fixed effects and random effects:
+
+```{r plot-all-effects, echo=TRUE, eval=T, fig.width = 7}
 ggplot(data = filter(p_proj, year > 1995)) +
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est)), 
              size = 0.4, alpha = 0.5) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
+           ylim = c(min(p_proj$Y), max(p_proj$Y)))+
   scale_colour_viridis_c(
     # transform to make variation in low number visible 
     trans="sqrt", 
     # and also trim the top extremes of the colour axis 
     limits = c(0, quantile(exp(p_proj$est), 0.995)), na.value = "yellow") +
   labs(x = "Longitude", y = "Latitude", colour = "Predicted\ncount") +
-  # theme_bw() + 
-  theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank()) +
+  theme(axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank()) +
   facet_wrap(~year_f)
 ```
-
 Note that for these annually varying estimates, we are showing only the most recent 25 years. 
-We can also look at just the fixed effects, but in this case these only include the overall effect of mean annual NAO:
 
-```{r plot-fixed-effects}
+## Other components of predicted counts
+
+In addition to the spatially varying effect we started with, there are three other components that go into the overall predictions that we can plot spatially. 
+
+1. Just fixed effects
+
+<!-- confirm that the random effect of year is not included here? -->
+In this case these only include the overall effect of mean annual NAO:
+
+```{r plot-fixed-effects, echo=TRUE, eval=T}
 ggplot(data = filter(p_proj, year > 1995)) +
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est_non_rf)), 
              size = 0.4, alpha = 0.5) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
+           ylim = c(min(p_proj$Y), max(p_proj$Y)))+
   scale_colour_viridis_c() + 
-  # theme_bw() + 
-  theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank()) +
+  theme(axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank()) +
   facet_wrap(~year_f)
 ```
 
-We can look at the spatial random effects that represent consistent deviations in space that are not accounted for by our fixed effects. 
+2. Static spatial random effects 
+
+We can look at the spatial random effects (`omega_s`) that represent consistent deviations in space that are not accounted for by our fixed effects. 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
 These could be landcover, proximity to the breeding grounds, and effects of flyways and barriers like coasts.
 
-```{r plot-spatial-effects, echo=TRUE, eval=FALSE}
+```{r plot-spatial-effects, echo=TRUE, eval=T}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X,Y, colour = omega_s), alpha = 0.5) +
   geom_sf(data = coast, fill = NA) +
   geom_sf(data = lakes, fill = NA) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), # adjust buffers slightly
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000),
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
-  scale_colour_viridis_c(
-    guide = guide_colourbar(direction = "horizontal", title.position = "top", label.position = "bottom")) +
+  scale_colour_viridis_c(guide = guide_colourbar(
+    direction = "horizontal", title.position = "top", label.position = "bottom")) +
   theme_bw() + theme(
     legend.key.height = unit(0.3, "cm"),
     legend.position = c(0.25,0.13),
     axis.title = element_blank())
 ```
 
-Finally, we can look at the spatiotemporal random effects that represent deviations from the fixed effect predictions and the spatial random effect deviations. 
+3. Spatiotemporal random effects 
+
+Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that represent deviations from the fixed effect predictions and the spatial random effect deviations. 
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be things like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects}
+```{r plot-spatiotemporal-effects, echo=TRUE, eval=T}
 ggplot(data = filter(p_proj, year > 1995)) +
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = epsilon_st), 
              size = 0.4, alpha = 0.5) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
-  scale_fill_gradient2() +
-  # theme_bw() + 
-  theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank()) +
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
+           ylim = c(min(p_proj$Y), max(p_proj$Y))) +
+  scale_colour_viridis_c() +
+  theme(axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank()) +
   facet_wrap(~year_f)
 ```
 
