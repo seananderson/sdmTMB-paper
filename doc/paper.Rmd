@@ -36,11 +36,22 @@ abstract: |
     | Point 4: identify the conclusions and the wider implications.
 ---
 
+```{r pkg-checks, include=FALSE, echo=FALSE}
+if (!require("rnaturalearthhires", quietly = TRUE)) {
+  stop("Please install 'rnaturalearthhires'.\n",
+  "`remotes::install_github('ropensci/rnaturalearthhires')`")
+}
+if (!require("ggsidekick", quietly = TRUE)) {
+  stop("Please install 'ggsidekick'.\n",
+  "`remotes::install_github('seananderson/ggsidekick')`")
+}
+```
+
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
 library(here)
 library(ggplot2)
-theme_set(theme_minimal())
-# theme_set(ggsidekick::theme_sleek())
+# theme_set(theme_minimal())
+theme_set(ggsidekick::theme_sleek())
 library(dplyr)
 library(sdmTMB)
 ```
@@ -54,13 +65,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-```
-
-```{r rnaturalearthhires, include=FALSE, echo=FALSE}
-if (!require("rnaturalearthhires", quietly = TRUE)) {
-  stop("Please install 'rnaturalearthhires'.\n",
-  "`remotes::install_github('ropensci/rnaturalearthhires')`")
-}
 ```
 
 # Introduction
@@ -518,29 +522,31 @@ fit_spatiotemporal_tv <- sdmTMB(
 # Citizen science count data with a spatially varying effect
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
-The reasons for the interannual variation in the number of individuals migrating south are still not well understood, but seem to be related to very high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
+The reasons for the interannual variation in the number of individuals migrating south are still not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
-Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially variable effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution. 
-We fit counts observed in North America during annual Christmas Bird Counts (**REF**) using a negative binomial distribution, random intercepts for year, both spatial and spatiotemporal random fields, and a spatially varying effect of NAO (**see appendix for more detail**): 
+Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution. 
+We fit counts observed in North America during annual Christmas Bird Counts (**REF**) using a negative binomial ('NB2') distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with NAO (**see appendix for more detail**):
 
 ```{r owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
+mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owls <- sdmTMB(
-  count ~ 1 + nao + (1|year_f),
+  count ~ 1 + nao + (1 | year_factor),
   spatial_varying = ~ 0 + nao,     
-  family = nbinom2(link = "log"), data = snow, mesh = mesh, reml = TRUE,  
+  family = nbinom2(link = "log"), data = snow, mesh = mesh, 
   time = "year", spatial = "on", spatiotemporal = "IID"
   )
 ```
 
-We found a weak positive effect of annual mean NAO on overall counts, but that there was also a southeast to northwest gradient in the intensity of this effect that would be consistent with owls closer to the Atlantic coast and migrating the furthest south being the most effected by NAO (Fig. \@ref(fig:owl-nao)). 
+We found a weak positive effect of annual mean NAO on overall counts, but also a southeast to northwest gradient in the intensity of this effect.
+This result would be consistent with owls closer to the Atlantic coast and those migrating the furthest south being the most effected by NAO (Fig. \@ref(fig:owl-nao)). 
 
-(ref:owl-nao-fig) A spatially varying effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts between 1979 and 2020. 
-Circles represent all count locations and are roughly scaled to the mean number of owls observed each year (range: 0 to 8).
+(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
+Circles represent all count locations and are their area is scaled to the mean number of owls observed per year (range: 0 to 8).
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="3.5in", fig.align='center'}
 owl <- here::here("figs", "owl_nao_effect.pdf")
 if (!file.exists(owl)) {
-  download.file("https://www.dropbox.com/s/3aco85mizuplz7z/owl_nao_effect.pdf?dl=1", 
+  download.file("https://www.dropbox.com/s/fz1iw0a0diohyxc/owl_nao_effect.pdf?dl=1", 
     destfile = owl)
 }
 knitr::include_graphics(owl)
