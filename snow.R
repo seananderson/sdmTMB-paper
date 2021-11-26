@@ -1,9 +1,6 @@
 # owls
 
-# library(rgdal)
-library(sp)
-library(spdep)
-library(sf)
+
 library(tidyverse)
 
 #### get clean snowy owl data ####
@@ -50,13 +47,16 @@ m <- sdmTMB(count ~ 1 + nao + (1|year_f),
               family = nbinom2(link = "log"),
               # control = sdmTMBcontrol(normalize = TRUE),
               spatial = "on", spatiotemporal = "IID",
-              # silent = F,
+              silent = F,
               reml = T,
               data = sdat, mesh = mesh)
 m
 
+# saveRDS(m, "owls/snow_w_main_effect_150km.rds")
 saveRDS(m, "owls/snow_w_main_effect_150km_reml.rds")
 
+## tried with two ranges
+## works, but still uses up some of the nao variation
 # mf <- sdmTMB(count ~ 1 + nao + (1|year_f),
 #               time = "year",
 #               # time_varying = ~ 1,
@@ -68,9 +68,7 @@ saveRDS(m, "owls/snow_w_main_effect_150km_reml.rds")
 #               # silent = F,
 #               data = sdat, mesh = mesh)
 # mf
-#
 # saveRDS(mf, "owls/snow_w_diff_ranges_150km.rds")
-
 
 # mf3 <- sdmTMB(count ~ 1 + nao + (1|year_f),
 #             time = "year",
@@ -87,18 +85,12 @@ saveRDS(m, "owls/snow_w_main_effect_150km_reml.rds")
 #             reml = T,
 #             data = sdat, mesh = mesh)
 # mf3
-#
 # saveRDS(mf3, "owls/snow_w_reml_priors_150km.rds")
 
-## without filtering for TotalSpecies == T when after 1997
-# mr <- readRDS("owls/snow_w_main_effect.rds")
-# mr
 
 m2 <- readRDS( "owls/snow_w_main_effect_150km.rds")
 
 AIC(m0, m1, m2)
-
-m <- mf3
 
 m <- readRDS( "owls/snow_w_main_effect_150km_reml.rds")
 
@@ -117,14 +109,14 @@ sdat$residuals1 <- residuals(m1)
 qqnorm(sdat$residuals1);abline(a = 0, b = 1)
 
 
-
-library(rstan)
-library(tmbstan)
-s <- tmbstan(m$tmb_obj, iter = 200, chains = 1, warmup = 199)
-pstan <- predict(m, tmbstan_model = s)
-resid <- as.numeric(pstan) - m$data$observed
-# or do any PIT residuals randomization here...
-qqnorm(resid);qqline(resid) # should be right
+## TODO:add other residual checks
+# library(rstan)
+# library(tmbstan)
+# s <- tmbstan(m$tmb_obj, iter = 200, chains = 1, warmup = 199)
+# pstan <- predict(m, tmbstan_model = s)
+# resid <- as.numeric(pstan) - m$data$observed
+# # or do any PIT residuals randomization here...
+# qqnorm(resid);qqline(resid) # should be right
 
 # # try model with SOI for comparison -- a little worse
 # m2 <- sdmTMB(count ~ 1 + soi, time = "year",
@@ -140,7 +132,6 @@ qqnorm(resid);qqline(resid) # should be right
 #
 p <- predict(m)
 p <- p %>% mutate(
-  X10 = X, Y10 = Y,
   X = X * 100000,
   Y = Y * 100000
 )
@@ -170,20 +161,26 @@ p <- p %>% mutate(
 
 
 ## --- get coastlines and lakes
+# library(rgdal)
+# library(sp)
+# library(spdep)
+library(sf)
 library("rnaturalearth")
 library("rnaturalearthdata")
+
+proj <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+
 coast <- ne_coastline(scale = "medium", returnclass = "sf")
-coast2 <- coast %>% sf::st_transform(crs = proj)
+coast <- coast %>% sf::st_transform(crs = proj)
 
 land <- ne_countries(scale = "medium", returnclass = "sf")
-land2  <- land  %>% sf::st_transform(crs = proj)
+land  <- land  %>% sf::st_transform(crs = proj)
 
 ## --- from http://www.naturalearthdata.com/downloads/10m-physical-vectors/
 lakes <- sf::st_read("owls/ne_10m_lakes")
 ## --- Only the largest lakes
 lakes <- lakes[lakes$scalerank==0,]
 # lakes <- lakes %>% sf::st_transform(crs = sf::st_crs(cbc_na_grid))
-
 lakes <- lakes %>% sf::st_transform(crs = proj)
 
 # make maps
@@ -199,6 +196,7 @@ p_proj <- p %>% mutate(x = X, y = Y) %>% st_as_sf(., coords = c("x", "y"), crs =
 
 # p_mean <- p %>% group_by(CBCID) %>% summarise(X = mean(X), Y= mean(Y),est = mean(est), zeta_s = mean(zeta_s))
 
+
 b <- tidy(m)
 p_mean <- p %>% group_by(CBCID) %>% summarise(
   X = mean(X), Y= mean(Y),
@@ -206,15 +204,16 @@ p_mean <- p %>% group_by(CBCID) %>% summarise(
   nao_effect = exp(b[b$term == "nao", 2] + mean(zeta_s))
 )
 
-# mean(p_mean$zeta_s)
+range(p_mean$mean_est_count)
+
 ggplot(data = p_proj) +
-  geom_sf(data = land2, fill = "white", colour = "white",lwd = 0.35) +
+  geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
   geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
   geom_point(
     # data = filter(p, year == 2020),
     data = p_mean,
              aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
-  geom_sf(data = coast2, colour = "gray23", fill = NA, lwd = 0.35) +
+  geom_sf(data = coast, colour = "gray23", fill = NA, lwd = 0.35) +
   geom_sf(data = lakes, colour = "gray23", fill = NA, lwd = 0.35) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
   # scale_fill_viridis_c() +
@@ -237,13 +236,14 @@ ggplot(data = p_proj) +
     axis.title = element_blank())
 
 ggsave("owls/nao_effect_w_main_effect_150_reml.png", width = 5.5, height = 3.1)
+ggsave("owl_nao_effect.pdf", width = 5.5, height = 3.1)
 # ggsave("snow_nao_zeta_s_grid.png", width = 6, height = 3)
 
 ggplot(data = p_proj) +
-  geom_sf(data = land2, fill = "white", colour = "white",lwd = 0.35) +
+  geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
   geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
   geom_point(data = p, aes(X,Y, colour = omega_s)) +
-  geom_sf(data = coast2, colour = "gray23", fill = NA, lwd = 0.35) +
+  geom_sf(data = coast, colour = "gray23", fill = NA, lwd = 0.35) +
   geom_sf(data = lakes, colour = "gray23", fill = NA, lwd = 0.35) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
   scale_colour_viridis_c(
@@ -264,7 +264,7 @@ ggplot(data = p_proj) +
 ggsave("snow_nao_omega_150_reml.png", width = 5.5, height = 3.1)
 
 ggplot(data = filter(p_proj, year > 1995)) +
-  # geom_sf(data = land2, fill = "white", colour = "gray23", lwd = 0.35) +
+  # geom_sf(data = land, fill = "white", colour = "gray23", lwd = 0.35) +
   # geom_sf(data = lakes, fill = "white", colour = "gray23", lwd = 0.35) +
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   # geom_sf(data = coast2, colour = "gray23", fill = NA, lwd = 0.35) +
