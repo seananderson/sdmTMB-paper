@@ -108,11 +108,46 @@ qqnorm(sdat$residuals0)
 sdat$residuals1 <- residuals(m1)
 qqnorm(sdat$residuals1);abline(a = 0, b = 1)
 
+# ## TODO:add other residual checks
+# mini_sim <- function(fit) {
+#   params <- fit$tmb_obj$env$parList()
+#   tmb_data <- fit$tmb_data
+#   # tmb_data$sim_re <- rep(1, length(tmb_data$sim_re))
+#   newobj <- TMB::MakeADFun(data = tmb_data, map = fit$tmb_map,
+#                            random = fit$tmb_random, parameters = params, DLL = "sdmTMB")
+#   s <- newobj$simulate()
+#   s$y_i
+# }
+#
+# nd <- matrix(NA, ncol = 20L, nrow = nrow(m$data))
+# for (i in seq_len(ncol(nd))) {
+#   nd[,i] <- mini_sim(m)
+# }
+#
+# s <- DHARMa::createDHARMa(
+#   simulatedResponse = nd,
+#   observedResponse = m$data$count,
+#   fittedPredictedResponse = m$family$linkinv(predict(m, newdata = NULL)$est),
+#   method = "PIT"
+# )
+#
+# plot(s)
 
-## TODO:add other residual checks
+# ### or this, but it took 2.5 hrs!
 # library(rstan)
 # library(tmbstan)
-# s <- tmbstan(m$tmb_obj, iter = 200, chains = 1, warmup = 199)
+#
+# stan_fit <- tmbstan::tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 99)
+# eta <- predict(m, tmbstan_model = stan_fit)
+# mu <- m$family$linkinv(as.numeric(eta))
+# r_mcmc <- sdmTMB:::qres_nbinom2(m, y = m$data$count, mu = mu)
+# qqnorm(r_mcmc);qqline(r_mcmc) # MCMC
+# saveRDS(r_mcmc, "owls/mcmc_residuals.rds")
+#
+# r <- residuals(m)
+# qqnorm(r);qqline(r) # naive
+
+# s <- tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 199)
 # pstan <- predict(m, tmbstan_model = s)
 # resid <- as.numeric(pstan) - m$data$observed
 # # or do any PIT residuals randomization here...
@@ -282,4 +317,23 @@ ggplot(data = filter(p_proj, year > 1995)) +
 
 ggsave("snow_nao_annual_p_est_post1996_150.png", width = 9, height = 6.5)
 
-glimpse(p)
+
+# # conditional effect of nao
+nd <- data.frame(
+  nao = seq(min(m$data$nao),
+            max(m$data$nao), length.out = 30),
+  year = 2000L,
+  year_f = as.factor(2000)
+)
+
+pn <- predict(m, newdata = nd, se_fit = TRUE, re_form = NA)
+
+(gg <- pn %>%
+    ggplot(., aes(nao, exp(est)
+                  # ,ymin = exp(est - 1.96 * est_se),
+                  # ymax = exp(est + 1.96 * est_se)
+    )) +
+    # geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line()
+)
+
