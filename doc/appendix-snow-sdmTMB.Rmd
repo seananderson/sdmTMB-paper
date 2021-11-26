@@ -3,6 +3,7 @@ title: "Annotated example of a spatially varying effect with sdmTMB"
 output:
   pdf_document:
     highlight: tango
+bibliography: refs.bib
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -265,7 +266,7 @@ Note that for these annually varying estimates, we are showing only the most rec
 
 In addition to the spatially varying effect we started with, there are three other components that go into the overall predictions that we can plot spatially. 
 
-1. Just fixed effects
+### 1. Just fixed effects
 
 <!-- confirm that the random effect of year is not included here? -->
 In this case these only include the overall effect of mean annual NAO:
@@ -283,7 +284,7 @@ ggplot(data = filter(p_proj, year > 1995)) +
   facet_wrap(~year_f)
 ```
 
-2. Static spatial random effects 
+### 2. Static spatial random effects 
 
 We can look at the spatial random effects (`omega_s`) that represent consistent deviations in space that are not accounted for by our fixed effects. 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
@@ -304,7 +305,8 @@ ggplot(data = p_proj) +
     axis.title = element_blank())
 ```
 
-3. Spatiotemporal random effects 
+<!-- \clearpage -->
+### 3. Spatiotemporal random effects 
 
 Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that represent deviations from the fixed effect predictions and the spatial random effect deviations. 
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
@@ -324,3 +326,7 @@ ggplot(data = filter(p_proj, year > 1995)) +
 ```
 
 
+# References
+
+::: {#refs}
+:::
