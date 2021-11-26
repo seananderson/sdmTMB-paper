@@ -383,6 +383,7 @@ g_pred <- ggplot(bc_coast_proj) +
   geom_sf(fill = NA, colour = "gray30", lwd = 0.3) +
   geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = exp(est))) +
   coord_sf(datum = st_crs(utm_zone9)) +
+  theme(panel.grid.major = element_line(colour = "grey90")) +
   scale_x_continuous(
     limits = c(230957.7 + 105000, 1157991 - 570000),
     labels = function(x) paste0(x / 1000)
@@ -406,9 +407,10 @@ reds <- RColorBrewer::brewer.pal(5, "Reds")
 g_mesh <- ggplot(pcod, aes(X, Y)) +
   inlabru::gg(mesh$mesh, edge.color = "grey60") +
   geom_point(alpha = 0.6, mapping = aes(size = density), colour = blues[4]) +
-  theme_minimal() + coord_fixed() +
+  coord_fixed() +
   labs(x = "UTMs E (km)", y = "UTMs N (km)") +
   scale_size_area(max_size = 10) +
+  theme(panel.grid.major = element_line(colour = "grey90")) +
   theme(legend.position = "none")
 ```
 
@@ -429,7 +431,8 @@ g_smooth <- ggplot(
   geom_line(colour = blues[5], lwd = 1) +
   labs(x = "Depth (m)", y = "Density (units)") +
   xlim(min(pcod$depth), 300) +
-  coord_fixed(expand = FALSE, ratio = 1.28)
+  coord_fixed(expand = FALSE, ratio = 1.28) +
+  theme(panel.grid.major = element_line(colour = "grey90"))
 ```
 
 ```{r fit-pcod-st, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=FALSE}
@@ -481,8 +484,9 @@ g_omega <- ggplot(bc_coast_proj) +
   theme(
     # panel.background = element_rect(fill = "slategray1", colour= "white"),
     legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt")
-  )
-cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto")
+  ) +
+  theme(panel.grid.major = element_line(colour = "grey90"))
+cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto", align = "hv")
 ```
 
 We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
@@ -518,7 +522,6 @@ fit_spatiotemporal_tv <- sdmTMB(
 )
 ```
 
-
 # Citizen science count data with a spatially varying effect
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
@@ -543,7 +546,7 @@ This result would be consistent with owls closer to the Atlantic coast and those
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
 Circles represent all count locations and are their area is scaled to the mean number of owls observed per year (range: 0 to 8).
 
-```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="3.5in", fig.align='center'}
+```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="3.9in", fig.align='center'}
 owl <- here::here("figs", "owl_nao_effect.pdf")
 if (!file.exists(owl)) {
   download.file("https://www.dropbox.com/s/fz1iw0a0diohyxc/owl_nao_effect.pdf?dl=1", 
