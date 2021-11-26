@@ -506,14 +506,14 @@ p <- predict(fit_spatiotemporal, newdata = qcs_grid, return_tmb_object = TRUE)
 ind <- get_index(p)
 ```
 
-As a third example, we could model presence/absence of Pacific cod (`present`) with a time-varying quadratic effect of depth, an independent mean each year, a spatial random field, and IID spatiotemporal fields:
+<!-- As a third example, we could model presence/absence of Pacific cod (`present`) with a time-varying quadratic effect of depth, an independent mean each year, a spatial random field, and IID spatiotemporal fields: -->
 
 ```{r, eval=TRUE, echo=FALSE}
 # restore 'present' column
 pcod <- sdmTMB::pcod
 ```
 
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=FALSE, echo=FALSE}
 fit_spatiotemporal_tv <- sdmTMB(
   present ~ 0 + as.factor(year), 
   time_varying = ~ 0 + poly(depth, 2), 
@@ -537,7 +537,7 @@ fit_owls <- sdmTMB(
   spatial_varying = ~ 0 + nao,     
   family = nbinom2(link = "log"), data = snow, mesh = mesh, 
   time = "year", spatial = "on", spatiotemporal = "IID"
-  )
+)
 ```
 
 We found a weak positive effect of annual mean NAO on overall counts, but also a southeast to northwest gradient in the intensity of this effect.
