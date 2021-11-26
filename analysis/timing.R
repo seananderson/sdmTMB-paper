@@ -10,6 +10,9 @@ plan(multisession)
 INLA::inla.setOption(num.threads = "1:1")
 source(here::here("analysis/mgcv_spde_smooth.R"))
 
+INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+# INLA::inla.setOption(inla.mode="experimental")
+
 # INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
 
 simulate_dat <- function(n_obs = 100,
@@ -144,6 +147,8 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   } else {
     stop("Family not found")
   }
+  INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+  # INLA::inla.setOption(inla.mode="experimental")
 
   out <- system.time({
     tryCatch({
@@ -215,7 +220,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 
   cat("mgcv\n")
 
-  if (max.edge >= 0.06) {
+  if (max.edge >= 0.061) {
     out <- system.time({
       fit <- tryCatch({
         bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
@@ -240,6 +245,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out$max.edge <- max.edge
   # out$inla_error = inla_error
   out$inla_eb_error = inla_eb_error
+  out$pardiso <- inla.pardiso.check()
   out
 }
 
@@ -257,11 +263,13 @@ to_run <- expand.grid(
 to_run$seed <- to_run$iter * 29212
 nrow(to_run)
 
+# test2 <- sim_fit_time(n_obs = 1000L, max.edge = 0.06, family = gaussian(), seed = 1 * 29212, iter = 1)
+
 # scramble for parallel task assignment:
 to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 
 # out <- purrr::pmap_dfr(to_run, sim_fit_time)
-plan(multisession, workers = 7L)
+plan(multisession, workers = 6L)
 out <- furrr::future_pmap_dfr(
 # out <- purrr::pmap_dfr(
   to_run,
@@ -273,8 +281,8 @@ out <- furrr::future_pmap_dfr(
       'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
     packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB'))
 )
-saveRDS(out, file = "analysis/timing-cache-parallel.rds")
-out <- readRDS("analysis/timing-cache-parallel.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-openblas-pardiso.rds")
+out <- readRDS("analysis/timing-cache-parallel-openblas-pardiso.rds")
 plan(sequential)
 
 # # -------tweedie
@@ -319,14 +327,14 @@ out_long <- tidyr::pivot_longer(
 clean_names <- tribble(
   ~model, ~model_clean,
   "sdmTMB", "sdmTMB",
-  "sdmTMB_norm", "sdmTMB (normalize = TRUE)",
+  "sdmTMB_norm", "sdmTMB(normalize = TRUE)",
   "inlabru", "inlabru",
   "inlabru_eb", "inlabru EB",
   "INLA", "INLA",
   "INLA_eb", "INLA EB",
   "INLA_eb_nolike", "INLA EB no like()",
-  # "mgcv_ml", "mgcv ML",
-  "mgcv_disc", "mgcv::bam() SPDE"
+  "mgcv_ml", "mgcv::bam\n(discretize = F) SPDE",
+  "mgcv_disc", "mgcv::bam\n(discretize = T) SPDE "
 )
 clean_names$model_clean <- factor(clean_names$model_clean, levels = clean_names$model_clean)
 out_long <- left_join(out_long, clean_names)
@@ -340,7 +348,7 @@ out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
   summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
 
 g <- out_long_sum %>%
-  filter(model_clean != "mgcv ML") %>%
+  # filter(model_clean != "mgcv ML") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
   geom_line(lwd = 0.7) +
@@ -352,18 +360,20 @@ g <- out_long_sum %>%
   # scale_x_continuous(breaks = unique(out_long$n_obs)) +
   # facet_wrap(vars(mean_mesh_n), nrow = 1L) +
   # theme(legend.position = "bottom") +
-  theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
+  # theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
+  theme(legend.position = c(0.4, 0.85)) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
   coord_cartesian(expand = FALSE) +
   theme(panel.spacing.x = unit(20, "pt")) +
   guides(
-    colour = guide_legend(nrow = 2, byrow = TRUE, title.theme = element_blank()),
-    fill = guide_legend(nrow = 2, byrow = TRUE, title.theme = element_blank()))
+    colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
+    fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()))
 g
-ggsave("figs/timing2-logx.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing2-logx.png", width = .width, height = .width / 1.3)
+.width <- 5
+ggsave("figs/timing2-logx-blas-pardiso.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-blas-pardiso.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
 #   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
