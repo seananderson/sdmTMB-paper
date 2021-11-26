@@ -24,18 +24,13 @@ library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(sf)
-theme_set(theme_bw() + theme(
-  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
-  legend.position = "top", legend.justification = c(0, 0), 
-  axis.title = element_blank()))
 ```
 
 This illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
-We will use counts of Snow Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts (CBCs) between 1979 and 2020. 
-This citizen science survey is organized by the by the National Audubon Society (data available by request from cbcadmin@audubon.org). 
+We will use counts of Snow Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc]. 
 Each survey is conducted between December 14 to January 5 in 24.14 kilometre diameter circle. 
 Circle locations are chosen by local volunteers and therefore reflect both locations of higher human densities and known bird watching locations.
-Each circle (given a unique "CBCID") is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
+Each circle (given a unique ID) is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
 While these locations are not random, the consistent sampling through time still make them useful for exploring spatiotemporal processes. 
 
 Snow Owls are an arctic breeding species is an irruptive migrant meaning that the number of individuals choosing to migrate varies dramatically from year to year. 
@@ -44,7 +39,8 @@ The North Atlantic Oscillation Index (NAO) has been linked to productivity of bo
 On average a positive NAO index results in colder and drier conditions in northern Canada and mild and wetter conditions in the eastern United States [@liu2021]. 
 For this analysis, we have defined survey year as the year prior to/ending during the survey window. 
 For these years, we have retrieved mean annual climate indices from the University of East Anglia's [Climatic Research Unit](https://crudata.uea.ac.uk/cru/data/nao/). 
-Because both productivity and the choice of wintering location could be influenced by climate, we will test for a spatially variable effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution and the only portion well surveyed by CBCs. 
+Because both productivity and the choice of wintering location could be influenced by climate, we will test for a spatially variable effect of annual mean NAO index between 1979 and 2020 on winter owl abundance. 
+Our model will span the southern boundary of their winter distribution in North America, the only portion of their range well surveyed by CBCs. 
 
 ```{r load-data, cache=FALSE} 
 snow <- readRDS(here::here("owls/SNOW_data.rds"))
@@ -71,7 +67,7 @@ plot(mesh)
 
 The result is a mesh with `r mesh$mesh$n` knots. 
 
-Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. 
+Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. The dataframe also contains the Southern Oscillation Index (SOI), which is related to El Niño cycles, but we will only consider NAO in this example because any effect of SOI was even weaker. 
 
 ```{r explore, fig.asp = 0.3}
 ggplot(snow, aes(year, count, colour = nao)) + 
@@ -205,6 +201,11 @@ qqline(r_mcmc)
 <!-- \clearpage -->
 
 ```{r plot-resids, fig.width = 8}
+theme_set(theme_bw() + theme(
+  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
+  legend.position = "top", legend.justification = c(0, 0), 
+  axis.title = element_blank()))
+
 ggplot(pred, aes(X, Y, colour = resid)) +
   geom_point(size = 0.5) +
   facet_wrap(~year) +
@@ -279,7 +280,8 @@ ggplot(data = p_proj) +
 ## Predicted counts
 
 These are the predictions of winter owl counts that incorporate all fixed effects and random effects. 
-The colour axis has been transformed and trimmed to improve the visibility of variation in count estimates. 
+The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
+The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
 ```{r plot-all-effects, echo=TRUE, eval=T}
 ggplot(data = filter(p_proj, year > 1995)) +
@@ -305,8 +307,7 @@ In addition to the spatially varying effect that we started with, there are thre
 
 ### 1. Just fixed effects
 
-<!-- confirm that the random effect of year is not included here? -->
-In this case these only include the overall effect of mean annual NAO:
+In this case these only include the overall effect of mean annual NAO and the random intercepts for year.
 
 ```{r plot-fixed-effects, echo=TRUE, eval=T}
 ggplot(data = filter(p_proj, year > 1995)) +
