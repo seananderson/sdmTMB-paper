@@ -4,6 +4,17 @@ library(ggplot2)
 library(sf)
 library(patchwork)
 
+if (!require("rnaturalearthhires", quietly = TRUE)) {
+  stop("Please install 'rnaturalearthhires'.\n",
+  "`remotes::install_github('ropensci/rnaturalearthhires')`")
+}
+if (!require("ggsidekick", quietly = TRUE)) {
+  stop("Please install 'ggsidekick'.\n",
+  "`remotes::install_github('seananderson/ggsidekick')`")
+}
+
+theme_set(ggsidekick::theme_sleek())
+
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 
 fit <- sdmTMB(
@@ -186,5 +197,7 @@ layout <- "
       12
       34
 "
-g <- wrap_plots(g_mesh, g_omega, g_pred, g3) + plot_layout(design = layout)
+g <- wrap_plots(g_mesh, g_omega, g_pred, g3) + plot_layout(design = layout) +
+  plot_annotation(tag_levels = c('A'))
+# g
 ggsave("figs/pcod-fig.pdf", width = 9, height = 7)
