@@ -382,7 +382,7 @@ knitr::include_graphics(pcodfig)
 
 \clearpage
 
-# Citizen science count data with a spatially varying effect
+# Spatially varying coefficients applied to citizen-science owl counts
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
@@ -396,7 +396,7 @@ fit_owls <- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
   spatial_varying = ~ 0 + nao,     
   family = nbinom2(link = "log"), data = snow, mesh = mesh, 
-  time = "year", spatial = "on", spatiotemporal = "IID"
+  time = "year", spatial = "on", spatiotemporal = "iid"
 )
 ```
 
