@@ -404,8 +404,8 @@ We found a weak average positive effect of annual mean NAO on overall counts, bu
 This result would be consistent with owls closer to the Atlantic coast and those migrating the furthest south being the most effected by NAO. 
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
-Circles represent all count locations and are their area is scaled to the mean number of owls observed per year (range: 0 to 8). 
-The effect is multiplicative on owl count.
+Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
+The effect is multiplicative on owl count per NOA unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl_nao_effect.pdf")
