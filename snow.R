@@ -109,29 +109,20 @@ sdat$residuals1 <- residuals(m1)
 qqnorm(sdat$residuals1);abline(a = 0, b = 1)
 
 # ## TODO:add other residual checks
-# mini_sim <- function(fit) {
-#   params <- fit$tmb_obj$env$parList()
-#   tmb_data <- fit$tmb_data
-#   # tmb_data$sim_re <- rep(1, length(tmb_data$sim_re))
-#   newobj <- TMB::MakeADFun(data = tmb_data, map = fit$tmb_map,
-#                            random = fit$tmb_random, parameters = params, DLL = "sdmTMB")
-#   s <- newobj$simulate()
-#   s$y_i
-# }
-#
-# nd <- matrix(NA, ncol = 20L, nrow = nrow(m$data))
-# for (i in seq_len(ncol(nd))) {
-#   nd[,i] <- mini_sim(m)
-# }
-#
-# s <- DHARMa::createDHARMa(
-#   simulatedResponse = nd,
-#   observedResponse = m$data$count,
-#   fittedPredictedResponse = m$family$linkinv(predict(m, newdata = NULL)$est),
-#   method = "PIT"
-# )
-#
-# plot(s)
+
+# m <- readRDS("owls/snow_w_main_effect_0_150km.rds") # poisson for comparison
+
+s_nb2 <- simulate(m, nsim = 500)
+
+pred_fixed <- m$family$linkinv(predict(m)$est_non_rf)
+r_nb2 <- DHARMa::createDHARMa(
+  simulatedResponse = s_nb2,
+  observedResponse = m$data$count,
+  fittedPredictedResponse = pred_fixed
+)
+plot(r_nb2)
+
+DHARMa::testZeroInflation(r_nb2)
 
 # ### or this, but it took 2.5 hrs!
 # library(rstan)
@@ -147,11 +138,6 @@ qqnorm(sdat$residuals1);abline(a = 0, b = 1)
 # r <- residuals(m)
 # qqnorm(r);qqline(r) # naive
 
-# s <- tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 199)
-# pstan <- predict(m, tmbstan_model = s)
-# resid <- as.numeric(pstan) - m$data$observed
-# # or do any PIT residuals randomization here...
-# qqnorm(resid);qqline(resid) # should be right
 
 # # try model with SOI for comparison -- a little worse
 # m2 <- sdmTMB(count ~ 1 + soi, time = "year",
@@ -171,6 +157,12 @@ p <- p %>% mutate(
   Y = Y * 100000
 )
 
+
+# plot(m$data$count, p2$est_count)
+
+p2 <- p %>% mutate(est_count = round(exp(est)))
+nrow(m$data[m$data$count==0,])
+nrow(p2[p2$est_count==0,])
 
 # mean(p$count)
 #
@@ -201,7 +193,7 @@ p <- p %>% mutate(
 # library(spdep)
 library(sf)
 library("rnaturalearth")
-library("rnaturalearthdata")
+# library("rnaturalearthdata")
 
 proj <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 
@@ -243,35 +235,30 @@ range(p_mean$mean_est_count)
 
 ggplot(data = p_proj) +
   geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
-  geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
+  geom_sf(data = lakes, colour= "grey86", fill = "grey86", lwd = 0.35) +
   geom_point(
-    # data = filter(p, year == 2020),
     data = p_mean,
              aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
-  geom_sf(data = coast, colour = "gray23", fill = NA, lwd = 0.35) +
-  geom_sf(data = lakes, colour = "gray23", fill = NA, lwd = 0.35) +
+  geom_sf(data = coast, colour = "gray40", fill = NA, lwd = 0.2) +
+  geom_sf(data = lakes, colour = "gray40", fill = NA, lwd = 0.2) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), ylim = c(min(p_proj$Y), max(p_proj$Y)))+
-  # scale_fill_viridis_c() +
-  scale_colour_viridis_c(
-    # trans = "log", #limits =c(0.85, 1.45),
-                         # breaks = c(1.0, 1.4, 1.8),
-                         #breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_colour_viridis_c(# breaks = c(1.0, 1.4, 1.8),
           guide = guide_colourbar(direction = "horizontal", title.vjust = 1,
                                   title.position = "top", label.position = "bottom")) +
   guides(size = "none") +
   labs(x= "Longitude", y = "Latitude", colour = "NAO effect\non Snowy Owl count") +
-  theme_bw() + theme(
+  ggsidekick::theme_sleek() + theme(
     legend.title = element_text(size= 9, hjust = 0),
     legend.key.height = unit(0.2, "cm"),
-    panel.background = element_rect(fill = "grey90", colour = NA),
-    legend.background = element_rect(fill = "transparent", colour = NA) # get rid of legend bg
-    , legend.box.background = element_rect(fill = "transparent", colour = NA), # get rid of legend panel bg
+    panel.background = element_rect(fill = "grey86", colour = NA),
+    panel.grid.major = element_line(colour = "grey98"),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.box.background = element_rect(fill = "transparent", colour = NA), # get rid of legend panel bg
     legend.position = c(0.25,0.13),
-    # legend.position = "bottom",
     axis.title = element_blank())
 
 ggsave("owls/nao_effect_w_main_effect_150_reml.png", width = 5.5, height = 3.1)
-ggsave("owl_nao_effect.pdf", width = 5.5, height = 3.1)
+ggsave("figs/owl_nao_effect.pdf", width = 5.5, height = 3.1)
 # ggsave("snow_nao_zeta_s_grid.png", width = 6, height = 3)
 
 ggplot(data = p_proj) +
