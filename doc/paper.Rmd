@@ -37,14 +37,14 @@ abstract: |
 ---
 
 ```{r pkg-checks, include=FALSE, echo=FALSE}
-if (!require("rnaturalearthhires", quietly = TRUE)) {
-  stop("Please install 'rnaturalearthhires'.\n",
-  "`remotes::install_github('ropensci/rnaturalearthhires')`")
-}
-if (!require("ggsidekick", quietly = TRUE)) {
-  stop("Please install 'ggsidekick'.\n",
-  "`remotes::install_github('seananderson/ggsidekick')`")
-}
+# if (!require("rnaturalearthhires", quietly = TRUE)) {
+#   stop("Please install 'rnaturalearthhires'.\n",
+#   "`remotes::install_github('ropensci/rnaturalearthhires')`")
+# }
+# if (!require("ggsidekick", quietly = TRUE)) {
+#   stop("Please install 'ggsidekick'.\n",
+#   "`remotes::install_github('seananderson/ggsidekick')`")
+# }
 ```
 
 ```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
@@ -284,7 +284,7 @@ head(pcod)
 
 We start by creating a mesh object that contains matrices to apply the SPDE approach:
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, eval=FALSE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
@@ -296,7 +296,7 @@ We can then fit a model with spatial random fields via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 
-```{r pcod-eg1-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE}
+```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
   density ~ s(depth),
   data = pcod,
@@ -312,9 +312,6 @@ We can get a summary of the fit with the `print()` method or extract parameter e
 ```{r,eval=FALSE, echo=TRUE}
 print(fit)
 ```
-
-<!-- tidy(fit, conf.int = TRUE) -->
-<!-- tidy(fit, effects = 'ran_pars', conf.int = TRUE) -->
 
 ```{}
 #> Spatiotemporal model fit by ML ['sdmTMB']
@@ -346,112 +343,21 @@ We show a basic plot of the estimated spatial random field, predictions across a
 p <- predict(fit, newdata = qcs_grid)
 ```
 
-```{r, echo=FALSE, eval=TRUE}
-p <- predict(fit, newdata = subset(qcs_grid, year == 2003))
-```
+We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
+Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
 
-```{r, eval=FALSE}
-p3 <- predict(fit, newdata = subset(qcs_grid, year == 2003), sims = 500L)
-se <- apply(p3, 1, sd)
-p$se <- se
-g_pred_se <- ggplot(p, aes(X, Y, fill = se)) +
-  geom_raster() +
-  scale_fill_viridis_c(trans = "log10", option = "C") +
-  coord_fixed() +
-  labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
-  theme(legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt"))
-```
-
-```{r, warning=FALSE, message=FALSE}
-library(sf)
-# devtools::install_github("ropensci/rnaturalearthhires") # install if needed
-map_data <- rnaturalearth::ne_countries(
-  scale = "large",
-  returnclass = "sf", country = "canada")
-# Crop the polygon for plotting and efficiency:
-# st_bbox(map_data) # find the rough coordinates
-bc_coast <- suppressWarnings(suppressMessages(
-  st_crop(map_data,
-    c(xmin = -134, ymin = 46, xmax = -120, ymax = 57))))
-utm_zone9 <- 3156
-bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
-# ggplot(bc_coast_proj) + geom_sf()
-```
-
-```{r}
-g_pred <- ggplot(bc_coast_proj) +
-  geom_sf(fill = NA, colour = "gray30", lwd = 0.3) +
-  geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = exp(est))) +
-  coord_sf(datum = st_crs(utm_zone9)) +
-  theme(panel.grid.major = element_line(colour = "grey90")) +
-  scale_x_continuous(
-    limits = c(230957.7 + 105000, 1157991 - 570000),
-    labels = function(x) paste0(x / 1000)
-  ) +
-  scale_y_continuous(
-    limits = c(5366427 + 270000, 6353456 - 513000),
-    labels = function(x) paste0(x / 1000)
-  ) +
-  scale_fill_viridis_c(trans = "sqrt", option = "C") +
-  # scale_fill_viridis_c(trans = "sqrt", option = "B", begin = 0.3) +
-  labs(fill = "Predicted\ndensity (units)", x = "UTMs E (km)", y = "UTMs N (km)") +
-  theme(
-    # panel.background = element_rect(fill = "slategray1", colour= "white"),
-    legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt")
-  )
-```
-
-```{r, echo=FALSE}
-blues <- RColorBrewer::brewer.pal(5, "Blues")
-reds <- RColorBrewer::brewer.pal(5, "Reds")
-g_mesh <- ggplot(pcod, aes(X, Y)) +
-  inlabru::gg(mesh$mesh, edge.color = "grey60") +
-  geom_point(alpha = 0.6, mapping = aes(size = density), colour = blues[4]) +
-  coord_fixed() +
-  labs(x = "UTMs E (km)", y = "UTMs N (km)") +
-  scale_size_area(max_size = 10) +
-  theme(panel.grid.major = element_line(colour = "grey90")) +
-  theme(legend.position = "none")
-```
-
-```{r}
-nd <- data.frame(
-  depth =
-    seq(min(pcod$depth), max(pcod$depth), length.out = 300)
+```{r fit-tv, eval=FALSE, echo=TRUE}
+fit_spatiotemporal <- sdmTMB(
+  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh,
+  time = "year", spatial = "off", spatiotemporal = "ar1"
 )
-p_smooth <- predict(fit, newdata = nd, se_fit = TRUE, re_form = NA)
-g_smooth <- ggplot(
-  p_smooth,
-  aes(depth, exp(est),
-    ymin = exp(est - 1.96 * est_se),
-    ymax = exp(est + 1.96 * est_se)
-  )
-) +
-  geom_ribbon(fill = blues[2]) +
-  geom_line(colour = blues[5], lwd = 1) +
-  labs(x = "Depth (m)", y = "Density (units)") +
-  xlim(min(pcod$depth), 300) +
-  coord_fixed(expand = FALSE, ratio = 1.28) +
-  theme(panel.grid.major = element_line(colour = "grey90"))
 ```
 
-```{r fit-pcod-st, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE, echo=FALSE}
-fit2 <- sdmTMB(
-  density ~ 0 + as.factor(year),
-  family = tweedie(link = "log"), data = sdmTMB::pcod, mesh = mesh,
-  time = "year", spatial = "on", spatiotemporal = "iid", silent = TRUE
-)
-p2 <- predict(fit2, newdata = qcs_grid, sims = 500L)
-ind <- get_index_sims(p2)
-```
+We could generate a standardized index from that fit on a 2x2 km grid:
 
-```{r plot-ind, eval=FALSE}
-g_ind <- ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) + 
-  geom_ribbon(fill = blues[2]) +
-  geom_line(colour = blues[5], lwd = 1) +
-  ylim(0, max(ind$upr)) +
-  coord_fixed(expand = FALSE, ratio = 0.3) +
-  labs(x = "Year", y = "Biomass (units)")
+```{r, eval=FALSE, echo=TRUE}
+p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
+ind <- get_index(p)
 ```
 
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
@@ -465,62 +371,16 @@ These predictions are made omitting the spatial random field.
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
 (d) Overall prediction: these estimates represent the combination of all fixed and random effects.
 
-```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", fig.width=9, out.width="5.2in", fig.asp=1, fig.align='center'}
-g_omega <- ggplot(bc_coast_proj) +
-  geom_sf(fill = NA, colour = "gray30", lwd = 0.3) +
-  geom_raster(data = p, aes(x = X * 1000, y = Y * 1000, fill = omega_s)) +
-  coord_sf(datum = st_crs(utm_zone9)) +
-  scale_x_continuous(
-    limits = c(230957.7 + 105000, 1157991 - 570000),
-    labels = function(x) paste0(x / 1000)
-  ) +
-  scale_y_continuous(
-    limits = c(5366427 + 270000, 6353456 - 513000),
-    labels = function(x) paste0(x / 1000)
-  ) +
-  # scale_fill_gradient2(high = reds[4], low = scales::muted("purple")) +
-  scale_fill_gradient2(high = reds[4], low = blues[4]) +
-  labs(fill = "Spatial random\nfield deviations", x = "UTMs E (km)", y = "UTMs N (km)") +
-  theme(
-    # panel.background = element_rect(fill = "slategray1", colour= "white"),
-    legend.position = c(0.2, 0.2), legend.key.height = unit(10, "pt")
-  ) +
-  theme(panel.grid.major = element_line(colour = "grey90"))
-cowplot::plot_grid(g_mesh, g_smooth, g_omega, g_pred, labels = "auto", align = "hv")
+```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
+pcodfig <- here::here("figs", "pcod-fig.pdf")
+if (!file.exists(pcodfig)) {
+  download.file("https://www.dropbox.com/s/s8kl4u49p27qqhy/pcod-fig.pdf?dl=1", 
+    destfile = pcodfig)
+}
+knitr::include_graphics(pcodfig)
 ```
 
-We could extend our model to a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
-Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1):
-
-```{r, eval=FALSE, echo=TRUE}
-fit_spatiotemporal <- sdmTMB(
-  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh,
-  time = "year", spatial = "off", spatiotemporal = "ar1"
-)
-```
-
-We could generate a standardized index from that fit with:
-
-```{r, eval=FALSE, echo=TRUE}
-p <- predict(fit_spatiotemporal, newdata = qcs_grid, return_tmb_object = TRUE)
-ind <- get_index(p)
-```
-
-<!-- As a third example, we could model presence/absence of Pacific cod (`present`) with a time-varying quadratic effect of depth, an independent mean each year, a spatial random field, and IID spatiotemporal fields: -->
-
-```{r, eval=TRUE, echo=FALSE}
-# restore 'present' column
-pcod <- sdmTMB::pcod
-```
-
-```{r, eval=FALSE, echo=FALSE}
-fit_spatiotemporal_tv <- sdmTMB(
-  present ~ 0 + as.factor(year), 
-  time_varying = ~ 0 + poly(depth, 2), 
-  family = binomial(), data = pcod, mesh = mesh,
-  time = "year", spatial = "on", spatiotemporal = "iid"
-)
-```
+\clearpage
 
 # Citizen science count data with a spatially varying effect
 
@@ -546,7 +406,7 @@ This result would be consistent with owls closer to the Atlantic coast and those
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
 Circles represent all count locations and are their area is scaled to the mean number of owls observed per year (range: 0 to 8).
 
-```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="3.9in", fig.align='center'}
+```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl_nao_effect.pdf")
 if (!file.exists(owl)) {
   download.file("https://www.dropbox.com/s/fz1iw0a0diohyxc/owl_nao_effect.pdf?dl=1", 
