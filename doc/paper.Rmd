@@ -324,15 +324,16 @@ fit_spatiotemporal <- sdmTMB(
 ```
 
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
-(a) SPDE mesh (lines) combined with the trawl survey observations (points).
+(A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but increase the accuracy of the SPDE approximation.
 The circle area corresponds to density of Pacific Cod for individual trawls.
-(b) Conditional effect of depth modelled as a penalized smoother.
 The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
 These predictions are made omitting the spatial random field.
-(c) Spatial random field:
+(B) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
-(d) Overall prediction: these estimates represent the combination of all fixed and random effects.
+(C) Overall prediction: these estimates represent the combination of all fixed and random effects.
+(D) Conditional effect of depth modelled as a penalized smoother.
+(E) Standardized area-weighted population index derived from a spatiotemporal version of this model.
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
 pcodfig <- here::here("figs", "pcod-fig.pdf")
