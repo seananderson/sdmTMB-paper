@@ -24,6 +24,11 @@ library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(sf)
+theme_set(ggsidekick::theme_sleek() + theme( # modifications for plotting sf data
+  legend.position = "top", legend.justification = c(0, 0), # move legend to top left
+  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"), 
+  panel.grid.major = element_line(colour = "grey90"), # for lat/lons
+  axis.title = element_blank())) # lat/lon is clear from axis text
 ```
 
 This illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
@@ -48,10 +53,10 @@ glimpse(snow)
 ```
 
 Here, X and Y are coordinates in Albers projection for North America and divided by 100000 to give units of 100 km. 
-This projection was achieved with the following crs code using `sf::st_transform(crs = proj)`. 
+This projection was achieved with the following crs code using `sf::st_transform(crs = Albers)`. 
 
 ```{r proj, echo=TRUE}
-proj <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 
+Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 
 +datum=NAD83 +units=m +no_defs"
 ```
 
@@ -73,7 +78,7 @@ Next, we will plot the owl counts through time to see if there is an obvious ove
 ggplot(snow, aes(year, count, colour = nao)) + 
   geom_jitter() + 
   scale_colour_viridis_c() +
-  theme_bw() 
+  ggsidekick::theme_sleek()
 ```
 
 # Model fitting
@@ -90,11 +95,10 @@ The random intercept for year allows the mean estimate for each of these spatiot
 If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`. 
 
 
-
 ```{r fit-poisson, echo=TRUE, eval=FALSE}
 m0 <- sdmTMB(count ~ 1 + nao + (1|year_f),
-             time = "year",
              spatial_varying = ~ 0 + nao,
+             time = "year",
              spatial = "on", 
              spatiotemporal = "IID",
              family = poisson(link = "log"),
@@ -103,8 +107,8 @@ m0 <- sdmTMB(count ~ 1 + nao + (1|year_f),
 
 ```{r fit-negb1, echo=TRUE, eval=FALSE}
 m1 <- sdmTMB(count ~ 1 + nao + (1|year_f),
+            spatial_varying = ~ 0 + nao,  
             time = "year",
-            spatial_varying = ~ 0 + nao,            
             spatial = "on", 
             spatiotemporal = "IID",
             family = nbinom1(link = "log"),
@@ -113,8 +117,8 @@ m1 <- sdmTMB(count ~ 1 + nao + (1|year_f),
 
 ```{r fit-negb2, echo=TRUE, eval=FALSE}
 m2 <- sdmTMB(count ~ 1 + nao + (1|year_f),
+            spatial_varying = ~ 0 + nao,  
             time = "year",
-            spatial_varying = ~ 0 + nao,            
             spatial = "on", 
             spatiotemporal = "IID",
             family = nbinom2(link = "log"),
@@ -129,30 +133,27 @@ m <- readRDS(here::here("owls/snow_w_main_effect_150km_reml.rds"))
 ```
 
 
-
 ```{r aic, echo=TRUE, cache=TRUE}
 AIC(m0,m1,m2)
 ```
-
-
 
 The `nbinom2` distribution appears to have the best fit. 
 We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model. 
 
 ```{r fit-negb2-reml, echo=TRUE, eval=FALSE}
-m <- sdmTMB(count ~ 1 + nao + (1|year_f),
-            time = "year",
-            spatial_varying = ~ 0 + nao,            
-            spatial = "on", 
-            spatiotemporal = "IID",
+m <- sdmTMB(count ~ 1 + nao + (1|year_f), spatial_varying = ~ 0 + nao,
+            time = "year", spatial = "on", spatiotemporal = "IID",
             family = nbinom2(link = "log"),
             reml = TRUE,
             data = snow, mesh = mesh)
 ```
 
 Print the model to inspect the fit:
+```{r check, include = FALSE, cache=FALSE, eval=TRUE}
+m 
+```
 
-```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE}
+```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
 print(m)
 ```
 
@@ -170,7 +171,8 @@ pred <- predict(m)
 pred$resid <- residuals(m)
 ```
 
-We can inspect randomized quantile residuals, although this method of checking residuals is not guaranteed to be accurate. 
+\clearpage
+We can inspect randomized quantile residuals, although this method is not guaranteed to be accurate. 
 
 ```{r qqnorm, out.width = "33%"}
 qqnorm(pred$resid)
@@ -198,48 +200,48 @@ qqnorm(r_mcmc)
 qqline(r_mcmc) 
 ```
 
+We can also test for zero-inflation using the `simulate.sdmTMB` function and a couple functions from the DHARMa package.
+<!-- If our data was zero-inflated ... maybe make suggestions or even link to an example for how to do a delta model in sdmTMB?-->
+
+```{r zero-test, echo=TRUE, message=FALSE, cache=FALSE}
+s_nb2 <- simulate(m, nsim = 500) 
+pred_fixed <- m$family$linkinv(predict(m)$est_non_rf)
+r_nb2 <- DHARMa::createDHARMa(
+  simulatedResponse = s_nb2,
+  observedResponse = m$data$count,
+  fittedPredictedResponse = pred_fixed
+)
+DHARMa::testZeroInflation(r_nb2, plot = FALSE)
+```
+
 <!-- \clearpage -->
+Check the spatiotemporal distribution of the residuals. 
 
-```{r plot-resids, fig.width = 8}
-theme_set(theme_bw() + theme(
-  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
-  legend.position = "top", legend.justification = c(0, 0), 
-  axis.title = element_blank()))
-
-ggplot(pred, aes(X, Y, colour = resid)) +
-  geom_point(size = 0.5) +
-  facet_wrap(~year) +
-  coord_fixed() +
-  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-  scale_colour_gradient2(guide = guide_colourbar(title.position = "top"))
+```{r plot-resids, fig.width = 8, cache=FALSE}
+ggplot(pred, aes(X, Y, colour = resid)) + geom_point(size = 0.5) +
+  facet_wrap(~year) + coord_fixed() +
+  scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) + 
+  theme(axis.text = element_blank(), axis.ticks = element_blank())
 ```
 
 <!-- \clearpage -->
 
 # Plotting spatial predictions
 
-In order to produce pretty maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an sf object so that the plot axis will appear in latitude and longitude. 
+In order to produce pretty maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an sf object so that the plot axis will be in latitude and longitude. 
 
 ```{r proj-p, echo=TRUE, eval=T}
-library(sf)
-
-p <- pred %>% mutate(
-  X = X * 100000,
-  Y = Y * 100000
-)
-
-p_proj <- p %>% mutate(x = X, y = Y) %>% st_as_sf(., coords = c("x", "y"), crs = proj)
+p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
+p_proj <- p %>% mutate(x = X, y = Y) %>% sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
-One can also get continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http://www.naturalearthdata.com/) and transform them to the correct projection using `sf::st_transform(crs = proj)`.
+We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http://www.naturalearthdata.com/) and transformed them to the correct projection.
 
 ```{r shapes, warning=FALSE, echo=TRUE, message=FALSE}
-library("rnaturalearth")
-library("rnaturalearthdata")
-coast <- ne_coastline(scale = "medium", returnclass = "sf") %>% 
-  sf::st_transform(crs = proj)
+coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>% 
+  sf::st_transform(crs = Albers) 
 lakes <- sf::st_read(here::here("owls/ne_10m_lakes"),  quiet = TRUE)
-lakes <- lakes[lakes$scalerank==0,] %>% sf::st_transform(crs = proj) # only large lakes
+lakes <- lakes[lakes$scalerank==0,] %>% sf::st_transform(crs = Albers) # only large lakes
 ```
 
 ## Spatially varying effect
@@ -257,22 +259,21 @@ p_mean <- p %>% group_by(CBCID) %>% summarise(
   )
 ```
 
-```{r plot-map, echo=TRUE, eval=T}
-ggplot(data = p_proj) +
+```{r plot-map, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = p_proj) + 
   geom_point(data = p_mean, 
      aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
-  geom_sf(data = coast, fill = NA) +
-  geom_sf(data = lakes, fill = NA) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000),# adjusts space on sides
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
   scale_colour_viridis_c(guide = guide_colourbar(
     direction = "horizontal", title.position = "top")) +
   guides(size = "none") + 
   labs(colour = "NAO effect\non Snowy Owl count") +
-  theme_bw() + theme(
-    legend.key.height = unit(0.3, "cm"),
-    legend.position = c(0.25,0.13),
-    axis.title = element_blank())
+  theme(legend.key.height = unit(0.3, "cm"),
+        legend.position = c(0.1,0.1),
+        axis.title = element_blank())
 ```
 
 \clearpage
@@ -283,8 +284,8 @@ These are the predictions of winter owl counts that incorporate all fixed effect
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects, echo=TRUE, eval=T}
-ggplot(data = filter(p_proj, year > 1995)) +
+```{r plot-all-effects, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = filter(p_proj, year > 1995)) + 
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est)), 
              size = 0.4, alpha = 0.5) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
@@ -309,8 +310,8 @@ In addition to the spatially varying effect that we started with, there are thre
 
 In this case these only include the overall effect of mean annual NAO and the random intercepts for year.
 
-```{r plot-fixed-effects, echo=TRUE, eval=T}
-ggplot(data = filter(p_proj, year > 1995)) +
+```{r plot-fixed-effects, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = filter(p_proj, year > 1995)) + 
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est_non_rf)), 
              size = 0.4, alpha = 0.5) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
@@ -329,19 +330,18 @@ We can look at the spatial random effects (`omega_s`) that represent consistent 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
 These could be landcover, proximity to the breeding grounds, and effects of flyways and barriers like coasts.
 
-```{r plot-spatial-effects, echo=TRUE, eval=T}
-ggplot(data = p_proj) +
+```{r plot-spatial-effects, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = p_proj) + 
   geom_point(data = p, aes(X,Y, colour = omega_s), alpha = 0.5) +
-  geom_sf(data = coast, fill = NA) +
-  geom_sf(data = lakes, fill = NA) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000),
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
   scale_colour_viridis_c(guide = guide_colourbar(
     direction = "horizontal", title.position = "top")) +
-  theme_bw() + theme(
-    legend.key.height = unit(0.3, "cm"),
-    legend.position = c(0.25,0.13),
-    axis.title = element_blank())
+  theme(legend.key.height = unit(0.3, "cm"),
+        legend.position = c(0.1,0.1),
+        axis.title = element_blank())
 ```
 
 \clearpage
@@ -352,8 +352,8 @@ Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that re
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be things like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects, echo=TRUE, eval=T}
-ggplot(data = filter(p_proj, year > 1995)) +
+```{r plot-spatiotemporal-effects, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = filter(p_proj, year > 1995)) + 
   geom_point(data = filter(p, year > 1995), aes(X, Y, colour = epsilon_st), 
              size = 0.4, alpha = 0.5) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
