@@ -351,7 +351,7 @@ Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migr
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution. 
-We fit counts observed in North America during annual Christmas Bird Counts (**REF**) using a negative binomial distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO (**see appendix for more detail**):
+We fit counts observed in North America during annual Christmas Bird Counts (@cbc) using a negative binomial distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO (**see appendix for more detail**):
 
 ```{r owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
@@ -514,7 +514,7 @@ knitr::include_graphics(f)
 There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
 The difference lies mainly in the user interfaces and considerable additional functionality for multivariate response data (REF) and delta/hurdle models (REF) in VAST.
-Interface-wise, VAST is a less modular interface (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
+Interface-wise, VAST is less modular (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
 sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
 Unlike VAST, however, sdmTMB does not currently extend to multivariate applications.
