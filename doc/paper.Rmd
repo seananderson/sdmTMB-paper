@@ -377,7 +377,7 @@ if (!file.exists(owl)) {
 knitr::include_graphics(owl)
 ```
 
-## Model selection and validation
+# Model selection and validation
 
 Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [`AIC()`, @akaike1974]. 
 Because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation.
@@ -399,13 +399,13 @@ Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate si
 4. An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017] to evaluate the accuracy of the Laplace approximation or evaluate residuals (see `?extract_mcmc`). 
 <!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
 
-## Parameter priors/penalties
+# Parameter priors/penalties
 
 sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
 
-## Derived quantities of interest
+# Derived quantities of interest
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`; Fig. \@ref(fig:pcod-fig)E).
