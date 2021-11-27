@@ -382,7 +382,7 @@ knitr::include_graphics(pcodfig)
 
 \clearpage
 
-# Citizen science count data with a spatially varying effect
+# Spatially varying coefficients applied to citizen-science owl counts
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
@@ -396,7 +396,7 @@ fit_owls <- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
   spatial_varying = ~ 0 + nao,     
   family = nbinom2(link = "log"), data = snow, mesh = mesh, 
-  time = "year", spatial = "on", spatiotemporal = "IID"
+  time = "year", spatial = "on", spatiotemporal = "iid"
 )
 ```
 
@@ -404,8 +404,8 @@ We found a weak average positive effect of annual mean NAO on overall counts, bu
 This result would be consistent with owls closer to the Atlantic coast and those migrating the furthest south being the most effected by NAO. 
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
-Circles represent all count locations and are their area is scaled to the mean number of owls observed per year (range: 0 to 8). 
-The effect is multiplicative on owl count.
+Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
+The effect is multiplicative on owl count per NOA unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl_nao_effect.pdf")
@@ -480,7 +480,9 @@ In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fa
 inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
 With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (note that this option may not be possible or as fast for all models).
-Results with up to an order of magnitude more data points slightly shift the lines up without affecting the overall pattern (not shown).
+Results with up to an order of magnitude more data points slightly shift the lines up without affecting the overall pattern substantially (not shown).
+<!-- Results with optimized math libraries (openBLAS and PARDISO (REFs)) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speedup for mgcv. -->
+Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 
 (ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons ranges across 20 random iterations.
