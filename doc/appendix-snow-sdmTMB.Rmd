@@ -62,23 +62,22 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh, echo=TRUE, cache=FALSE}
+```{r mesh, echo=TRUE, cache=FALSE, out.width="5.5in"}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
+plot(mesh)
 ```
 
-```{r plot-mesh, out.width="6in"}
-plot(mesh)
+```{r plot-mesh}
+
 ```
 
 The result is a mesh with `r mesh$mesh$n` knots. 
 
 Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. The dataframe also contains the Southern Oscillation Index (SOI), which is related to El Niño cycles, but we will only consider NAO in this example because any effect of SOI was even weaker. 
 
-```{r explore, fig.asp = 0.3}
-ggplot(snow, aes(year, count, colour = nao)) + 
-  geom_jitter() + 
-  scale_colour_viridis_c() +
-  ggsidekick::theme_sleek()
+```{r explore, fig.asp = 0.3, cache=FALSE}
+ggplot(snow, aes(year, count, colour = nao)) + geom_jitter() + 
+  scale_colour_viridis_c() + ggsidekick::theme_sleek()
 ```
 
 # Model fitting
@@ -141,7 +140,8 @@ The `nbinom2` distribution appears to have the best fit.
 We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model. 
 
 ```{r fit-negb2-reml, echo=TRUE, eval=FALSE}
-m <- sdmTMB(count ~ 1 + nao + (1|year_f), spatial_varying = ~ 0 + nao,
+m <- sdmTMB(count ~ 1 + nao + (1|year_f), 
+            spatial_varying = ~ 0 + nao,
             time = "year", spatial = "on", spatiotemporal = "IID",
             family = nbinom2(link = "log"),
             reml = TRUE,
@@ -171,7 +171,7 @@ pred <- predict(m)
 pred$resid <- residuals(m)
 ```
 
-\clearpage
+<!-- \clearpage -->
 We can inspect randomized quantile residuals, although this method is not guaranteed to be accurate. 
 
 ```{r qqnorm, out.width = "33%"}
@@ -179,11 +179,10 @@ qqnorm(pred$resid)
 qqline(pred$resid)
 ```
 
-More accurate residuals can be generated using STAN, but this is a very slow process!
+More accurate residuals can be generated using tmbstan, but this is a very slow process!
 In this case, it took more than 2.5 hrs.
 
 ```{r stan-resids, eval=FALSE}
-library(tmbstan)
 stan_fit <- tmbstan::tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 99)
 eta <- predict(m, tmbstan_model = stan_fit)
 mu <- m$family$linkinv(as.numeric(eta))
@@ -228,7 +227,7 @@ ggplot(pred, aes(X, Y, colour = resid)) + geom_point(size = 0.5) +
 
 # Plotting spatial predictions
 
-In order to produce pretty maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an sf object so that the plot axis will be in latitude and longitude. 
+To produce pretty maps of these predictions, we back transformed the spatial coordinates into the same units as our original projection and then convert back into an sf object so that the plot axis will be in latitude and longitude. 
 
 ```{r proj-p, echo=TRUE, eval=T}
 p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
@@ -237,7 +236,7 @@ p_proj <- p %>% mutate(x = X, y = Y) %>% sf::st_as_sf(coords = c("x", "y"), crs 
 
 We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http://www.naturalearthdata.com/) and transformed them to the correct projection.
 
-```{r shapes, warning=FALSE, echo=TRUE, message=FALSE}
+```{r shapes, cache=FALSE}
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>% 
   sf::st_transform(crs = Albers) 
 lakes <- sf::st_read(here::here("owls/ne_10m_lakes"),  quiet = TRUE)
@@ -249,9 +248,8 @@ lakes <- lakes[lakes$scalerank==0,] %>% sf::st_transform(crs = Albers) # only la
 We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO.
 First, we extract the overall coefficients using the `b <- tidy(m)` and add them together with the spatially varying coefficients `zeta_s`.
 
-```{r p-mean, message=FALSE, echo=TRUE, eval=T}
+```{r p-mean, message=FALSE, echo=TRUE, eval=T, cache=FALSE}
 b <- tidy(m)
-
 p_mean <- p %>% group_by(CBCID) %>% summarise(
   X = mean(X), Y= mean(Y), 
   mean_est_count = exp(mean(est)), 
@@ -260,8 +258,7 @@ p_mean <- p %>% group_by(CBCID) %>% summarise(
 ```
 
 ```{r plot-map, echo=TRUE, eval=T, cache=FALSE}
-ggplot(data = p_proj) + 
-  geom_point(data = p_mean, 
+ggplot(data = p_proj) + geom_point(data = p_mean, 
      aes(X,Y, colour = nao_effect, size = mean_est_count), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
@@ -269,11 +266,8 @@ ggplot(data = p_proj) +
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
   scale_colour_viridis_c(guide = guide_colourbar(
     direction = "horizontal", title.position = "top")) +
-  guides(size = "none") + 
-  labs(colour = "NAO effect\non Snowy Owl count") +
-  theme(legend.key.height = unit(0.3, "cm"),
-        legend.position = c(0.1,0.1),
-        axis.title = element_blank())
+  guides(size = "none") + labs(colour = "NAO effect\non Snowy Owl count") +
+  theme(legend.position = c(0.1,0.1), axis.title = element_blank())
 ```
 
 \clearpage
@@ -285,8 +279,8 @@ The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
 ```{r plot-all-effects, echo=TRUE, eval=T, cache=FALSE}
-ggplot(data = filter(p_proj, year > 1995)) + 
-  geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est)), 
+ggplot(data = filter(p_proj, year > 1978)) + 
+  geom_point(data = filter(p, year > 1978), aes(X, Y, colour = exp(est)), 
              size = 0.4, alpha = 0.5) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
            ylim = c(min(p_proj$Y), max(p_proj$Y)))+
@@ -299,32 +293,14 @@ ggplot(data = filter(p_proj, year > 1995)) +
   facet_wrap(~year_f)
 ```
 
-Note that for all of these annually varying predictions, we are showing only the most recent 25 years. 
+<!-- Note that for all of these annually varying predictions, we are showing only the most recent 25 years.  -->
 
 \clearpage
 ## Other components of predicted counts
 
 In addition to the spatially varying effect that we started with, there are three other components that go into the overall predictions that we can plot spatially. 
 
-### 1. Just fixed effects
-
-In this case these only include the overall effect of mean annual NAO and the random intercepts for year.
-
-```{r plot-fixed-effects, echo=TRUE, eval=T, cache=FALSE}
-ggplot(data = filter(p_proj, year > 1995)) + 
-  geom_point(data = filter(p, year > 1995), aes(X, Y, colour = exp(est_non_rf)), 
-             size = 0.4, alpha = 0.5) +
-  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
-           ylim = c(min(p_proj$Y), max(p_proj$Y)))+
-  scale_colour_viridis_c(breaks = c(0.03, 0.05, 0.07), 
-    guide = guide_colourbar(title.position = "top")) +
-  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-  facet_wrap(~year_f)
-```
-
-\clearpage
-
-### 2. Static spatial random effects 
+### 1. Static spatial random effects 
 
 We can look at the spatial random effects (`omega_s`) that represent consistent deviations in space that are not accounted for by our fixed effects. 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
@@ -339,22 +315,20 @@ ggplot(data = p_proj) +
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
   scale_colour_viridis_c(guide = guide_colourbar(
     direction = "horizontal", title.position = "top")) +
-  theme(legend.key.height = unit(0.3, "cm"),
-        legend.position = c(0.1,0.1),
-        axis.title = element_blank())
+  theme(legend.position = c(0.1,0.1), axis.title = element_blank())
 ```
 
 \clearpage
 
-### 3. Spatiotemporal random effects 
+### 2. Spatiotemporal random effects 
 
 Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that represent deviations from the fixed effect predictions and the spatial random effect deviations. 
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be things like landcover changes, prey abundance cycles, and snow depth.
 
 ```{r plot-spatiotemporal-effects, echo=TRUE, eval=T, cache=FALSE}
-ggplot(data = filter(p_proj, year > 1995)) + 
-  geom_point(data = filter(p, year > 1995), aes(X, Y, colour = epsilon_st), 
+ggplot(data = filter(p_proj, year > 1978)) + 
+  geom_point(data = filter(p, year > 1978), aes(X, Y, colour = epsilon_st), 
              size = 0.4, alpha = 0.5) +
   coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
            ylim = c(min(p_proj$Y), max(p_proj$Y))) +
@@ -363,8 +337,27 @@ ggplot(data = filter(p_proj, year > 1995)) +
   facet_wrap(~year_f)
 ```
 
+<!-- Note that for these annually varying predictions, we are showing only the most recent 25 years.  -->
+
 \clearpage
 
+### 3. Just fixed effects
+
+In this case these only include the overall effect of mean annual NAO and the random intercepts for year.
+
+```{r plot-fixed-effects, echo=TRUE, eval=T, cache=FALSE}
+ggplot(data = filter(p_proj, year > 1978)) + 
+  geom_point(data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)), 
+             size = 0.4, alpha = 0.5) +
+  coord_sf(xlim = c(min(p_proj$X)-50000, max(p_proj$X)-50000), 
+           ylim = c(min(p_proj$Y), max(p_proj$Y)))+
+  scale_colour_viridis_c(breaks = c(0.03, 0.05, 0.07), 
+    guide = guide_colourbar(title.position = "top")) +
+  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
+  facet_wrap(~year_f)
+```
+
+\clearpage
 # References
 
 ::: {#refs}
