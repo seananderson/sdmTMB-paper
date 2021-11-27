@@ -215,38 +215,6 @@ The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
 
-## Model selection
-
-Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [`aic()`, @akaike1974]. 
-Because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation.
-The function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
-The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model.
-
-## Model evaluation
-
-Validation of mixed-effects models is non-trivial (that REF). We provide three approaches to assist with model validation:
-
-1. The `residuals()` method returns randomized quantile residuals (e.g., as in DHARMa REF).
-These residuals are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximumize the likelihood conditional on the estimated fixed effects. 
-These residuals have known statistical issues (REF) but are quick to calculate. One-step-ahead residuals (REF) or residuals from a single MCMC draw (REF) are also possible, but both approaches are much slower.
-
-2. The `sdmTMB_simulate()` function can simulate new data, or simulate from a fitted model, to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
-
-3. An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan (REF) to evaluate the accuracy of the Laplace approximation (see `?extract_mcmc`). 
-We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling (REF).
-
-## Parameter priors/penalties
-
-sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
-Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
-
-## Derived quantities of interest
-
-The results from an sdmTMB model can be used to generate various quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`).
-Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
-
 <!-- ## Advanced options -->
 
 <!-- While not of interest to all users, sdmTMB also implements several advanced options for model fitting.  -->
@@ -259,7 +227,7 @@ Estimated parameters from the Matérn covariance function can be used to describ
 # An introductory example
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-It usually makes sense to convert the spatial coordinates to UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
+It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
@@ -353,13 +321,6 @@ fit_spatiotemporal <- sdmTMB(
 )
 ```
 
-We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations.
-
-```{r, eval=FALSE, echo=TRUE}
-p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
-ind <- get_index(p)
-```
-
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (a) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but increase the accuracy of the SPDE approximation.
@@ -403,7 +364,7 @@ fit_owls <- sdmTMB(
 We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao)).
 This result would be consistent with owls closer to the Atlantic coast and those migrating the furthest south being the most effected by NAO. 
 
-(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020. 
+(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. 
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
 The effect is multiplicative on owl count per NOA unit.
 
@@ -414,6 +375,47 @@ if (!file.exists(owl)) {
     destfile = owl)
 }
 knitr::include_graphics(owl)
+```
+
+# Model selection and validation
+
+Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [`AIC()`, @akaike1974]. 
+Because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation.
+The function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
+The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model.
+
+Validation of state-space models is non-trivial, particularly those using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation:
+
+1. The cross validation function `sdmTMB_cv()` can be used to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
+
+2. The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
+These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects. 
+These residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
+One-step-ahead residuals [@thygesen2017a] or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are much slower.
+
+3. The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE).
+
+4. An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017] to evaluate the accuracy of the Laplace approximation or evaluate residuals (see `?extract_mcmc`). 
+<!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
+
+# Parameter priors/penalties
+
+sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
+Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
+
+# Derived quantities of interest
+
+The results from an sdmTMB model can be used to generate various quantities of interest.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`; Fig. \@ref(fig:pcod-fig)E).
+Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
+
+<!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
+
+```{r, eval=FALSE, echo=FALSE}
+p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
+ind <- get_index(p)
 ```
 
 <!--
@@ -490,8 +492,8 @@ Note the log x and y axes.
 sdmTMB used the default settings and `normalize = TRUE`, which calculates the random effect normalizing constant in R.
 inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
 mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
-inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library.
-All platforms were restricted to one core and could be faster with parallel computation.
+<!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
+<!-- All platforms were restricted to one core and could be faster with parallel computation. -->
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
 ```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
@@ -510,7 +512,7 @@ knitr::include_graphics(f)
 There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
 The difference lies mainly in the user interfaces and considerable additional functionality for multivariate response data (REF) and delta/hurdle models (REF) in VAST.
-Interface-wise, VAST is a less modular interface (e.g., by default automatically constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries index standardization perspective (e.g., splitting 'catchability' and 'habitat' covariates), and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
+Interface-wise, VAST is a less modular interface (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
 sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
 Unlike VAST, however, sdmTMB does not currently extend to multivariate applications.
@@ -526,6 +528,13 @@ First, the smoothers typically used with mgcv (e.g., thin plate splines), while 
 Second, the implementation of the Tweedie distribution in mgcv requires the power parameter to be fixed in a mixed effects model.
 Third, mgcv does not have built-in functionality to calculate derived values with uncertainty such as population indexes or center of gravity.
 Despite these sdmTMB advantages for the models discussed here, mgcv is an immensely powerful modelling package that extends well beyond spatial random field models.
+
+<!-- Future directions para? -->
+<!-- multivariate, but only if can keep interface simple -->
+<!-- optimized Bayes sampling -->
+<!-- residual diagnostics -->
+<!-- zero inflation -->
+<!-- MVT? time-varying epsilon -->
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management (REF).
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
