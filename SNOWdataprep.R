@@ -9,7 +9,7 @@ library(tidyverse)
 
 #### get owl data ####
 
-d <- read_excel("owls/1-121-CBC_Count_History_Report.xlsx") %>%
+d <- read_excel("owls/PE-CBC_data/1-121-CBC_Count_History_Report.xlsx") %>%
   select(CBCID = Abbrev, Latitude, Longitude, surveyID = Count_yr, TotalSpecies) %>%
   filter(surveyID > 79) %>%
   # filter(TotalSpecies == TRUE) %>% # remove survey years not conducted?
@@ -20,7 +20,8 @@ a <- read_excel("owls/PE-CBC_data/PE-CBC_Circle_Species_Report_SQL_updated.xlsx"
   select(CBCID = Abbrev, Species = COM_NAME, Latitude, Longitude, surveyID = Count_yr,
          count = how_many, SppCount = TotalSpecies) %>%
   mutate(year = ifelse(surveyID <= 100, paste0(19, surveyID-1),
-                       ifelse(surveyID <= 110, paste0(200, surveyID-101), paste0(20, surveyID-101)))) %>%
+                       ifelse(surveyID <= 110, paste0(200, surveyID-101), paste0(20, surveyID-101))),
+         year_f = as.factor(year)) %>%
   filter(Longitude > -125 & Longitude < -60 & Latitude > 32 & Latitude < 55)
 
 
@@ -63,7 +64,7 @@ s <- bind_cols(s, sxy)
 
 # select relevant variables and scale X and Y for mesh
 # use unit of 100 kms
-sdat <- s %>% select(X, Y, count, year, CBCID, Latitude, Longitude,TotalSpecies, SppCount) %>%
+sdat <- s %>% select(X, Y, count, year, year_f, CBCID, Latitude, Longitude, TotalSpecies, SppCount) %>%
   mutate(year = as.integer(year),
          year_f = as.factor(year),
          X = X / 100000,
