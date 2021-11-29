@@ -96,7 +96,7 @@ knitr::opts_chunk$set(
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
-Accounting for this residual correlation is important because doing so (1) allows for valid statistical inference [@legendre1989a], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @thorson2019d, @barnett2021].
+Accounting for this residual correlation is important because doing so (1) allows for valid statistical inference [@legendre1989a], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @thorson2019d; @barnett2021].
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
 Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
@@ -196,10 +196,10 @@ where
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-sdmTMB models are spatially explicit models---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
+The GLMMs underpinning sdmTMB models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], most smooths in mgcv [@wood2017a]).
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
-The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) (REF).
+The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim$ 0.13 (REF)---can be shared or estimated separately.
 
 <!-- - high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?) -->
@@ -302,7 +302,14 @@ We also see the formula, mesh, fitted data, and family.
 Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 Internally, `s(depth)` creates random effect spline weights and so is not shown here.
 
-We can make predictions with the `predict()` method; we will predict on new data with the `newdata` argument.
+<!--
+EW: TODO I think this could use a bit more hand holding — things to highlight are (1) predictions can be made for a new dataframe with any locations, 
+(2) more detail about why you’re predicting on a grid. 
+(3) other uses for predict — e.g. might be helpful to understand marginal effects of covariates for complicated models
+-->
+
+We can make predictions with the `predict()` method and optionally use the `newdata` argument to predict on a new data frame with any locations and values for the predictor columns.
+<!-- Here, we will predict on a 2x2 km grid that covers the entire region of interest so we can visualize the predictions spatially (or calculate a standardized population index with a spatiotemporal model). -->
 The data frame `qcs_grid` (included in the package data) is a grid that extends over the full survey domain and contains all predictors used in the model set at values for which we want to predict.
 The output of `predict()` is a data frame containing overall estimates, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
 We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)B--D.
@@ -409,7 +416,7 @@ Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood
 # Derived quantities of interest
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`; Fig. \@ref(fig:pcod-fig)E).
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`; Fig. \@ref(fig:pcod-fig)E) given a user supplied grid.
 Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
 
 <!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
@@ -509,6 +516,8 @@ knitr::include_graphics(f)
 # Discussion
 
 <!-- Take home, re-iterate paragraph? -->
+
+<!-- EW: TODO Not sure if Heaton included CAR models, but we might want to talk about them briefly because there’s a lot of packages that include that functionality - including NIMBLE, etc.  -->
 
 There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
