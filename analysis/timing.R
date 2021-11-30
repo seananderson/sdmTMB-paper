@@ -326,8 +326,8 @@ out <- furrr::future_pmap_dfr(
       'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
     packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB', 'spaMM'))
 )
-saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM2.rds")
-out1 <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM.rds")
+out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
 plan(sequential)
 
 # # -------tweedie
