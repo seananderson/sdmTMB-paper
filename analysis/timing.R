@@ -78,6 +78,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   cat("n_obs:", n_obs, "\n")
   cat("iter:", iter, "\n")
   cat("simulating...\n")
+
   s <- simulate_dat(n_obs = n_obs, cutoff = cutoff, seed = seed,
     iter = iter, family = family, max.edge = max.edge, tweedie_p = tweedie_p, phi = phi,
     sigma_O = sigma_O)
@@ -215,32 +216,20 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-  spde2 <- INLA::inla.spde2.pcmatern(
+  # note <<- below:
+  # Avoids: `Hmmm... it looks like you should put some object(s) in control.HLfit$formula_env`
+  spde_spaMM <<- INLA::inla.spde2.pcmatern(
     mesh = mesh2,
     prior.range = c(0.05, 0.05),
     prior.sigma = c(2, 0.05)
   )
-
   out <- system.time({
     fit_spaMM <- tryCatch({
-      # browser()
-      fitme(observed~a1 + IMRF(1|X+Y, model = spde2),
+      fitme(observed~a1 + IMRF(1|X+Y, model = spde_spaMM),
             family = family, data = sim_dat)
     }, error = function(e) NA)
   })
-  # Error in eval(parse(text = paste("list(", pars, ")")), envir = env) :
-  #   object 'spde2' not found
-  # Error in eval(parse(text = paste("list(", pars, ")")), envir = env) :
-  #   object 'spde' not found
-  # Error in .process_IMRF_bar(term, env = env) :
-  #   Hmmm... it looks like you should put some object(s) in control.HLfit$formula_env.
-  # if (!is.null(fit_spaMM$error)) {
-  #   spaMM_error <- TRUE
-  # } else {
-  #   spaMM_error <- FALSE
-  # }
   times$spaMM <- if (all(is.na(fit_spaMM))) NA else out[["elapsed"]]
-
 
   cat("mgcv disc.\n")
     loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
