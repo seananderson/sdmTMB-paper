@@ -283,8 +283,8 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out
 }
 
-test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
-test
+# test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
+# test
 # test1 <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
 # test1
 # test <- sim_fit_time(n_obs = 500, max.edge = 0.05, family = tweedie("log"), phi = 2, sigma_O = 0.5)
@@ -295,11 +295,11 @@ to_run <- expand.grid(
   iter = seq_len(20L)
 )
 
-# short test version
+# # # short test version
 # to_run <- expand.grid(
 #   n_obs = c(1000L),
-#   max.edge = c(0.1, 0.2),
-#   iter = seq_len(5L)
+#   max.edge = c(0.15, 0.2),
+#   iter = seq_len(2L)
 # )
 
 to_run$seed <- to_run$iter * 29212
@@ -312,8 +312,8 @@ to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 
 # out <- purrr::pmap_dfr(to_run, sim_fit_time)
 
+plan(multisession, workers = 5L)
 
-plan(multisession, workers = 6L)
 out <- furrr::future_pmap_dfr(
 # out <- purrr::pmap_dfr(
   to_run,
@@ -323,8 +323,9 @@ out <- furrr::future_pmap_dfr(
   .options = furrr::furrr_options(seed = TRUE,
     globals = c('simulate_dat', 'sim_fit_time',
       'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
-    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB'))
+    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'spaMM', 'sdmTMB'))
 )
+
 saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM.rds")
 out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
 plan(sequential)
@@ -417,7 +418,7 @@ g <- out_long_sum %>%
     fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()))
 g
 .width <- 5
-ggsave("figs/timing2-logx-blas-PE.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-blas-PE-test.pdf", width = .width, height = .width / 1.3)
 ggsave("figs/timing2-logx-blas-PE.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
