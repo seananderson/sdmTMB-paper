@@ -11,7 +11,7 @@ Spatiotemporal fields,1,1,1,1,1,1*,0,0
 Spatial + spatiotemporal fields,1,1,1,1,1,0,0,0
 Anisotropy,1,1,1,0,0,0,0,0
 Correlation barriers,1,1,1,1,1,0,0,0
-Separate range parameters for fields,1,?,1,1,1,0,1,0
+Separate range parameters for fields,1,0,1,1,1,0,1,0
 Share range parameters across fields,1,1,0,0,1,0,0,0
 SPDE-based,1,1,1*,1,1,0*,0,1
 # distribution stuff,,,,,,,,
