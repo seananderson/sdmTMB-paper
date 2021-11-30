@@ -20,7 +20,7 @@ simulate_dat <- function(n_obs = 100,
                          cutoff = 0.1,
                          range = 0.5,
                          phi = 0.1,
-  tweedie_p = 1.5,
+                         tweedie_p = 1.5,
                          max.edge = 0.1,
                          family = gaussian(),
                          sigma_O = 0.2,
@@ -127,7 +127,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     proj4string = sp::CRS('+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
   + +y_0=0 +datum=NAD83 +units=km +no_defs'), data = dat)
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
-  segm.bnd <- inla.mesh.segment(loc.bnd)
+  segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
   mesh <- INLA::inla.mesh.2d(
     boundary = segm.bnd,
     max.edge = c(max.edge, 0.2),
@@ -156,7 +156,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     stop("Family not found")
   }
   # INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-  INLA::inla.setOption(inla.mode="experimental")
+  # INLA::inla.setOption(inla.mode="experimental")
 
   out <- system.time({
     tryCatch({
@@ -208,34 +208,38 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   # attempt at a spaMM model
   cat("spaMM\n")
 
-  dat <- sim_dat
-  dat_sp <- sp::SpatialPointsDataFrame(cbind(dat$X, dat$Y),
-       proj4string = sp::CRS('+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
-                           + +y_0=0 +datum=NAD83 +units=km +no_defs'), data = dat)
-
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
-
-  segm.bnd <- inla.mesh.segment(loc.bnd)
-
-  mesh <- INLA::inla.mesh.2d(
+  segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
+  mesh2 <- INLA::inla.mesh.2d(
     boundary = segm.bnd,
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-
-  spde <- INLA::inla.spde2.pcmatern(
-    mesh = mesh,
+  spde2 <- INLA::inla.spde2.pcmatern(
+    mesh = mesh2,
     prior.range = c(0.05, 0.05),
     prior.sigma = c(2, 0.05)
   )
+
   out <- system.time({
-    fit <-  tryCatch({
-      fitme(observed~
-              a1 + IMRF(1|X+Y, model=spde),
-            family=family, data=dat)
+    fit_spaMM <- tryCatch({
+      # browser()
+      fitme(observed~a1 + IMRF(1|X+Y, model = spde2),
+            family = family, data = sim_dat)
     }, error = function(e) NA)
   })
-  times$spaMM <- if (all(is.na(fit))) NA else out[["elapsed"]]
+  # Error in eval(parse(text = paste("list(", pars, ")")), envir = env) :
+  #   object 'spde2' not found
+  # Error in eval(parse(text = paste("list(", pars, ")")), envir = env) :
+  #   object 'spde' not found
+  # Error in .process_IMRF_bar(term, env = env) :
+  #   Hmmm... it looks like you should put some object(s) in control.HLfit$formula_env.
+  # if (!is.null(fit_spaMM$error)) {
+  #   spaMM_error <- TRUE
+  # } else {
+  #   spaMM_error <- FALSE
+  # }
+  times$spaMM <- if (all(is.na(fit_spaMM))) NA else out[["elapsed"]]
 
 
   cat("mgcv disc.\n")
@@ -251,7 +255,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
       bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
         xt = list(mesh = mesh2)),
         data = sim_dat,
-        family= family,
+        family = family,
         method = "fREML",
         control = gam.control(scalePenalty = FALSE), discrete = TRUE)
     }, error = function(e) NA)
@@ -267,7 +271,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
         bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
           xt = list(mesh = mesh2)),
           data = sim_dat,
-          family= family,
+          family = family,
           method = "ML",
           control = gam.control(scalePenalty = FALSE))
       }, error = function(e) NA)
@@ -290,7 +294,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out
 }
 
-test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
+test <- sim_fit_time(n_obs = 1000, max.edge = 0.1, family = gaussian(), seed = 1)
 test
 # test1 <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
 # test1
@@ -323,7 +327,7 @@ out <- furrr::future_pmap_dfr(
     packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB', 'spaMM'))
 )
 saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM2.rds")
-out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM2.rds")
+out1 <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
 plan(sequential)
 
 # # -------tweedie
