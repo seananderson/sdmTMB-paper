@@ -4,13 +4,14 @@ library(ggplot2)
 library(INLA)
 library(inlabru)
 library(mgcv)
+library(spaMM)
 # library(tictoc)
 library(future)
 plan(multisession)
 INLA::inla.setOption(num.threads = "1:1")
 source(here::here("analysis/mgcv_spde_smooth.R"))
 
-INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+# INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
 # INLA::inla.setOption(inla.mode="experimental")
 
 # INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
@@ -66,6 +67,9 @@ simulate_dat <- function(n_obs = 100,
   list(mesh = mesh, dat = sim_dat)
 }
 
+
+
+
 sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedie_p = 1.5,
   seed = sample.int(.Machine$integer.max, 1), family = gaussian(), sigma_O = 0.2,
   max.edge = 0.1) {
@@ -80,8 +84,9 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   sim_dat <- s$dat
   mesh <- s$mesh
   times <- list()
-
+# browser()
   cat("fitting...\n")
+
   cat("sdmTMB\n")
   out <- system.time({
     fit <- sdmTMB(observed ~ a1,
@@ -128,11 +133,14 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
+
   spde <- INLA::inla.spde2.pcmatern(
     mesh = mesh,
     prior.range = c(0.05, 0.05),
     prior.sigma = c(2, 0.05)
   )
+
+
   # g <- ggplot() + gg(mesh) + geom_point(data = dat, aes(X, Y))
   # print(g)
 
@@ -147,8 +155,8 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   } else {
     stop("Family not found")
   }
-  INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-  # INLA::inla.setOption(inla.mode="experimental")
+  # INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+  INLA::inla.setOption(inla.mode="experimental")
 
   out <- system.time({
     tryCatch({
@@ -196,6 +204,39 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   #   inla_error <- FALSE
   # }
   # times$inlabru <- out[["elapsed"]]
+
+  # attempt at a spaMM model
+  cat("spaMM\n")
+
+  dat <- sim_dat
+  dat_sp <- sp::SpatialPointsDataFrame(cbind(dat$X, dat$Y),
+       proj4string = sp::CRS('+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
+                           + +y_0=0 +datum=NAD83 +units=km +no_defs'), data = dat)
+
+  loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+
+  segm.bnd <- inla.mesh.segment(loc.bnd)
+
+  mesh <- INLA::inla.mesh.2d(
+    boundary = segm.bnd,
+    max.edge = c(max.edge, 0.2),
+    offset = c(0.1, 0.05)
+  )
+
+  spde <- INLA::inla.spde2.pcmatern(
+    mesh = mesh,
+    prior.range = c(0.05, 0.05),
+    prior.sigma = c(2, 0.05)
+  )
+  out <- system.time({
+    fit <-  tryCatch({
+      fitme(observed~
+              a1 + IMRF(1|X+Y, model=spde),
+            family=family, data=dat)
+    }, error = function(e) NA)
+  })
+  times$spaMM <- if (all(is.na(fit))) NA else out[["elapsed"]]
+
 
   cat("mgcv disc.\n")
     loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
@@ -245,12 +286,12 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out$max.edge <- max.edge
   # out$inla_error = inla_error
   out$inla_eb_error = inla_eb_error
-  out$pardiso <- inla.pardiso.check()
+  # out$pardiso <- inla.pardiso.check()
   out
 }
 
-# test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
-# test
+test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
+test
 # test1 <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
 # test1
 # test <- sim_fit_time(n_obs = 500, max.edge = 0.05, family = tweedie("log"), phi = 2, sigma_O = 0.5)
@@ -279,10 +320,10 @@ out <- furrr::future_pmap_dfr(
   .options = furrr::furrr_options(seed = TRUE,
     globals = c('simulate_dat', 'sim_fit_time',
       'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
-    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB'))
+    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB', 'spaMM'))
 )
-saveRDS(out, file = "analysis/timing-cache-parallel-openblas-pardiso.rds")
-out <- readRDS("analysis/timing-cache-parallel-openblas-pardiso.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM2.rds")
+out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM2.rds")
 plan(sequential)
 
 # # -------tweedie
@@ -333,6 +374,7 @@ clean_names <- tribble(
   "INLA", "INLA",
   "INLA_eb", "INLA EB",
   "INLA_eb_nolike", "INLA EB no like()",
+  "spaMM", "spaMM",
   "mgcv_ml", "mgcv::bam\n(discretize = F) SPDE",
   "mgcv_disc", "mgcv::bam\n(discretize = T) SPDE "
 )
@@ -372,8 +414,8 @@ g <- out_long_sum %>%
     fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()))
 g
 .width <- 5
-ggsave("figs/timing2-logx-blas-pardiso.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing2-logx-blas-pardiso.png", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-blas-PE.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-blas-PE.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
 #   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
