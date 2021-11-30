@@ -79,7 +79,7 @@ subscripts <- tibble::tribble(
 knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex", booktabs = TRUE)
 ```
 
-# Basic model structure
+# Combined model structure
 
 As described in the main paper, the complete sdmTMB model can be written as:
 
@@ -109,9 +109,9 @@ where
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-We now split this model apart to describe the various parts in more detail
+We now split this model apart to describe the various parts in more detail.
 
-## Fixed- or main-effect portion:
+## Main effects:
 
 $$
 \begin{aligned}
@@ -126,6 +126,35 @@ Within `sdmTMB()`,
   coefficients.
   
 * Get into smoothers, breakpoints, etc. here
+
+### Smoothers
+
+TODO
+
+### Linear breakpoint threshold models
+
+TODO
+
+These models can be fit by including `+ breakpt(x)` in the model formula, where
+`x` is a covariate.
+
+### Logistic threshold models
+
+The form is
+
+$$
+s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln\ \left(19\right) \cdot \left( x-s50 \right)
+     / \left(s95 - s50 \right) } \right] }^{-1},
+$$
+
+where $\psi$ is a scaling parameter (controlling the height of the y-axis for
+the response, and is unconstrained), $\tau$ is an intercept, $s50$ is
+a parameter controlling the point at which the function reaches 50% of the
+maximum ($\psi$), and $s95$ is a parameter controlling the point at which the
+function reaches 95%. The parameter $s50$ is unconstrained, and $s95$ is
+constrained to be larger than $s50$.
+
+These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
 
 ## Spatial random fields
 
@@ -232,7 +261,7 @@ $x_{\s,t}$ is the corresponding predictor value. This is defined via the
 uniform prior. I.e., the same variable should not appear in the fixed effect
 formula since the initial value is estimated as part of the time-varying formula.
 
-If `time` is defined in the call to `sdmTMB()`, then `time_varying ~ 1` implicitly represents a time-varying intercept.
+If `time` is defined in the call to `sdmTMB()`, then `time_varying ~ 1` implicitly represents a time-varying intercept and the intercept should be omitted from the main effects (`~ + 0` or `~ -1`).
 
 ## Offset terms
 
@@ -249,32 +278,6 @@ $$
 
 where $O_{\s,t}$ is an offset term---a **log transformed** variable without
 a coefficient (assuming a log link).
-
-# Threshold models
-
-## Linear breakpoint threshold models
-
-TODO
-
-These models can be fit by including `+ breakpt(x)` in the model formula, where
-`x` is a covariate.
-
-## Logistic threshold models
-
-The form is
-
-$$
-s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln\ \left(19\right) \cdot \left( x-s50 \right)
-     / \left(s95 - s50 \right) } \right] }^{-1},
-$$
-where $\psi$ is a scaling parameter (controlling the height of the y-axis for
-the response, and is unconstrained), $\tau$ is an intercept, $s50$ is
-a parameter controlling the point at which the function reaches 50% of the
-maximum ($\psi$), and $s95$ is a parameter controlling the point at which the
-function reaches 95%. The parameter $s50$ is unconstrained, and $s95$ is
-constrained to be larger than $s50$.
-
-These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
 
 # Observation model families
 
@@ -374,14 +377,38 @@ $$
 
 where $\mu$ is the mean, $p$ is the power parameter constrained between 1 and 1, and $\phi$ is the dispersion parameter.
 
+# Random field details
+
 ## Matern parameterization
 
 The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as 
+
 $$
 \Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1} (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right),$$
 <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
+
 where $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents a scaling parameter that controls the decorrelation distance (REF).
 The parameter $\nu$ controls the smoothness of the covariance function.
 We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
   
+## Projection 'A' matrix
+
+## Anisoptropy
+
+## Barrier mesh
+
+# Optimization details
+
+The sdmTMB model is fit by maximum marginal likelihood.
+Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
+Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
+
+TODO two-stage fitting
+
+TODO extra loops and Newton loops
+
+# Assessing convergence
+
+TODO
+
 # References
