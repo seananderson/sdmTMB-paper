@@ -460,7 +460,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
   linesep = c(
     rep('', 4), # coefs
     '\\addlinespace',
-    rep('', 5), # correlation stuff
+    rep('', 6), # correlation stuff
     '\\addlinespace',
     rep('', 12), # likelihood
     '\\addlinespace',
@@ -471,9 +471,11 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
   kableExtra::kable_styling(font_size = 8) %>% 
   kableExtra::footnote(
     number = c(
-      "Penalized smoother GAMs",
-      "SPDE approach as in Miller et al. (2019)",
       "Technically possible but non-trivial",
+      "Penalized smoother GAMs",
+      "Spatiotemporal fields as random walk only",
+      "SPDE approach as in Miller et al. (2019)",
+      "Does have predictive process knots",
       "Zero-inflated NB2 only",
       "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}",
       "Technically possible but non-trivial",
