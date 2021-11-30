@@ -10,9 +10,21 @@ csl: mee.csl
 bibliography: refs.bib
 ---
 
+```{r setup, echo=FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = FALSE,
+  error = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+
 \newcommand{\s}{\boldsymbol{s}}
 
-## Notation conventions
+# Notation conventions
 
 This appendix uses the following notation conventions:
 
@@ -32,21 +44,255 @@ This appendix uses the following notation conventions:
 ```{r, results='asis'}
 symbols <- tibble::tribble(
   ~Symbol, ~Description,
-  "$\\phi$",   "A dispersion parameter for a distribution",
-  "$\\mu$",   "Mean",
-  "$f$",   "Link function"
+  "$\\phi$", "A dispersion parameter for a distribution",
+  "$\\mu$", "Mean",
+  "$y$", "Observed response data",
+  "$f$", "Link function",
+  "$\\omega_{\\s}$", "Spatial random field at point $\\s$",
+  "$\\zeta_{\\s, t}$", "Spatially varying coefficient random field at point $\\s$ and time $t$",
+  "$\\epsilon_{\\s, t}$", "Spatiotemporal random field",
+  "$\\boldsymbol{\\Sigma}_\\omega$", "Spatial random field covariance matrix",
+  "$\\boldsymbol{\\Sigma}_\\epsilon$", "Spatiotemporal random field covariance matrix",
+  "$\\boldsymbol{\\Sigma}_\\zeta$", "Spatially varying coefficient random field covariance matrix",
+  "$\\boldsymbol{\\beta}$", "Parameter vector",
+  "$\\boldsymbol{X}$", "Model predictor matrix",
+  "$\\alpha_g$", "IID random intercept deviations",
+  "$\\sigma_\\alpha^2$", "IID random intercept variance",
+  "$\\delta_{\\s,t}$", "AR1 or random walk spatiotemporal deviations",
+  "$\\rho$", "Correlation between random fields in subsequent time steps"
+  
 )
-knitr::kable(symbols, caption = "Symbol notation and descriptions", escape = FALSE, format = "latex",  booktabs = TRUE)
+knitr::kable(symbols, caption = "Symbol notation and descriptions", escape = FALSE, format = "latex", booktabs = TRUE)
 ```
 
 ```{r}
 subscripts <- tibble::tribble(
   ~Symbol, ~Description,
-  "$\\s$",   "Index for space; a vector of x and y coordinates",
-  "$t$",   "Index for time",
-  "$g$",   "Group"
+  "$\\s$", "Index for space; a vector of x and y coordinates",
+  "$t$", "Index for time",
+  "$g$", "Group"
 )
-knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex",  booktabs = TRUE)
+knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex", booktabs = TRUE)
 ```
 
+# Basic model structure
 
+$$
+\begin{aligned}
+  \mathbb{E}(y_{\s,t}) &= \mu_{\s,t},\\
+  \mu_{\s,t} &= f^{-1}
+  \left( \boldsymbol{X} \boldsymbol{\beta} + \omega_s + \epsilon_{\s,t} \right),\\
+  \boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
+  \boldsymbol{\epsilon}_t &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right).
+\end{aligned}
+$$
+where $f$ is a link function (e.g., log or logit) and $f^{-1}$ is its inverse link.
+
+* $\boldsymbol{X} \boldsymbol{\beta}$ is defined by the `formula` argument and
+  represents the fixed effect model matrix and a corresponding vector of
+  coefficients
+
+* $\omega_s$ are included if `spatial = 'on'`
+
+* $\epsilon_{\s,t}$ are included by default if there are multiple time elements (`time` argument is not `NULL`) but can be set to IID (`IID`; default), AR1 (`AR1`), random walk (`RW`), or off (`'off`) via the `spatiotemporal` argument
+
+# Random or multi-level intercepts
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \alpha_{g} + \ldots \right),\\
+  \alpha_g &\sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right),\\
+\end{aligned}
+$$
+
+where $\alpha_g$ is an example optional "random" intercept---an intercept
+centered on zero that varies by level $g$ and is constrained by
+$\sigma_\alpha$. This is defined by the `formula` argument via the `(1 | g)`
+syntax as in lme4 or glmmTMB.
+
+# Time-varying regression parameters
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \gamma_{t} x_{\s,t} + \ldots \right),\\
+  \gamma_{t=1} &\sim \operatorname{Uniform} \left(-\infty, \infty \right),\\
+  \gamma_{t>1} &\sim \operatorname{Normal} \left(\gamma_{t-1}, \sigma^2_{\gamma} \right),
+\end{aligned}
+$$
+
+where $\gamma_t$ is an example optional time-varying regression parameter and
+$x_{\s,t}$ is the corresponding predictor value. This is defined via the
+`time_varying` argument. E.g., `~ 0 + x`. The first value is given an implicit
+uniform prior. I.e., the same variable should not appear in the fixed effect
+formula since the initial value is estimated as part of the time-varying formula.
+
+# Spatial regression parameters
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \zeta_s x_t + \ldots \right),\\
+  \boldsymbol{\zeta} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\zeta \right),
+\end{aligned}
+$$
+
+where $\zeta_s$ is a regression parameter that varies spatially and $x_t$ is a predictor that is constant for a given time $t$. Currently, $x_t$ must be the time variable itself. If you are interested in using a different predictor, contact the developers.
+
+# AR1 spatiotemporal random fields
+
+Dropping the optional $\omega_s$ for simplicity:
+
+$$
+\begin{aligned}
+\mu_{\s,t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} + \delta_{\s,t} \right),\\
+\boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
+\boldsymbol{\delta}_{t>1} &= \rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2} \boldsymbol{\epsilon}_t,  \:
+\boldsymbol{\epsilon}_t \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\end{aligned}
+$$
+
+where $\rho$ is the correlation between subsequent spatiotemporal random
+fields. The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance.
+
+# Random walk spatiotemporal random fields
+
+Dropping the optional $\omega_s$ for simplicity:
+
+$$
+\begin{aligned}
+\mu_{\s,t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} + \delta_{\s,t} \right),\\
+\boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
+\boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon}_t,  \:
+\boldsymbol{\epsilon}_t \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\end{aligned}
+$$
+
+# Offset terms
+
+Offset terms can be included with the reserved word `offset` in the formula.
+E.g., `y ~ x + offset`.
+
+These are included in the linear predictor as
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + O_{\s,t} + \ldots \right),
+\end{aligned}
+$$
+where $O_{\s,t}$ is an offset term---a **log transformed** variable without
+a coefficient (assuming a log link).
+
+# Threshold models
+
+## Linear breakpoint threshold models
+
+TODO
+
+These models can be fit by including `+ breakpt(x)` in the model formula, where
+`x` is a covariate.
+
+## Logistic threshold models
+
+The form is
+
+$$
+s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln\ \left(19\right) \cdot \left( x-s50 \right)
+     / \left(s95 - s50 \right) } \right] }^{-1},
+$$
+where $\psi$ is a scaling parameter (controlling the height of the y-axis for
+the response, and is unconstrained), $\tau$ is an intercept, $s50$ is
+a parameter controlling the point at which the function reaches 50% of the
+maximum ($\psi$), and $s95$ is a parameter controlling the point at which the
+function reaches 95%. The parameter $s50$ is unconstrained, and $s95$ is
+constrained to be larger than $s50$.
+
+These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
+
+# Observation model families
+
+## [Binomial](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaee11f805f02bc1febc6d7bf0487671be)
+
+Internally parameterized as the [robust
+version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaecb5a18095a320b42e2d20c4b120f5f5).
+
+## [Beta](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga5324c83759d5211c7c2fbbad37fa8e59)
+
+$$
+\operatorname{Beta} \left(\mu \phi, 1 - \mu \phi \right)
+$$
+
+where $\phi$ is variance.
+
+$$
+\operatorname{Binomial} \left( N, \mu \right)
+$$
+
+$N = 1$ (i.e., 'size' currently fixed) and $\mu$ is probability
+
+## [Gamma](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gab0e2205710a698ad6a0ed39e0652c9a3)
+
+As shape, scale:
+
+$$
+\operatorname{Gamma} \left( \phi, \frac{\mu}{\phi}  \right)
+$$
+
+where $\phi$ represents the shape and $\frac{\mu}{\phi}$ represents the scale.
+
+## [Gaussian](https://kaskr.github.io/adcomp/dnorm_8hpp.html)
+
+$$
+\operatorname{Normal} \left( \mu, \phi \right)
+$$
+where $\phi$ is the standard deviation (following Stan convention of SD not variance).
+
+## [Lognormal](https://github.com/pbs-assess/sdmTMB/blob/28a93496a93b12e5a2f73f703bc96afbf14d86c1/src/sdmTMB.cpp#L22-L30)
+
+$$
+\operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi \right)
+$$
+
+
+## [Negative Binomial](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga76266c19046e04b651fce93aa0810351)
+
+Internally parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c)
+
+$$
+\operatorname{NB2} \left( \mu, \phi \right)
+$$
+
+Variance scales quadratically with mean $\mathrm{Var}[y] = \mu + \mu^2 / \phi$.
+
+## [Poisson](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa1ed15503e1441a381102a8c4c9baaf1)
+
+$$
+\operatorname{Poisson} \left( \mu \right)
+$$
+
+## [Student-t](https://github.com/pbs-assess/sdmTMB/blob/28a93496a93b12e5a2f73f703bc96afbf14d86c1/src/sdmTMB.cpp#L11-L20)
+
+$$
+\operatorname{Student-t} \left( \mu, \phi, \nu \right)
+$$
+
+where $\nu$, the degrees of freedom, is currently fixed at 3.
+
+## [Tweedie](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga262f3c2d1cf36f322a62d902a608aae0)
+
+[Source code](https://kaskr.github.io/adcomp/tweedie_8cpp_source.html) as in [cplm](https://CRAN.R-project.org/package=cplm) package. <https://link.springer.com/article/10.1007/s11222-012-9343-7>
+
+$$
+\operatorname{Tweedie} \left(\mu, p, \phi \right), \: 1 < p < 2
+$$
+
+## Matern parameterization
+
+<!-- EW: Because of space limits, I might suggest moving all this to the SI -->
+  The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as $\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1}
+  (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right)$,
+  <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
+    where $\tau^2$ represents the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents
+  a scaling parameter that is estimated (REF).
+  The parameter $\nu$ controls the smoothness of the covariance function.
+  We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+  
+# References
