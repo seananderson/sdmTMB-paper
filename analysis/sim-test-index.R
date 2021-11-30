@@ -109,6 +109,7 @@ sim_test_index <- function(i) {
   out <- bind_cols(select(true_index, true), index_bc)
   out <- bind_cols(out, index_sims)
   out <- bind_cols(out, index_nbc)
+  out$pdHess <- m$sd_report$pdHess
   bind_cols(data.frame(iter = i), out)
 }
 
@@ -120,19 +121,30 @@ saveRDS(est, "data/generated/sim-test-index.rds")
 est <- readRDS("data/generated/sim-test-index.rds")
 
 est %>% filter(max_gradient > 0.001)
+est %>% filter(bad_eig)
+est %>% filter(is.na(se))
 
-ggplot(est, aes(year, est, ymin = lwr, ymax = upr)) +
+set.seed(29482)
+keep <- sample(unique(est$iter), 25L)
+dplyr::filter(est, iter %in% keep) %>%
+  ggplot(aes(year, est, ymin = lwr, ymax = upr)) +
   geom_ribbon(fill = "grey70") +
   geom_line() +
   geom_line(aes(y = true), colour = "red") +
   facet_wrap(vars(iter), scales = "free_y") #+
 # scale_y_log10()
 
-ggplot(est, aes(year, est_sim, ymin = lwr_sim, ymax = upr_sim)) +
+dplyr::filter(est, iter %in% keep) %>%
+  ggplot(aes(year, est_sim, ymin = lwr_sim, ymax = upr_sim)) +
   geom_ribbon(fill = "grey70") +
   geom_line() +
   geom_line(aes(y = true), colour = "red") +
   facet_wrap(vars(iter), scales = "free_y") #+
+
+sum(is.na(est$est_sim))
+sum(!is.na(est$est_sim))
+est <- filter(est, !is.na(est_sim))
+est <- filter(est, !is.infinite(upr))
 
 coverage <- est %>%
   mutate(covered = lwr < true & upr > true) %>%
@@ -141,8 +153,26 @@ coverage
 
 coverage <- est %>%
   mutate(covered = lwr_sim < true & upr_sim > true) %>%
-  summarise(coverage = mean(covered))
+  summarise(coverage = mean(covered, na.rm = TRUE))
 coverage
+
+# epsilon bias correction
+bias <- est %>%
+  mutate(ratio = est/true) %>%
+  summarise(ratio = mean(ratio, na.rm = TRUE))
+bias
+
+# MVN simulation
+bias <- est %>%
+  mutate(ratio = est_sim/true) %>%
+  summarise(ratio = mean(ratio, na.rm = TRUE))
+bias
+
+# no bias correction
+bias <- est %>%
+  mutate(ratio = est_nbc/true) %>%
+  summarise(ratio = mean(ratio, na.rm = TRUE))
+bias
 
 error <- est %>%
   mutate(error = (true - est)/true) %>%
@@ -154,19 +184,33 @@ error <- est %>%
   summarise(error = median(error))
 error
 
-ratios <- est %>%
+
+
+ratios_long <- est %>%
   mutate(
     se = se_sim / se,
     lwr = lwr_sim / lwr,
     upr = upr_sim/upr,
     est = est_sim/est
-  ) %>%
+  )
+ratios_long %>%
   summarise(
     se = mean(se, na.rm = TRUE),
     lwr = mean(lwr, na.rm = TRUE),
     upr = mean(upr, na.rm = TRUE),
     est = mean(est, na.rm = TRUE)
   )
-ratios
+
+ratios_long %>%
+  summarise(
+    se = median(se, na.rm = TRUE),
+    lwr = median(lwr, na.rm = TRUE),
+    upr = median(upr, na.rm = TRUE),
+    est = median(est, na.rm = TRUE)
+  )
+
+# ggplot(ratios_long, aes(se)) + geom_boxplot() + coord_flip()
+# ggplot(ratios_long, aes(lwr)) + geom_histogram()
+# ggplot(ratios_long, aes(est)) + geom_boxplot()
 
 plan(sequential)
