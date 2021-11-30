@@ -1,5 +1,16 @@
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+library(INLA)
+library(spaMM)
+
 # with sample sim data
 sim_dat <- readRDS("simdat.rds")
+
+max.edge = 0.1
+loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+segm.bnd <- inla.mesh.segment(loc.bnd)
+
 
 me <- INLA::inla.mesh.2d(
     boundary = segm.bnd,
@@ -9,15 +20,10 @@ me <- INLA::inla.mesh.2d(
 
 mesh <- make_mesh(sim_dat, xy_cols = c("X", "Y"), mesh = me)
 
-fit_sdmTMB <- sdmTMB(observed ~ a1,
+fit_sdmTMB  <- sdmTMB(observed ~ a1,
                 data = sim_dat, mesh = mesh, family = gaussian(),
                 priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2)))
 
-max.edge = 0.1
-
-loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
-
-segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
 
 mesh2 <- INLA::inla.mesh.2d(
   boundary = segm.bnd,
@@ -34,3 +40,5 @@ spde <- INLA::inla.spde2.pcmatern(
 fit_spaMM <- fitme(observed~
                      a1 + IMRF(1|X+Y, model=spde),
                    family=gaussian, data=sim_dat)
+fit_sdmTMB
+fit_spaMM
