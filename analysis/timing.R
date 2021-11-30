@@ -283,7 +283,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out
 }
 
-test <- sim_fit_time(n_obs = 1000, max.edge = 0.1, family = gaussian(), seed = 1)
+test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
 test
 # test1 <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
 # test1
@@ -294,6 +294,14 @@ to_run <- expand.grid(
   max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
   iter = seq_len(20L)
 )
+
+# short test version
+# to_run <- expand.grid(
+#   n_obs = c(1000L),
+#   max.edge = c(0.1, 0.2),
+#   iter = seq_len(5L)
+# )
+
 to_run$seed <- to_run$iter * 29212
 nrow(to_run)
 
@@ -303,6 +311,8 @@ nrow(to_run)
 to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 
 # out <- purrr::pmap_dfr(to_run, sim_fit_time)
+
+
 plan(multisession, workers = 6L)
 out <- furrr::future_pmap_dfr(
 # out <- purrr::pmap_dfr(
@@ -313,7 +323,7 @@ out <- furrr::future_pmap_dfr(
   .options = furrr::furrr_options(seed = TRUE,
     globals = c('simulate_dat', 'sim_fit_time',
       'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
-    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB', 'spaMM'))
+    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'sdmTMB'))
 )
 saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM.rds")
 out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
