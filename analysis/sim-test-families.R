@@ -61,6 +61,7 @@ fake_NAs <- function(iter, family, link) {
 est <- purrr::map_dfr(families, function(.fam) {
   cat(.fam$family, "\n")
   furrr::future_map_dfr(seq_len(8 * 16), function(i) {
+  # furrr::future_map_dfr(seq_len(1), function(i) {
   # purrr::map_dfr(seq_len(1), function(i) {
     if (.fam$family == "Beta") {
       phi <- phi * 5 # small phi's can cause ~0.0 and ~1.0
@@ -90,7 +91,7 @@ est <- purrr::map_dfr(families, function(.fam) {
 
     if (max(m$gradients) > 0.001) {
       m <- tryCatch({run_extra_optimization(m,
-        nlminb_loops = 0, newton_steps = 1)},
+        nlminb_loops = 0, newton_loops = 1)},
         error = function(e) return(NULL))
     }
     if (is.null(m)) return(fake_NAs(i, .fam$family, .fam$link))
@@ -171,7 +172,7 @@ worm_plot <- function(dat, lwr, est, upr, true, title) {
     geom_point(size = 1.5) +
     geom_linerange(size = 0.3) +
     scale_shape_manual(values = c("TRUE" = 19, "FALSE" = 21)) +
-    guides(shape = FALSE) +
+    guides(shape = "none") +
     ggtitle(title) +
     labs(x = "Parameter value") +
     theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
