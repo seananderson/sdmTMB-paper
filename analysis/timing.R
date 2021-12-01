@@ -252,23 +252,23 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
 
-  cat("mgcv\n")
-
-  if (max.edge >= 0.061) {
-    out <- system.time({
-      fit <- tryCatch({
-        bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
-          xt = list(mesh = mesh2)),
-          data = sim_dat,
-          family = family,
-          method = "ML",
-          control = gam.control(scalePenalty = FALSE))
-      }, error = function(e) NA)
-    })
-  } else {
-    fit <- list(elapsed = NA)
-  }
-  times$mgcv_ml <- if (all(is.na(fit))) NA else out[["elapsed"]]
+  # cat("mgcv\n")
+  #
+  # if (max.edge >= 0.061) {
+  #   out <- system.time({
+  #     fit <- tryCatch({
+  #       bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
+  #         xt = list(mesh = mesh2)),
+  #         data = sim_dat,
+  #         family = family,
+  #         method = "ML",
+  #         control = gam.control(scalePenalty = FALSE))
+  #     }, error = function(e) NA)
+  #   })
+  # } else {
+  #   fit <- list(elapsed = NA)
+  # }
+  # times$mgcv_ml <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
   out <- as_tibble(times)
   out$cutoff <- cutoff
@@ -326,8 +326,8 @@ out <- furrr::future_pmap_dfr(
     packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'spaMM', 'sdmTMB'))
 )
 
-saveRDS(out, file = "analysis/timing-cache-parallel-openblas-spaMM.rds")
-out <- readRDS("analysis/timing-cache-parallel-openblas-spaMM.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-spaMM.rds")
+out <- readRDS("analysis/timing-cache-parallel-spaMM.rds")
 plan(sequential)
 
 # # -------tweedie
@@ -392,11 +392,35 @@ out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cut
 # out_long <- filter(out_long, max.edge > 0.05)
 out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
   summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
+  # summarise(
+  #   lwr = quantile(time, 0.025, na.rm = T), upr = quantile(time, 0.975, na.rm = T),
+  #           time = median(time), mean_mesh_n = mean(mesh_n))
+
+# out_long_sum <- out_long_sum %>% group_by(model_clean) %>% mutate(model_clean = forcats::fct_reorder(model_clean, time, .fun = min))
+
+# remotes::install_github("clauswilke/colorblindr")
+
+# unikn package (Neth & Gradwohl, 2021)
+# unikn::pal_unikn_pair
+colour_vect <- c(
+  "#0A9086", #seegruen4
+  "#54BFB7",
+  # "#077187", #petrol
+  # "#4454C4FF",
+  # "#8290BB",
+  # "#3E5496", # karpfenblau4
+  "#FEA090", #peach
+  "#008ECE", #seeblau5
+  # "#E0607E", # pinky4
+  "#8E2043" # bordeaux
+)
+
+library(colorblindr)
 
 g <- out_long_sum %>%
-  # filter(model_clean != "mgcv ML") %>%
+  filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.1, colour = NA) +
   geom_line(lwd = 0.7) +
   scale_y_log10() +
   scale_x_log10(breaks = c(250, 500, 1000)) +
@@ -408,8 +432,10 @@ g <- out_long_sum %>%
   # theme(legend.position = "bottom") +
   # theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
   theme(legend.position = c(0.4, 0.85)) +
-  scale_color_brewer(palette = "Dark2") +
-  scale_fill_brewer(palette = "Dark2") +
+  scale_fill_OkabeIto(order = c(2,5,7,3,4)) +
+  scale_colour_OkabeIto(order = c(2,5,7,3,4)) +
+  # scale_fill_manual(values = colour_vect) +
+  # scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
   coord_cartesian(expand = FALSE) +
   theme(panel.spacing.x = unit(20, "pt")) +
@@ -417,9 +443,10 @@ g <- out_long_sum %>%
     colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
     fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()))
 g
+
 .width <- 5
-ggsave("figs/timing2-logx-blas-PE-test.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing2-logx-blas-PE.png", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-PE.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing2-logx-PE.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
 #   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
