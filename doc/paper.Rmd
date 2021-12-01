@@ -351,7 +351,7 @@ knitr::include_graphics(pcodfig)
 
 \clearpage
 
-# Spatially varying coefficients applied to citizen-science owl counts
+# Spatially varying coefficients from citizen-science count data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
@@ -437,7 +437,7 @@ Highlights?
 - Variance estimation and derived quantities (spatial range, area occupied etc)
 -->
 
-\clearpage 
+<!-- \clearpage  -->
 
 ```{r compare-table}
 library(kableExtra)
@@ -507,7 +507,7 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
 ```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
-f <- here::here("figs", "timing2-logx.pdf")
+f <- here::here("figs", "timing2-logx-PE.pdf")
 if (!file.exists(f)) {
   download.file("https://www.dropbox.com/s/3aco85mizuplz7z/timing2-logx.pdf?dl=1", 
     destfile = f)
@@ -522,12 +522,14 @@ knitr::include_graphics(f)
 <!-- EW: TODO Not sure if Heaton included CAR models, but we might want to talk about them briefly because there’s a lot of packages that include that functionality - including NIMBLE, etc.  -->
 
 There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
-VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in functionality.
-The difference lies mainly in the user interfaces and considerable additional functionality for multivariate response data (REF) and delta/hurdle models (REF) in VAST.
+VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in the user interfaces.
+<!-- could add: 'and functionality' to the above if next sentence deemed redundant. -->
+<!-- The major difference lies in VAST's considerable additional functionality for multivariate response data (REF) and delta/hurdle models (REF). -->
 Interface-wise, VAST is less modular (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
-sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
-Unlike VAST, however, sdmTMB does not currently extend to multivariate applications.
+From a fisheries perspective, sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
+Unlike VAST, however, sdmTMB does not currently extend to multivariate applications or support delta/hurdle models.
+<!-- I think either this final sentence or the 3rd sentence are a bit redundant. I suggest removing the 3rd one here. -->
 
 inlabru is similar to sdmTMB in design, but differs fundamentally in that fitting is achieved via INLA and approximate Bayesian computation.
 For some models, TMB/sdmTMB can be considerably faster than INLA/inlabru, but those differences depend on the SPDE mesh, model, algebra libraries, and fitting algorithm settings [Fig. \@ref(fig:timing), @osgood-zimmerman2021].
