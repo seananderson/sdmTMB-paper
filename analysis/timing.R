@@ -326,8 +326,8 @@ out <- furrr::future_pmap_dfr(
     packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'spaMM', 'sdmTMB'))
 )
 
-saveRDS(out, file = "analysis/timing-cache-parallel-spaMM.rds")
-out <- readRDS("analysis/timing-cache-parallel-spaMM.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-PE.rds")
+out <- readRDS("analysis/timing-cache-parallel-spaMM-PE.rds")
 plan(sequential)
 
 # # -------tweedie
@@ -365,7 +365,7 @@ out_long <- tidyr::pivot_longer(
   out,
   # sdmTMB:inlabru,
   # sdmTMB:inlabru_eb,
-  sdmTMB:mgcv_ml,
+  sdmTMB:mgcv_disc,
   names_to = "model",
   values_to = "time"
 )
@@ -420,7 +420,7 @@ library(colorblindr)
 g <- out_long_sum %>%
   filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.1, colour = NA) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
   geom_line(lwd = 0.7) +
   scale_y_log10() +
   scale_x_log10(breaks = c(250, 500, 1000)) +
