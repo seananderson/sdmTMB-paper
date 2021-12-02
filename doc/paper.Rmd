@@ -93,6 +93,10 @@ knitr::opts_chunk$set(
 
 <!-- } -->
 
+<!-- TODO cite: -->
+<!-- Dormann, C.F., McPherson, J.M., Araújo, M.B., Bivand, R., Bolliger, J., Carl, G., Davies, R.G., Hirzel, A., Jetz, W., Kissling, W.D., Kühn, I., Ohlemüller, R., Peres‐Neto, P.R., Reineking, B., Schröder, B., Schurr, F.M., and Wilson, R. (n.d.). Methods to account for spatial autocorrelation in the analysis of species distributional data: a review. Ecography 30(5): 609–628. doi:10.1111/j.2007.0906-7590.05171.x. -->
+
+
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
@@ -164,11 +168,20 @@ knitr::include_graphics(f)
 
 # Model description
 
+<!-- or areal/grid data with centroids instead of CAR/SAR models -->
+<!-- add CAR/SAR to table -->
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
 Geostatistical data simply refers to data observed at specific spatial coordinates. The data can be collected across discrete points in time. Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional autoregressive models (CAR). sdmTMB can also fit models with areal data if each polygon has an associated centroid (observations are treated as replicates). A benefit of the sdmTMB approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g. range).
  
 The process component of an sdmTMB model can be formed by any combination of main ('fixed') effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
+
+<!-- highlight where each one excels ... -->
+<!-- no CV built into VAST or priors -->
+<!-- discussion integrates across speed, familiarity and table 1 -->
+<!-- results paragraph on Table 1 -->
+<!-- familiarity is an important word here -->
+<!-- add section on functionality comparison -->
 
 Using the notation of a bold capital letter to represent a data matrix or vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time,
 the general form of a GLMM is
@@ -548,7 +561,13 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 <!-- optimized Bayes sampling -->
 <!-- residual diagnostics -->
 <!-- zero inflation -->
-<!-- MVT? time-varying epsilon -->
+<!-- MVT? time-varying epsilon, non-gaussian fields -->
+
+<!-- limitations -->
+
+<!-- 3d models, continuous time, -->
+<!-- areal models, neighbours or not, must be CAR or SAR, ... but if have centroid, could use sdmTMB... why not CAR/SAR, spatial process... not 1:1 relationship between distance and spatial correlation? neibour based only... -->
+<!-- https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.701.1636&rep=rep1&type=pdf -->
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management (REF).
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
@@ -638,3 +657,10 @@ As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cra
 
 Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance?
 -->
+
+
+<!-- CAR/SAR models? and why not if have...-->
+<!-- EOF paper from Jim-->
+<!-- testing that has been done... -->
+<!-- https://onlinelibrary.wiley.com/doi/abs/10.1111/gcb.15149 -->
+<!-- https://onlinelibrary.wiley.com/doi/abs/10.1111/gcb.15149 -->
