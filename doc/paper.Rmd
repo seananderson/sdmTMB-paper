@@ -165,8 +165,8 @@ knitr::include_graphics(f)
 # Model description
 
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
-Geostatistical data simply refers to data observed at specific spatial coordinates (vs. areal data that might represent polygons or grids).
-The data can be collected across discrete points in time.
+Geostatistical data simply refers to data observed at specific spatial coordinates. The data can be collected across discrete points in time. Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional autoregressive models (CAR). sdmTMB can also fit models with areal data if each polygon has an associated centroid (observations are treated as replicates). A benefit of the sdmTMB approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g. range).
+ 
 The process component of an sdmTMB model can be formed by any combination of main ('fixed') effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
 
