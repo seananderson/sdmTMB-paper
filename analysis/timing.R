@@ -6,13 +6,15 @@ library(inlabru)
 library(mgcv)
 library(spaMM)
 # library(tictoc)
-library(future)
-plan(multisession)
+# library(future)
+# plan(multisession)
 INLA::inla.setOption(num.threads = "1:1")
 source(here::here("analysis/mgcv_spde_smooth.R"))
 
-# INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-# INLA::inla.setOption(inla.mode="experimental")
+if (Sys.info()[["user"]] == "seananderson") {
+  INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+  # INLA::inla.setOption(inla.mode="experimental")
+}
 
 # INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
 
