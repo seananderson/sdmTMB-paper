@@ -124,16 +124,23 @@ Within `sdmTMB()`,
 * $\boldsymbol{X} \boldsymbol{\beta}$ is defined by the `formula` argument and
   represents the fixed effect model matrix and a corresponding vector of
   coefficients.
-  
-* Get into smoothers, breakpoints, etc. here
 
 ### Smoothers
 
-TODO
+Smoothers in sdmTMB are generally implemented with the same formula syntax familiar to `mgcv` users fitting GAMs (generalized additive models). Smooths are implemented in the formula using `+ s(x)`, which implements a smooth from `mgcv::s()`. Within these smooths, the same syntax commonly used in mgcv::s() can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)`; and various types of splines may be constructed such as cyclic splines to model seasonality, `+ s(month, bs = "cc", k = 12)`. 
+
+While `mgcv` can fit unpenalized (e.g. B-splines, and others) or penalized splines (P-splines), sdmTMB only uses penalized splines. 
+The penalized splines are constructed in sdmTMB using the function `mgcv::smooth2random()`, which transforms splines into random effects (and associated design matrices) that are estimable in a mixed effects modeling framework. This is a similar approach implemented in `gamm4` and `brms`, among other packages.
 
 ### Linear breakpoint threshold models
 
-TODO
+The linear breakpoint or hockey stick model can be used to describe threshold or asymptotic responses. This function consists of two pieces, so that for $x < b_{1}$
+
+$$s(x) = x \cdot b_{0}$$
+and for $x > b_{1}$
+
+$$s(x) = b_{1} \cdot b_{0}$$
+In both cases, $b_{0}$ represents the slope of the function up to a threshold, and the product $b_{1} \cdot b_{0}$ represents the value at the asymptote. No constraints are placed on parameters $b_{0}$ or $b_{1}$.
 
 These models can be fit by including `+ breakpt(x)` in the model formula, where
 `x` is a covariate.
@@ -194,9 +201,9 @@ $$
 \boldsymbol{\epsilon}_t \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
-where $\rho$ is the correlation between subsequent spatiotemporal random fields. The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance.
+where $\rho$ is the correlation between subsequent spatiotemporal random fields. The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance. The correlation $\rho$ allows for mean-reverting spatiotemporal fields, and is generally expected to be $-1 < \rho < 1$.
 
-### Random walk spatiotemporal random fields
+### Random walk spatiotemporal random fields (RW)
 
 Dropping other components for simplicity:
 
@@ -204,12 +211,12 @@ $$
 \begin{aligned}
 \mu_{\s,t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} + \delta_{\s,t} \right),\\
 \boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
-\boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon}_t,  \:
-\boldsymbol{\epsilon}_t \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon}_{t-1},  \:
+\boldsymbol{\epsilon}_{t-1} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
 
-TODO
+where the distribution of the spatiotemporal field in the initial time step is the same as for the AR(1) model, but the absence of the $\rho$ parameter allows the spatiotemporal field to be non-stationary in time. 
 
 <!-- * $\alpha_g$, are defined by an lme4-style formula, e.g. `formula = y ~ x + (1 | g)`, where `g` represents a column with grouping factors. -->
 
@@ -219,7 +226,7 @@ TODO
 
 <!-- * $f$ and $f^-1$ functions are defined by the `family` argument. E.g., `family = Gamma(link = "log")`. -->
 
-## Spatially varying coefficients
+## Spatially varying coefficients (SVC)
 
 $$
 \begin{aligned}
@@ -330,7 +337,7 @@ $$
 \operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi \right)
 $$
 
-TODO
+where $\mu$ and $\phi$ are the mean and standard deviation of the natural log of the random variable. If $X$ is lognormally distributed, $E[log(X)] = \mu$ and $Var(log(X)) = \phi$. The expectation of $X$ is $exp(u + \frac{\phi^2}{2})$ and variance of X is $\left(exp(\phi^2) - 1 \right)exp(2\mu + \phi^2)$. 
 
 ## [Negative Binomial 2 (NB2)](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga76266c19046e04b651fce93aa0810351)
 
