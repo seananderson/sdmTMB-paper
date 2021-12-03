@@ -671,8 +671,6 @@ To enable readers to locate archived data from papers, we require that authors l
 
 -->
 
-\clearpage
-
 # References
 
 ::: {#refs}
