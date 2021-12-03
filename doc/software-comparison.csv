@@ -36,3 +36,4 @@ Matern PC priors,1,0,0,1,1,0,0,0
 # Additional stuff,,,,,,,,
 Spatial (or spatial dynamic) factor analysis,0,1,0,0,0,0,0,0
 Built-in area-weighted index standardization,1,1,0,0,0,0,0,0
+Built in cross-validation,1,1,0,0*,0,0,1,0
