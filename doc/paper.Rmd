@@ -501,7 +501,8 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
       "Zero-inflated NB2 only",
       "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}",
       "Technically possible but non-trivial",
-      "Technically possible but non-trivial"
+      "Technically possible but non-trivial",
+      "Available in a companion package INLAutils"
     ),
     escape = FALSE
   )
