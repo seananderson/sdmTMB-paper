@@ -366,6 +366,8 @@ $$
 \operatorname{Poisson} \left( \mu \right)
 $$
 
+## [Censored-poisson] TODO
+
 ## [Student-t](https://github.com/pbs-assess/sdmTMB/blob/28a93496a93b12e5a2f73f703bc96afbf14d86c1/src/sdmTMB.cpp#L11-L20)
 
 $$
