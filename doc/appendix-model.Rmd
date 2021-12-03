@@ -400,9 +400,15 @@ We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differe
   
 ## Projection 'A' matrix
 
+TODO
+
 ## Anisoptropy
 
+TODO
+
 ## Barrier mesh
+
+TODO
 
 # Optimization details
 
@@ -410,9 +416,9 @@ The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
 
-TODO two-stage fitting
+Like AD Model Builder, TMB allows for parameters to be fit in phases and we inlcude the `multiphase` argument in `sdmTMB::sdmTMBcontrol()` to allow this. For high dimensional models (lots of fixed and random effects), phased estimation may be faster and result in more stable convergence. In sdmTMB, phased estimation proceeds by first estimating all fixed effect parameters contributing to the likelihood (holding random effects constant at initial values). In the second phase, the random effect parameters (and their variances) are also estimated. Fixed effect parameters are also estimated in the second phase, and initialized at their estimates from the first phase.  
 
-TODO extra loops and Newton loops
+In some cases, a single call to `stats::nlminb()` may not be result in convergence (or a small maximum gradient), and the algorithm may need to be run multiple times. In the `sdmTMB::sdmTMBcontrol()` function, we include an argument `nlminb_loops` that will restart the optimization at the previous best values. The number of `nlminb_loops` should generally be small (e.g. 2 or 3 initially), and defaults to 1. For some sdmTMB models, the Hessian may also be unstable and need to be re-evaluated. We do this optionally with the `stats::optimHess()` routine after the call to `stats::nlminb()`. The `stats::optimHess()` function implements a Newton optimization routine to find the Hessian, and we include the argument `newton_loops` in `sdmTMB::sdmTMBcontrol()` to allow for multiple function evaluations (each starting at the previous best value). By default, this is not included and `newton_loops` is set to 0.
 
 # Assessing convergence
 
