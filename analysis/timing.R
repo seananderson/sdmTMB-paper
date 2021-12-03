@@ -476,7 +476,7 @@ g <- out_long_sum %>%
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE) +
+  coord_cartesian(expand = FALSE, ylim = c(0.2, 102)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
   # guides(
     # colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
