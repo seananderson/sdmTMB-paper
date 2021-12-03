@@ -40,7 +40,7 @@ simulate_dat <- function(n_obs = 100,
   segm.bnd <- inla.mesh.segment(loc.bnd)
 
   # bnd <- INLA::inla.nonconvex.hull(cbind(predictor_dat$X, predictor_dat$Y),
-    # convex = -0.2)
+  # convex = -0.2)
   me <- INLA::inla.mesh.2d(
     boundary = segm.bnd,
     max.edge = c(max.edge, 0.2),
@@ -69,25 +69,23 @@ simulate_dat <- function(n_obs = 100,
   list(mesh = mesh, dat = sim_dat)
 }
 
-
-
-
 sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedie_p = 1.5,
-  seed = sample.int(.Machine$integer.max, 1), family = gaussian(), sigma_O = 0.2,
-  max.edge = 0.1) {
-
+                         seed = sample.int(.Machine$integer.max, 1), family = gaussian(), sigma_O = 0.2,
+                         max.edge = 0.1) {
   cat("max.edge:", max.edge, "\n")
   cat("n_obs:", n_obs, "\n")
   cat("iter:", iter, "\n")
   cat("simulating...\n")
 
-  s <- simulate_dat(n_obs = n_obs, cutoff = cutoff, seed = seed,
+  s <- simulate_dat(
+    n_obs = n_obs, cutoff = cutoff, seed = seed,
     iter = iter, family = family, max.edge = max.edge, tweedie_p = tweedie_p, phi = phi,
-    sigma_O = sigma_O)
+    sigma_O = sigma_O
+  )
   sim_dat <- s$dat
   mesh <- s$mesh
   times <- list()
-# browser()
+  # browser()
   cat("fitting...\n")
 
   cat("sdmTMB\n")
@@ -110,8 +108,9 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   times$sdmTMB_norm <- out[["elapsed"]]
 
   dat_sp <- sp::SpatialPointsDataFrame(cbind(sim_dat$X, sim_dat$Y),
-    proj4string = sp::CRS('+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
-+ +y_0=0 +datum=NAD83 +units=km +no_defs'), data = sim_dat)
+    proj4string = sp::CRS("+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
++ +y_0=0 +datum=NAD83 +units=km +no_defs"), data = sim_dat
+  )
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
   segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
   mesh2 <- INLA::inla.mesh.2d(
@@ -127,8 +126,9 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 
   dat <- s$dat
   dat_sp <- sp::SpatialPointsDataFrame(cbind(dat$X, dat$Y),
-    proj4string = sp::CRS('+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
-  + +y_0=0 +datum=NAD83 +units=km +no_defs'), data = dat)
+    proj4string = sp::CRS("+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
+  + +y_0=0 +datum=NAD83 +units=km +no_defs"), data = dat
+  )
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
   segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
   mesh <- INLA::inla.mesh.2d(
@@ -153,7 +153,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   dat_sp$observed <- dat_sp$observed * 10 # help convergence
   if (family$family == "gaussian") {
     like <- like(observed ~ Intercept + a1 + spatrf, family = "gaussian", data = dat_sp)
-  } else if (family$family == 'tweedie') {
+  } else if (family$family == "tweedie") {
     like <- like(observed ~ Intercept + a1 + spatrf, family = "tweedie", data = dat_sp)
   } else {
     stop("Family not found")
@@ -162,20 +162,24 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   # INLA::inla.setOption(inla.mode="experimental")
 
   out <- system.time({
-    tryCatch({
-      fit_bru <- bru(
-      like,
-      components = components,
-      options = bru_options(
-        control.inla = list(int.strategy = "eb", strategy = "gaussian"),
-        bru_max_iter = 1, num.threads = "1:1"
-        # control.family = list(hyper =  list(
-        #   theta1 = list(initial = 0),
-        #   theta2 = list(initial = -4,
-        #     prior = "loggamma",
-        #     param = c(100, 100))))
+    tryCatch(
+      {
+        fit_bru <- bru(
+          like,
+          components = components,
+          options = bru_options(
+            control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+            bru_max_iter = 1, num.threads = "1:1"
+            # control.family = list(hyper =  list(
+            #   theta1 = list(initial = 0),
+            #   theta2 = list(initial = -4,
+            #     prior = "loggamma",
+            #     param = c(100, 100))))
+          )
         )
-    )}, error = function(e) NA)
+      },
+      error = function(e) NA
+    )
   })
   if (!is.null(fit_bru$error)) {
     inla_eb_error <- TRUE
@@ -226,33 +230,42 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     prior.sigma = c(2, 0.05)
   )
   out <- system.time({
-    fit_spaMM <- tryCatch({
-      fitme(observed~a1 + IMRF(1|X+Y, model = spde_spaMM),
-            family = family, data = sim_dat)
-    }, error = function(e) NA)
+    fit_spaMM <- tryCatch(
+      {
+        fitme(observed ~ a1 + IMRF(1 | X + Y, model = spde_spaMM),
+          family = family, data = sim_dat
+        )
+      },
+      error = function(e) NA
+    )
   })
   times$spaMM <- if (all(is.na(fit_spaMM))) NA else out[["elapsed"]]
 
   cat("mgcv disc.\n")
-    loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
-    segm.bnd <- inla.mesh.segment(loc.bnd)
-    mesh2 <- INLA::inla.mesh.2d(
-      boundary = segm.bnd,
-      max.edge = c(max.edge, 0.2),
-      offset = c(0.1, 0.05)
-    )
+  loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+  segm.bnd <- inla.mesh.segment(loc.bnd)
+  mesh2 <- INLA::inla.mesh.2d(
+    boundary = segm.bnd,
+    max.edge = c(max.edge, 0.2),
+    offset = c(0.1, 0.05)
+  )
   out <- system.time({
-    fit <- tryCatch({
-      bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
-        xt = list(mesh = mesh2)),
+    fit <- tryCatch(
+      {
+        bam(observed ~ a1 + s(X, Y,
+          bs = "spde", k = mesh2$n,
+          xt = list(mesh = mesh2)
+        ),
         data = sim_dat,
         family = family,
         method = "fREML",
-        control = gam.control(scalePenalty = FALSE), discrete = TRUE)
-    }, error = function(e) NA)
+        control = gam.control(scalePenalty = FALSE), discrete = TRUE
+        )
+      },
+      error = function(e) NA
+    )
   })
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
-
 
   # cat("mgcv\n")
   #
@@ -280,7 +293,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out$mesh_n <- as.integer(mesh$n)
   out$max.edge <- max.edge
   # out$inla_error = inla_error
-  out$inla_eb_error = inla_eb_error
+  out$inla_eb_error <- inla_eb_error
   # out$pardiso <- inla.pardiso.check()
   out
 }
@@ -317,15 +330,19 @@ to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 plan(multisession, workers = 5L)
 
 out <- furrr::future_pmap_dfr(
-# out <- purrr::pmap_dfr(
+  # out <- purrr::pmap_dfr(
   to_run,
   sim_fit_time,
   .progress = TRUE,
   .env_globals = parent.frame(),
-  .options = furrr::furrr_options(seed = TRUE,
-    globals = c('simulate_dat', 'sim_fit_time',
-      'Predict.matrix.spde.smooth', 'smooth.construct.spde.smooth.spec'),
-    packages = c('mgcv', 'inlabru', 'INLA', 'ggplot2', 'dplyr', 'spaMM', 'sdmTMB'))
+  .options = furrr::furrr_options(
+    seed = TRUE,
+    globals = c(
+      "simulate_dat", "sim_fit_time",
+      "Predict.matrix.spde.smooth", "smooth.construct.spde.smooth.spec"
+    ),
+    packages = c("mgcv", "inlabru", "INLA", "ggplot2", "dplyr", "spaMM", "sdmTMB")
+  )
 )
 
 saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-PE.rds")
@@ -394,9 +411,9 @@ out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cut
 # out_long <- filter(out_long, max.edge > 0.05)
 out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
   summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
-  # summarise(
-  #   lwr = quantile(time, 0.025, na.rm = T), upr = quantile(time, 0.975, na.rm = T),
-  #           time = median(time), mean_mesh_n = mean(mesh_n))
+# summarise(
+#   lwr = quantile(time, 0.025, na.rm = T), upr = quantile(time, 0.975, na.rm = T),
+#           time = median(time), mean_mesh_n = mean(mesh_n))
 
 # out_long_sum <- out_long_sum %>% group_by(model_clean) %>% mutate(model_clean = forcats::fct_reorder(model_clean, time, .fun = min))
 
@@ -405,14 +422,14 @@ out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
 # unikn package (Neth & Gradwohl, 2021)
 # unikn::pal_unikn_pair
 colour_vect <- c(
-  "#0A9086", #seegruen4
+  "#0A9086", # seegruen4
   "#54BFB7",
   # "#077187", #petrol
   # "#4454C4FF",
   # "#8290BB",
   # "#3E5496", # karpfenblau4
-  "#FEA090", #peach
-  "#008ECE", #seeblau5
+  "#FEA090", # peach
+  "#008ECE", # seeblau5
   # "#E0607E", # pinky4
   "#8E2043" # bordeaux
 )
@@ -434,8 +451,8 @@ g <- out_long_sum %>%
   # theme(legend.position = "bottom") +
   # theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
   theme(legend.position = c(0.4, 0.85)) +
-  scale_fill_OkabeIto(order = c(2,5,7,3,4)) +
-  scale_colour_OkabeIto(order = c(2,5,7,3,4)) +
+  scale_fill_OkabeIto(order = c(2, 5, 7, 3, 4)) +
+  scale_colour_OkabeIto(order = c(2, 5, 7, 3, 4)) +
   # scale_fill_manual(values = colour_vect) +
   # scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
@@ -443,7 +460,8 @@ g <- out_long_sum %>%
   theme(panel.spacing.x = unit(20, "pt")) +
   guides(
     colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
-    fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()))
+    fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank())
+  )
 g
 
 .width <- 5
