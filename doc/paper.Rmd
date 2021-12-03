@@ -543,11 +543,7 @@ spaMM is limited to a single spatial random field and spBayes implements spatiot
 There is considerable variability in the available observation likelihoods across packages (Table 1).
 
 ```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
-f <- here::here("figs", "timing2-logx-PE.pdf")
-if (!file.exists(f)) {
-  download.file("https://www.dropbox.com/s/3aco85mizuplz7z/timing2-logx.pdf?dl=1", 
-    destfile = f)
-}
+f <- here::here("figs", "timing-spatial.pdf")
 knitr::include_graphics(f)
 ```
 

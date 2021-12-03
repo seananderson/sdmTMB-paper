@@ -6,8 +6,8 @@ library(inlabru)
 library(mgcv)
 library(spaMM)
 # library(tictoc)
-# library(future)
-# plan(multisession)
+library(future)
+plan(multisession)
 INLA::inla.setOption(num.threads = "1:1")
 source(here::here("analysis/mgcv_spde_smooth.R"))
 
@@ -399,7 +399,7 @@ clean_names <- tribble(
   "INLA_eb_nolike", "INLA EB no like()",
   "spaMM", "spaMM",
   "mgcv_ml", "mgcv::bam\n(discretize = F) SPDE",
-  "mgcv_disc", "mgcv::bam\n(discretize = T) SPDE "
+  "mgcv_disc", "mgcv::bam\n(discretize = TRUE) SPDE"
 )
 clean_names$model_clean <- factor(clean_names$model_clean, levels = clean_names$model_clean)
 out_long <- left_join(out_long, clean_names)
@@ -434,7 +434,25 @@ colour_vect <- c(
   "#8E2043" # bordeaux
 )
 
-library(colorblindr)
+cols <- RColorBrewer::brewer.pal(6, "Dark2")
+colour_vect <- c(
+  "sdmTMB" = cols[1],
+  "sdmTMB(normalize = TRUE)" = cols[5],
+  "inlabru EB" = cols[3],
+  "spaMM" = cols[4],
+  "mgcv::bam\n(discretize = TRUE) SPDE" = cols[2]
+)
+
+# library(colorblindr)
+
+leg <- tribble(
+  ~model_clean, ~mean_mesh_n, ~time,
+  "sdmTMB", 170, 0.8,
+  "sdmTMB(normalize = TRUE)", 400, 0.43,
+  "inlabru EB", 150, 8,
+  "spaMM", 500, 4.7,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 245, 40
+)
 
 g <- out_long_sum %>%
   filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
@@ -451,22 +469,24 @@ g <- out_long_sum %>%
   # theme(legend.position = "bottom") +
   # theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
   theme(legend.position = c(0.4, 0.85)) +
-  scale_fill_OkabeIto(order = c(2, 5, 7, 3, 4)) +
-  scale_colour_OkabeIto(order = c(2, 5, 7, 3, 4)) +
-  # scale_fill_manual(values = colour_vect) +
-  # scale_colour_manual(values = colour_vect) +
+  # ggrepel::geom_text_repel(aes(label = model_clean), data = leg) +
+  geom_text(aes(label = model_clean), data = leg, hjust = 0) +
+  # scale_fill_OkabeIto(order = c(2, 5, 7, 3, 4)) +
+  # scale_colour_OkabeIto(order = c(2, 5, 7, 3, 4)) +
+  scale_fill_manual(values = colour_vect) +
+  scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
   coord_cartesian(expand = FALSE) +
-  theme(panel.spacing.x = unit(20, "pt")) +
-  guides(
-    colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
-    fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank())
-  )
-g
+  theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
+  # guides(
+    # colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
+    # fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank())
+  # )
+# g
 
 .width <- 5
-ggsave("figs/timing2-logx-PE.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing2-logx-PE.png", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
 #   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
