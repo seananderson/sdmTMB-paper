@@ -70,17 +70,8 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-<!-- TODO: cite:  -->
-<!-- @article{gelfand2017, -->
-<!--   title = {Bayesian Modeling and Analysis of Geostatistical Data}, -->
-<!--   author = {Gelfand, Alan E. and Banerjee, Sudipto}, -->
-<!--   year = {2017}, -->
-<!--   journal = {Annual Review of Statistics and Its Application}, -->
-<!--   volume = {4}, -->
-<!--   number = {1}, -->
-<!--   pages = {245--266}, -->
-<!--   doi = {10.1146/annurev-statistics-060116-054155}, -->
-<!--   annotation = {\_eprint: https://doi.org/10.1146/annurev-statistics-060116-054155} -->
+<!-- TODO: cite: -->
+
 
 <!-- @book{diggle2007, -->
 <!--   title = {Model-Based {{Geostatistics}}}, -->
@@ -106,7 +97,7 @@ A common approach to modelling these spatial effects is with Gaussian random fie
 
 While simple on the surface, such models quickly become computationally limiting due to the need to invert large matrices in order to keep track of covariation among data [e.g., @latimer2009].
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016].
-These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian or maximum likelihood methods.
+These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can make an enormous difference to computational efficiency [@heaton2017].
 The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
 Details are beyond the scope of this paper, and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit GRFs to large spatial datasets [@lindgren2011].
@@ -536,7 +527,7 @@ There are many R packages capable of fitting geostatistical spatial or spatiotem
 sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
-To our knowledge, VAST is the only package to implement spatial (REF) and spatial dynamic factor analysis (REF). 
+To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
 <!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
 Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
 spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
@@ -606,7 +597,7 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
 Future development may include zero-inflated models, improvements to Bayesian sampling efficiency, continuous time models, and non-gaussian random fields (REF).
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
-We may introduce capability for multivariate response data, but VAST already focusses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
+We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management (REF).
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
