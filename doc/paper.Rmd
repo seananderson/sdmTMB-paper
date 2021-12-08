@@ -4,8 +4,8 @@ author: "|
   Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca], Other authors\n| $^1$Pacific Biological Station Fisheries and Oceans Canada, \n| Nanaimo, BC, Canada\n|
   $^2$Other addresses\n"
 output:
-    bookdown::word_document2:  
-    # bookdown::pdf_document2:
+    # bookdown::word_document2:  
+    bookdown::pdf_document2:
       toc: false
       number_sections: false
       fig_caption: true
@@ -517,7 +517,8 @@ mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
 With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
 Results with up to an order of magnitude more data points slightly shift the lines up without affecting the overall pattern substantially (not shown).
 Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries (openBLAS [REF] and PARDISO [REFs]) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speedup for mgcv.
+Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2a, @pardiso-7.2b, @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speedup for mgcv.
+<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 
 (ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons ranges across 20 random iterations.
@@ -535,7 +536,8 @@ There are many R packages capable of fitting geostatistical spatial or spatiotem
 sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
-To our knowledge, VAST is the only package to implement spatial (REF) and spatial dynamic factor analysis (REF) and spatial empirical orthogonal function (EOF) regression (REF).
+To our knowledge, VAST is the only package to implement spatial (REF) and spatial dynamic factor analysis (REF). 
+<!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
 Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
 spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
 <!-- TODO: still true? -->
