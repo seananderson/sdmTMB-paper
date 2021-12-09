@@ -149,7 +149,7 @@ The data can be collected across discrete points in time.
 Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional autoregressive models (CAR).
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
 <!-- (observations are treated as replicates). -->
-A benefit of the geostatistical approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g., range).
+A benefit of the geostatistical approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g., range---the distance at which points are effectively independent).
  
 The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial random fields, spatiotemporal random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit).
@@ -205,6 +205,15 @@ We include additional flexibility in specifying the linear fixed effect matrix: 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
+After rapid model exploration with maximum likelihood, one can pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
+
+sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
+Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors [@simpson2017] (`?pc_matern`) can constrain the spatial range and variance parameters.
+
+The results from an sdmTMB model can be used to generate various quantities of interest.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
+Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
 
 <!-- ## Advanced options -->
 
@@ -396,18 +405,6 @@ Simulation-based residuals [@DHARMa], one-step-ahead residuals [@thygesen2017a],
 (5) The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 <!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
-
-## Parameter priors/penalties
-
-sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
-Following other recent SPDE implementations [@simpson2017; @breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors (`pc_matern()`) may be particularly useful to constrain the spatial range and variance parameters.
-
-## Derived quantities of interest
-
-The results from an sdmTMB model can be used to generate various quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`; Fig. \@ref(fig:pcod-fig)E) given a user supplied grid.
-Estimated parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
 
 <!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
 
