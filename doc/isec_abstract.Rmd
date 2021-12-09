@@ -1,0 +1,23 @@
+---
+title: "ISEC_abstract"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Analyzing geostatistical data (coordinate referenced observations) is becoming increasingly common in ecology; these data often include a discrete temporal dimension, such as monthly or yearly samples. Computational tools to model spatial and spatiotemporal processes have advanced rapidly over the last decade; examples of R packages for analyzing geostatistical data include `mgcv`, `INLA` and `inlabru`, `VAST`, and `spBayes`. These packages are 
+In this talk, we present a new R package `sdmTMB`. The goals of `sdmTMB` are not to replace functionality in existing packages, but provide a user friendly implementation of SPDE models -- similar to the popular package `glmmTMB`, but with the addition of spatial models. We extend the generalized linear mixed models (GLMMs) familiar to ecologists to include the following optional features:
+* spatial fields
+* spatiotemporal fields, that may be independent by year or modeled with random walks or autoregressive processes
+* smooth terms for covariates, using the familiar `s()` notation in `mgcv`
+* spatially varying coefficient models (SVC)
+* non-stationary covariates (coefficients modeled as random walks)
+
+
+Like `glmmTMB`, estimation is performed in `sdmTMB` via maximum likelihood, implemented  using the Template Model Builder (TMB) software. 
+
+We provide a general overview of the package structure, and demonstrate features using several examples (Snowy Owl distribution in North America, and a dataset describing the distribution of Pacific cod in British Columbia).
+
+
