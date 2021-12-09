@@ -18,6 +18,6 @@ In this talk, we present a new R package `sdmTMB`. The goals of `sdmTMB` are not
 
 Like `glmmTMB`, estimation is performed in `sdmTMB` via maximum likelihood, implemented  using the Template Model Builder (TMB) software. 
 
-We provide a general overview of the package structure, and demonstrate features using several examples (Snowy Owl distribution in North America, and a dataset describing the distribution of Pacific cod in British Columbia).
+We provide a general overview of the package structure, and demonstrate features using several examples (Snowy Owl winter irruptions in North America, and a dataset describing the distribution of Pacific cod in British Columbia).
 
 
