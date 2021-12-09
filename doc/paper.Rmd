@@ -380,26 +380,23 @@ knitr::include_graphics(owl)
 
 # Additional functionality
 
-## Model selection and validation
+## Model validation and selection
 
-Following glmmTMB, we allow AIC to be calculated for each sdmTMB model [`AIC()`, @akaike1974]. 
-Because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation.
-The function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. 
-The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model.
-
-Validation of state-space models is non-trivial, particularly those using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation:
-
-1. The cross validation function `sdmTMB_cv()` can be used to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-
-2. The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
-These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects. 
-These residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
-One-step-ahead residuals [@thygesen2017a] or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are much slower.
-
-3. The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
-Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE).
-
-4. An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017] to evaluate the accuracy of the Laplace approximation or evaluate residuals (see `?extract_mcmc`). 
+Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. 
+We provide several approaches to assist this process: 
+(1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
+<!-- We allow AIC to be calculated for each sdmTMB model [`AIC()`, @akaike1974]; however, because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation. -->
+<!-- The function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. -->
+<!-- The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. -->
+<!-- Validation of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation: -->
+(2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection (e.g., via expected log predictive density, ELPD, REF) or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
+(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
+(4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
+<!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
+For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
+Simulation-based residuals [@DHARMa], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
+(5) The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+<!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 <!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
 
 ## Parameter priors/penalties
