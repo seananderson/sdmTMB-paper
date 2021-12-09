@@ -403,7 +403,9 @@ TODO
 
 ## Anisoptropy
 
-TODO
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longtidue ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anistropy can be turned on and off with the boolean `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance (Fuglstad et al. 2015), and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
+
+Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. Note: if you use a barrier mesh, anisotropy is disabled. 
 
 ## Barrier mesh
 
