@@ -211,7 +211,7 @@ After rapid model exploration with maximum likelihood, one can pass an sdmTMB mo
 
 sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
-Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors [@simpson2017] (`?pc_matern`) can constrain the spatial range and variance parameters.
+Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity ('PC') priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
@@ -526,7 +526,7 @@ Users already familiar with mgcv can fit adapt mgcv to fit similar models with c
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications, users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation with uncertainty of derived variables such as area-weighted population indexes may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
-Speed wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets (e.g., REFs).
+Speed wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @english2021].
 INLA/inlabru, or spaMM for spatial models, scale the best with very high resolution meshes.
 
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
