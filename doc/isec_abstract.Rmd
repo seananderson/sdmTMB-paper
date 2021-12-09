@@ -15,9 +15,8 @@ In this talk, we present a new R package `sdmTMB`. The goals of `sdmTMB` are not
 * spatially varying coefficient models (SVC)
 * non-stationary covariates (coefficients modeled as random walks)
 
+Like `glmmTMB`, estimation is performed in `sdmTMB` via maximum likelihood, implemented  using the Template Model Builder (TMB) software. The `sdmTMB` package also allows for models to be passed to Stan, allowing for efficient Bayesian estimation. 
 
-Like `glmmTMB`, estimation is performed in `sdmTMB` via maximum likelihood, implemented  using the Template Model Builder (TMB) software. 
-
-We provide a general overview of the package structure, and demonstrate features using several examples (Snowy Owl winter irruptions in North America, and a dataset describing the distribution of Pacific cod in British Columbia).
+We provide a general overview of the package structure, and demonstrate features using several examples (Snowy Owl winter irruptions in North America, and a dataset describing the distribution of Pacific cod in British Columbia). We highlight the advantages of using `sdmTMB` for these classes of models: (1) estimation in TMB is often faster than with alternative estimation routines, (2) `sdmTMB` provides a user friendly interface that is familiar to many R users, (3) `sdmTMB` allows for easy out of sample model validation, not found in other packages, (4) non-stationary processes are easily constructed with the formula interface (time varying coefficients, spatially varying coefficient models). For analysts fitting species distribution models (SDMs) or estimating population abundance trends, `sdmTMB` provides specific functions for performing these calculations. 
 
 
