@@ -70,20 +70,6 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-<!-- TODO: cite: -->
-<!-- @book{diggle2007, -->
-<!--   title = {Model-Based {{Geostatistics}}}, -->
-<!--   author = {Diggle, Peter and Ribeiro, Paulo Justiniano}, -->
-<!--   year = {2007}, -->
-<!--   publisher = {{Springer}}, -->
-<!--   googlebooks = {qCqOm39OuFUC}, -->
-<!--   isbn = {978-0-387-48536-2}, -->
-<!--   langid = {english} -->
-<!-- } -->
-
-<!-- } -->
-
-
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
