@@ -215,7 +215,7 @@ Random effects are estimated at values that maximize the log likelihood conditio
 <!-- Second, we allow non-linear effects of covariates to be modeled with penalized regression splines ("P-splines") [@eilers1996], in one or multiple dimensions, using the same `s(x)` syntax familiar to users of `mgcv`. -->
 <!-- Third, for users interested in Bayesian inference, we allow models to be passed to Stan (cite) via the package tmbstan [@monnahan2018]. -->
 
-# An introductory example
+# Introductory example with fish survey biomass
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
 It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
@@ -344,7 +344,7 @@ knitr::include_graphics(pcodfig)
 
 \clearpage
 
-# Spatially varying coefficients from citizen-science count data
+# Spatially varying coefficient example with citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
@@ -378,9 +378,7 @@ if (!file.exists(owl)) {
 knitr::include_graphics(owl)
 ```
 
-# Additional functionality
-
-## Model validation and selection
+# Model validation and selection
 
 Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. 
 We provide several approaches to assist this process: 
@@ -480,7 +478,22 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 
 # Package comparisons
 
-## Speed
+There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
+sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
+sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
+To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
+<!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
+<!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
+Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
+spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
+<!-- TODO: still true? -->
+There is considerable variability in the available observation likelihoods across packages (Table 1).
+
+```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
+f <- here::here("figs", "timing-spatial.pdf")
+knitr::include_graphics(f)
+```
 
 We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing)).
 In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fastest.
@@ -502,24 +515,6 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 <!-- All platforms were restricted to one core and could be faster with parallel computation. -->
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
-## Functionality
-
-There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
-sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
-sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
-sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
-To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
-<!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
-<!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
-Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
-spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
-<!-- TODO: still true? -->
-There is considerable variability in the available observation likelihoods across packages (Table 1).
-
-```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
-f <- here::here("figs", "timing-spatial.pdf")
-knitr::include_graphics(f)
-```
 
 \clearpage 
 
