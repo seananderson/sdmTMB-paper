@@ -27,6 +27,8 @@ header-includes:
   \renewcommand{\thetable}{S\arabic{table}}
   \setcounter{figure}{0}
   \renewcommand{\thefigure}{S\arabic{figure}}}
+  \widowpenalty10000
+  \clubpenalty10000
 editor_options:
   markdown:
     wrap: sentence
@@ -351,8 +353,6 @@ if (!file.exists(pcodfig)) {
 knitr::include_graphics(pcodfig)
 ```
 
-\clearpage
-
 # Spatially varying coefficient example with citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
@@ -512,9 +512,6 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 <!-- All platforms were restricted to one core and could be faster with parallel computation. -->
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
-
-\clearpage 
-
 # Discussion
 
 <!-- Take home, re-iterate paragraph? -->
@@ -524,8 +521,8 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary difference is the user interface.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
-Users familiar with INLA will find inlabru approachable.
-Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
+Users familiar with INLA may find inlabru approachable.
+Users already familiar with mgcv can fit adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications, users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation with uncertainty of derived variables such as area-weighted population indexes may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
