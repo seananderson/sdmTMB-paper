@@ -526,7 +526,7 @@ sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all 
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
 To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
-However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020].
+<!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
 <!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
 Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
 spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
