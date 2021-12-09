@@ -550,7 +550,7 @@ How does one choose among the related packages mentioned in this paper to fit SP
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary difference is the user interface.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
 Users familiar with INLA will find inlabru approachable.
-Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [e.g., @camp2020] and INLA/inlabru and mgcv are also general purpose modelling packages.
+Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications, users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation with uncertainty of derived variables such as area-weighted population indexes may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
