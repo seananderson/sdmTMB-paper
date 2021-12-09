@@ -34,16 +34,11 @@ This appendix uses the following notation conventions:
 
 * Bold lowercase for vectors
 
-* Bold subscript $\s$ since x, y
+* Bold subscript $\s$ (a point in space) since it represents a vector of length 2
 
 * Bold uppercase for matrices
 
-* $\phi$ for all 'dispersion' parameters for consistency with code
-
-* Family titles link to TMB or sdmTMB source code
-
-* Attempt to link math symbols to argument options in model and code symbols
-
+* $\phi$ for all 'dispersion' parameters for consistency with the code
 
 ```{r, results='asis'}
 symbols <- tibble::tribble(
@@ -64,7 +59,6 @@ symbols <- tibble::tribble(
   "$\\sigma_\\alpha^2$", "IID random intercept variance",
   "$\\delta_{\\s,t}$", "AR1 or random walk spatiotemporal deviations",
   "$\\rho$", "Correlation between random fields in subsequent time steps"
-  
 )
 knitr::kable(symbols, caption = "Symbol notation and descriptions", escape = FALSE, format = "latex", booktabs = TRUE)
 ```
@@ -101,7 +95,7 @@ where
 * $y$ represents the response data;
 * $\mu$ represents the mean;
 * $f$ represents a link function (e.g., log or logit) and $f^{-1}$ represents its inverse;
-* $\bm{X}_{1,\bm{s},t}$, $\bm{X}_{2,\bm{s},t}$, and $\bm{X}_{3,\bm{s},t}$ represent design matrices;
+* $\bm{X}_{1}$, $\bm{X}_{2}$, and $\bm{X}_{3}$ represent design matrices;
 * $\bm{\beta}$ represents a vector of fixed-effect coefficients;
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
@@ -111,35 +105,29 @@ where
 
 We now split this model apart to describe the various parts in more detail.
 
-## Main effects:
+## Main effects
 
 $$
 \begin{aligned}
-\mu_{\bm{s},t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} \ldots \right)
+\mu_{\bm{s},t} &= f^{-1} \left( \bm{X}_{1,\bm{s},t} \bm{\beta} \ldots \right)
 \end{aligned}
 $$
 
-Within `sdmTMB()`,
-
-* $\boldsymbol{X} \boldsymbol{\beta}$ is defined by the `formula` argument and
-  represents the fixed effect model matrix and a corresponding vector of
-  coefficients.
+Within `sdmTMB()`, $\bm{X}_{1,\bm{s},t} \bm{\beta}$ is defined by the `formula` argument and represents the main-effect model matrix and a corresponding vector of coefficients. This main effect formula can contain optional penalized smoothers or non-linear functions as defined below.
 
 ### Smoothers
 
-Smoothers in sdmTMB are generally implemented with the same formula syntax familiar to `mgcv` users fitting GAMs (generalized additive models). Smooths are implemented in the formula using `+ s(x)`, which implements a smooth from `mgcv::s()`. Within these smooths, the same syntax commonly used in mgcv::s() can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)`; and various types of splines may be constructed such as cyclic splines to model seasonality, `+ s(month, bs = "cc", k = 12)`. 
+Smoothers in sdmTMB are generally implemented with the same formula syntax familiar to mgcv users fitting GAMs (generalized additive models).
+Smooths are implemented in the formula using `+ s(x)`, which implements a smooth from `mgcv::s()`. 
+Within these smooths, the same syntax commonly used in `mgcv::s()` can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)`; and various types of splines may be constructed such as cyclic splines to model seasonality, e.g. `+ s(month, bs = "cc", k = 12)`. 
 
-While `mgcv` can fit unpenalized (e.g. B-splines, and others) or penalized splines (P-splines), sdmTMB only uses penalized splines. 
-The penalized splines are constructed in sdmTMB using the function `mgcv::smooth2random()`, which transforms splines into random effects (and associated design matrices) that are estimable in a mixed effects modeling framework. This is a similar approach implemented in `gamm4` and `brms`, among other packages.
+While mgcv can fit unpenalized (e.g., B-splines) or penalized splines (P-splines), sdmTMB only implements penalized splines. 
+The penalized splines are constructed in sdmTMB using the function `mgcv::smooth2random()`, which transforms splines into random effects (and associated design matrices) that are estimable in a mixed-effects modelling framework.
+This is a similar approach implemented in `gamm4` and `brms`, among other packages.
 
 ### Linear breakpoint threshold models
 
-The linear breakpoint or hockey stick model can be used to describe threshold or asymptotic responses. This function consists of two pieces, so that for $x < b_{1}$
-
-$$s(x) = x \cdot b_{0}$$
-and for $x > b_{1}$
-
-$$s(x) = b_{1} \cdot b_{0}$$
+The linear breakpoint or hockey stick model can be used to describe threshold or asymptotic responses. This function consists of two pieces, so that for $x < b_{1}$, $s(x) = x \cdot b_{0}$, and for $x > b_{1}$, $s(x) = b_{1} \cdot b_{0}$.
 In both cases, $b_{0}$ represents the slope of the function up to a threshold, and the product $b_{1} \cdot b_{0}$ represents the value at the asymptote. No constraints are placed on parameters $b_{0}$ or $b_{1}$.
 
 These models can be fit by including `+ breakpt(x)` in the model formula, where
@@ -147,14 +135,15 @@ These models can be fit by including `+ breakpt(x)` in the model formula, where
 
 ### Logistic threshold models
 
-The form is
+Models with logistic threshold relationships between a predictor and the response can be fit with the form
 
 $$
 s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln\ \left(19\right) \cdot \left( x-s50 \right)
      / \left(s95 - s50 \right) } \right] }^{-1},
 $$
 
-where $\psi$ is a scaling parameter (controlling the height of the y-axis for
+where $s$ represents the logistic function, 
+$\psi$ is a scaling parameter (controlling the height of the y-axis for
 the response, and is unconstrained), $\tau$ is an intercept, $s50$ is
 a parameter controlling the point at which the function reaches 50% of the
 maximum ($\psi$), and $s95$ is a parameter controlling the point at which the
@@ -165,6 +154,8 @@ These models can be fit by including `+ logistic(x)` in the model formula, where
 
 ## Spatial random fields
 
+Spatial random fields, $\omega_s$, are included if `spatial = 'on'` and omitted if `spatial = 'off'`.
+
 $$
 \begin{aligned}
 \mu_{\bm{s},t} &= f^{-1} \left( \ldots + \omega_s + \ldots \right),\\
@@ -172,13 +163,13 @@ $$
 \end{aligned}
 $$
 
-* $\omega_s$ are included if `spatial = 'on'` and omitted if `spatial = 'off'`.
-
 ## Spatiotemporal random fields
 
-Spatiotemporal random fields are included by default if there are multiple time elements (`time` argument is not `NULL`) but can be set to IID (`'iid'`; default), AR1 (`'ar1'`), random walk (`'rw'`), or off (`'off'`) via the `spatiotemporal` argument.
+Spatiotemporal random fields are included by default if there are multiple time elements (`time` argument is not `NULL`) and can be set to IID (`'iid'`; default), AR1 (`'ar1'`), random walk (`'rw'`), or off (`'off'`) via the `spatiotemporal` argument.
 
 ### IID spatiotemporal random fields
+
+IID spatiotemporal random fields (`spatiotemporal = 'iid'`) can be represented as
 
 $$
 \begin{aligned}
@@ -187,36 +178,39 @@ $$
 \end{aligned}
 $$
 
-* $\epsilon_{\s,t}$ are \ldots
+where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
+The random fields are assumed independent across time slices. 
 
 ### AR1 spatiotemporal random fields
 
-Dropping other components for simplicity:
+AR1 spatiotemporal random fields (`spatiotemporal = 'ar1'`) add a parameter defining the correlation between random field deviations from one time slice to the next. The are defined as
 
 $$
 \begin{aligned}
-\mu_{\s,t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} + \delta_{\s,t} \right),\\
+\mu_{\s,t} &= f^{-1} \left( \ldots + \delta_{\s,t} \ldots \right),\\
 \boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
 \boldsymbol{\delta}_{t>1} &= \rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2} \boldsymbol{\epsilon}_t,  \:
 \boldsymbol{\epsilon}_t \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
-where $\rho$ is the correlation between subsequent spatiotemporal random fields. The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance. The correlation $\rho$ allows for mean-reverting spatiotemporal fields, and is generally expected to be $-1 < \rho < 1$.
+where $\rho$ is the correlation between subsequent spatiotemporal random fields. The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance.
+The correlation $\rho$ allows for mean-reverting spatiotemporal fields, and is constrained to be $-1 < \rho < 1$.
 
 ### Random walk spatiotemporal random fields (RW)
 
-Dropping other components for simplicity:
+Random walk spatiotemporal random fields (`spatiotemporal = 'rw'`) represent a model where the difference in spatiotemporal deviations from one time slice to the next are IID. There defined as
 
 $$
 \begin{aligned}
-\mu_{\s,t} &= f^{-1} \left( \boldsymbol{X} \boldsymbol{\beta} + \delta_{\s,t} \right),\\
+\mu_{\s,t} &= f^{-1} \left( \ldots + \delta_{\s,t} + \ldots \right),\\
 \boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
 \boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon}_{t-1},  \:
 \boldsymbol{\epsilon}_{t-1} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
 
-where the distribution of the spatiotemporal field in the initial time step is the same as for the AR(1) model, but the absence of the $\rho$ parameter allows the spatiotemporal field to be non-stationary in time. 
+where the distribution of the spatiotemporal field in the initial time step is the same as for the AR(1) model, but the absence of the $\rho$ parameter allows the spatiotemporal field to be non-stationary in time.
+Note that, in contrast to the AR1 parametrization, the variance is no longer the steady-state marginal variance.
 
 <!-- * $\alpha_g$, are defined by an lme4-style formula, e.g. `formula = y ~ x + (1 | g)`, where `g` represents a column with grouping factors. -->
 
@@ -228,6 +222,8 @@ where the distribution of the spatiotemporal field in the initial time step is t
 
 ## Spatially varying coefficients (SVC)
 
+Spatially varying coefficient (SVC) models are defined as
+
 $$
 \begin{aligned}
   \mu_{\s,t} &= f^{-1} \left( \ldots + \bm{X}_{3,t} \zeta_{\bm{s}} + \ldots \right),\\
@@ -235,7 +231,9 @@ $$
 \end{aligned}
 $$
 
-where $\boldsymbol{\zeta}$ is a random field representing a spatially varying coefficient. Usually, $\bm{X}_{3,t}$ would represent a predictor that is constant for a given time $t$. Currently, $\bm{X}_{3,t}$ is restricted to a single covariate, supplied by a formula to `spatial_varying`.
+where $\boldsymbol{\zeta}$ is a random field representing a spatially varying coefficient.
+Usually, $\bm{X}_{3,t}$ would represent a predictor that is constant for a given time $t$.
+Currently, $\bm{X}_{3,t}$ is restricted to a single covariate, supplied by a formula to `spatial_varying`.
 
 ## IID random or multi-level intercepts
 
@@ -254,6 +252,8 @@ E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorr
 
 ## Time-varying regression parameters
 
+Parameters can be modelled as time varying (a random walk) according to the form
+
 $$
 \begin{aligned}
   \mu_{\s,t} &= f^{-1} \left( \ldots + \gamma_{t} x_{\s,t} + \ldots \right),\\
@@ -262,19 +262,17 @@ $$
 \end{aligned}
 $$
 
-where $\gamma_t$ is an example optional time-varying regression parameter and
-$x_{\s,t}$ is the corresponding predictor value. This is defined via the
-`time_varying` argument. E.g., `~ 0 + x`. The first value is given an implicit
-uniform prior. I.e., the same variable should not appear in the fixed effect
-formula since the initial value is estimated as part of the time-varying formula.
-
-If `time` is defined in the call to `sdmTMB()`, then `time_varying ~ 1` implicitly represents a time-varying intercept and the intercept should be omitted from the main effects (`~ + 0` or `~ -1`).
+where $\gamma_t$ is an example optional time-varying regression parameter and $x_{\s,t}$ is the corresponding predictor value.
+This is defined via the `time_varying` argument, assuming that the `time` argument is also supplied a column name.
+For example, `time_varying ~ 0 + x`.
+The first value is given an implicit uniform prior. 
+I.e., the same variable should not appear in the fixed effect formula since the initial value is estimated as part of the time-varying formula.
+The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and the intercept should be omitted from the main effects (`~ + 0` or `~ -1`).
 
 ## Offset terms
 
 Offset terms can be included with the reserved word `offset` in the formula.
 E.g., `y ~ x + offset`.
-
 These are included in the linear predictor as
 
 $$
@@ -283,8 +281,7 @@ $$
 \end{aligned}
 $$
 
-where $O_{\s,t}$ is an offset term---a **log transformed** variable without
-a coefficient (assuming a log link).
+where $O_{\s,t}$ is an offset term---a **log transformed** variable without a coefficient (assuming a log link).
 
 # Observation model families
 
