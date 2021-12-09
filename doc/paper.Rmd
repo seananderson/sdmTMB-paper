@@ -566,13 +566,12 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 <!-- https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.701.1636&rep=rep1&type=pdf -->
 
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
-Future development may include zero-inflated models, improvements to Bayesian sampling efficiency, continuous time models, and non-gaussian random fields (REF).
+Future development may include zero-inflated models, improvements to Bayesian sampling efficiency, continuous time models (REF?), and non-gaussian random fields [e.g., @anderson2019].
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
 
-Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management [@sofaer2019.
-<!-- Not sure if you have ideas here? @anderson2019 and @english2021 are my best ideas at the moment ;) -->
+Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @english2021] (OTHER REF?) and improve ecological management [@sofaer2019].
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
