@@ -332,6 +332,8 @@ fit_spatiotemporal <- sdmTMB(
 )
 ```
 
+We could generate a population index that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \@ref(fig:pcod-fig)E, APPENDIX).
+
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but increase the accuracy of the SPDE approximation.
@@ -566,7 +568,7 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 <!-- https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.701.1636&rep=rep1&type=pdf -->
 
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
-Future development may include zero-inflated models, improvements to Bayesian sampling efficiency, continuous time models (REF?), and non-gaussian random fields [e.g., @anderson2019].
+Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-gaussian random fields [e.g., @anderson2019].
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
