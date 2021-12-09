@@ -71,8 +71,6 @@ knitr::opts_chunk$set(
 # Introduction
 
 <!-- TODO: cite: -->
-
-
 <!-- @book{diggle2007, -->
 <!--   title = {Model-Based {{Geostatistics}}}, -->
 <!--   author = {Diggle, Peter and Ribeiro, Paulo Justiniano}, -->
@@ -528,6 +526,7 @@ sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all 
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
 To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
+However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020].
 <!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
 Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
 spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
@@ -551,7 +550,7 @@ How does one choose among the related packages mentioned in this paper to fit SP
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary difference is the user interface.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
 Users familiar with INLA will find inlabru approachable.
-Users already familiar with mgcv can adapt mgcv to fit similar models with custom code (REF) and INLA/inlabru and mgcv are also general purpose modelling packages.
+Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [e.g., @camp2020] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications, users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation with uncertainty of derived variables such as area-weighted population indexes may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
@@ -596,10 +595,12 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
 Future development may include zero-inflated models, improvements to Bayesian sampling efficiency, continuous time models, and non-gaussian random fields (REF).
+<!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
 
-Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management (REF).
+Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes (REF) and improve ecological management [@sofaer2019.
+<!-- Not sure if you have ideas here? @anderson2019 and @english2021 are my best ideas at the moment ;) -->
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
