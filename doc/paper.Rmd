@@ -571,7 +571,7 @@ Future development may include zero-inflated models, improvements to Bayesian sa
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
 
-Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @english2021] (OTHER REF?) and improve ecological management [@sofaer2019].
+Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2021] and improve ecological management [@sofaer2019].
 These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
