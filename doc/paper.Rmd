@@ -4,7 +4,7 @@ author: "|
   Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca], Other authors\n| $^1$Pacific Biological Station Fisheries and Oceans Canada, \n| Nanaimo, BC, Canada\n|
   $^2$Other addresses\n"
 output:
-    # bookdown::word_document2:  
+    # bookdown::word_document2:
     bookdown::pdf_document2:
       toc: false
       number_sections: false
@@ -214,7 +214,8 @@ Estimated parameters from the Matérn covariance function can be used to describ
 # Introductory example with fish survey biomass
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
+It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`, @pebesma2018).
+<!-- Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data, but it could be added to the pcod appendix too? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
