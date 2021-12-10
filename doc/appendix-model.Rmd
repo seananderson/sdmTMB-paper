@@ -409,7 +409,7 @@ Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plot
 
 ## Barrier mesh
 
-TODO
+In some cases the spatial domain of interest may be complex, and bordered by land or water (coastlines, islands, lakes, etc). SPDE models allow for barriers to be included, via barrier meshes. With  `sdmTMB()` models, the mesh construction occurs in two steps: (1) the user constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`. The barriers must be constructed as `sf` objects with polygons defining the barriers. See `?sdmTMB::add_barrier_mesh` for examples.
 
 # Optimization details
 
@@ -423,6 +423,6 @@ In some cases, a single call to `stats::nlminb()` may not be result in convergen
 
 # Assessing convergence
 
-TODO
+Much of the guidance around diagnostics and `glmmTMB` also applies to `sdmTMB`, e.g. [https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html). Warnings of non-positive-definite Hessian matrices (accompanied by parameters with NAs for standard errors) often mean models are improperly specified given the data used. Optimization with `stats::nlminb()` involves specifying the number of iterations and evaluations (`eval.max` and `iter.max`) and the tolerances (`abs.tol`, `rel.tol`, `x.tol`, `xf.tol`) -- more iterations and smaller tolerance thresholds ensure that the optimal solution is found, but more evaluations translates into longer computation time. Additionally, multiple function calls to `stats::nlminb()` may aid convergence; we include `nlmbinb_loops` as an argument to `sdmTMB()`, where each call is initialized at the best parameter vector from the previous iteration. Alternatively, `sdmTMB()` may be called repeatedly, using different random seeds.  
 
 # References
