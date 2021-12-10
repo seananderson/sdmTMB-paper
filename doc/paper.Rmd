@@ -75,6 +75,7 @@ knitr::opts_chunk$set(
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for via predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
+<!-- ecology has a latitude gradient: von Humboldt, A. (1808) Ansichten der Natur mit wissenschaftlichen Erlauterungen. J.G. Cotta, Tübingen, Germany. -->
 Accounting for this residual correlation is important because doing so (1) allows for valid statistical inference [@legendre1989a; @dormann2007], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @thorson2019d; @barnett2021].
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
@@ -82,7 +83,7 @@ Similarly to how random intercepts can account for correlation among groups, spa
 A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle1998; @chiles1999].
 
 While simple on the surface, such models quickly become computationally limiting due to the need to invert large matrices in order to keep track of covariation among data [e.g., @latimer2009].
-Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016].
+Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can make an enormous difference to computational efficiency [@heaton2017].
 The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
@@ -93,33 +94,16 @@ For example, TMB requires the user to program in a C++ template and it can be sl
 Packages such as lme4 [@bates2015] and glmmTMB [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
 Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used lme4 or glmmTMB or lack some of the flexibility for the particular class of models discussed here.
 We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
-<!-- User interfaces through software such as VAST or inlabru can greatly reduce these challenges. VAST is built on TMB, and is extremely powerful (e.g., fitting many multivariate models not described here), but does not provide a simple, familiar, modular interface for users with basic spatial or spatiotemporal data. inlabru provides a somewhat more familiar interface to a large class of models including GRMF models, but is strictly Bayesian, lacks some flexibility for the particular class of models discussed here. It also relies on INLA, and at least for some problems, TMB can be much faster [@osgood-zimmerman2021]. We provide a more detailed comparison of related software packages in Table 1 and the discussion. -->
 
 Here, we introduce the R package sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
 Our aim is not to replace the full functionality of the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of lme4, glmmTMB, or mgcv, for a specific class of spatial and spatiotemporal models [@wood2017a].
 One common application is for species distribution models (SDMs), hence the package name.
 This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software.
 
-<!-- -   [@anderson2019] -->
-<!-- -   [@maureaud2021] -->
-<!-- -   [@anderson2020] -->
-<!-- -   [@osgood-zimmerman2021] -->
-<!-- -   [@breivik2021] -->
-<!-- -   [@monnahan2021] -->
-<!-- -   [@shelton2014] -->
-<!-- -   [@lindgren2011] -->
-<!-- -   [@latimer2009] -->
-
-<!-- Packages: -->
-
-<!-- spaMM: @rousset2014 -->
-<!-- spNNGP: @finley2021 -->
-
 <!-- millard1985: Space–Time Correlation and Its Effects on Methods for Detecting Aquatic Ecological Change "In practice, spatial correlation is more likely to be a problem than is temporal correlation, given typical monitoring frequencies." -->
 
 <!-- legendre1989a: "Spatial pattern and ecological analysis": "We can expect the spatial approach to ecological problems to bring about a quantum jump for ecologists and population geneticists who had learned a type of statistics where one had to hide space or time structures. It is now possible to use these structures and to integrate them into our analyses as fully-fledged controlled variables." -->
 
-<!-- ecology has a latitude gradient: von Humboldt, A. (1808) Ansichten der Natur mit wissenschaftlichen Erlauterungen. J.G. Cotta, Tübingen, Germany. -->
 
 (ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
 An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
@@ -478,7 +462,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 # Package comparisons
 
 There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
-sdmTMB, VAST, INLA/inlabru, and spaMM are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
 To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
