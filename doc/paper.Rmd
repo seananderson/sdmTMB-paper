@@ -528,7 +528,7 @@ Users already familiar with mgcv can fit adapt mgcv to fit similar models with c
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation with uncertainty of derived variables such as area-weighted population indexes may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
-Speed wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @english2021].
+Speed wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2021].
 INLA/inlabru, or spaMM for spatial models, scale the best with very high resolution meshes.
 
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
