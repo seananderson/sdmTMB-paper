@@ -1,5 +1,5 @@
 ---
-title: "Annotated example of a spatially varying effect with sdmTMB"
+title: "Appendix 3: example of a spatially varying effect of climate on citizen science count data with sdmTMB"
 output:
   pdf_document:
     highlight: tango

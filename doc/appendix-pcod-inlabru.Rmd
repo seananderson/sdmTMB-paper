@@ -1,5 +1,5 @@
 ---
-title: "Annotated example of index standardization with inlabru"
+title: "Appendix 4: example of index standardization of fishery-independent survey data with inlabru"
 output:
   pdf_document:
     highlight: tango

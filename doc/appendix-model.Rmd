@@ -1,5 +1,5 @@
 ---
-title: sdmTMB statistical model description
+title: "Appendix 1: sdmTMB statistical model description"
 output:
   bookdown::pdf_document2:
     toc: false
