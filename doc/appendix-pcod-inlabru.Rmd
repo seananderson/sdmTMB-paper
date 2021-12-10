@@ -49,7 +49,7 @@ We can fit the model first with `sdmTMB`. Note that this is a model with only th
 ```{r}
 sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year),
   data = pcod,
-  time = "year", spde = mesh,
+  time = "year", mesh = mesh,
   family = binomial(link = "logit"),
   spatiotemporal = "off",
   priors = sdmTMBpriors(
