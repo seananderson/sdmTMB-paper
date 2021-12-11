@@ -26,21 +26,31 @@ library(inlabru)
 theme_set(theme_minimal())
 ```
 
-This model is an extension of the same vignette using sdmTMB.
+This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru.
+We will start by building an identical mesh using INLA.
+These same functions that are used internally in the sdmTMB `make_mesh()` function. 
 
 ```{r mesh, echo = TRUE, cache=FALSE}
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+loc_xy <- as.matrix(pcod[, c("X", "Y"), drop = FALSE])
+inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 
 spde <- inla.spde2.pcmatern(
   mesh = mesh$mesh,
   prior.range = c(10, 0.05), # P(range < 10) = 0.05
-  prior.sigma = c(2, 0.05)
-) # P(sigma > 2) = 0.05
+  prior.sigma = c(2, 0.05) # P(sigma > 2) = 0.05
+) 
 ```
 
+
 ```{r plot-mesh, fig.asp=0.9, out.width="4in"}
-plot(mesh)
+plot(spde$mesh)
 ```
+
+
+```{r mesh-sdmTMB, echo = TRUE, cache=FALSE}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+```
+
 
 There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work. In the first case, we can create a design matrix and add year effects individually to the formula.
 
@@ -61,6 +71,7 @@ sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year),
 )
 sdmtmb_coefs <- tidy(sdmtmb_fit, effects = "fixed")
 ```
+
 
 Now we can set up the design matrix for `inlabru`  
 
