@@ -43,17 +43,17 @@ The reasons for the interannual variation in the number of individuals migrating
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 On average a positive NAO index results in colder and drier conditions in northern Canada and mild and wetter conditions in the eastern United States [@liu2021]. 
 For this analysis, we have defined survey year as the year prior to/ending during the survey window. 
-For these years, we have retrieved mean annual climate indices from the University of East Anglia's [Climatic Research Unit](https://crudata.uea.ac.uk/cru/data/nao/). 
+For these years, we have retrieved mean annual climate indices from the University of East Anglia's Climatic Research Unit ([ https://crudata.uea.ac.uk/cru/data/nao/](https://crudata.uea.ac.uk/cru/data/nao/)). 
 Because both productivity and the choice of wintering location could be influenced by climate, we will test for a spatially variable effect of annual mean NAO index between 1979 and 2020 on winter owl abundance. 
 Our model will span the southern boundary of their winter distribution in North America, the only portion of their range well surveyed by CBCs. 
 
 ```{r load-data, cache=FALSE} 
-snow <- readRDS(here::here("owls/SNOW_data.rds"))
+snow <- readRDS(here::here("data/SNOW_data.rds"))
 glimpse(snow)
 ```
 
 Here, X and Y are coordinates in Albers projection for North America and divided by 100000 to give units of 100 km. 
-This projection was achieved with the following crs code using `sf::st_transform(crs = Albers)`. 
+This projection was achieved with the following crs code using `sf::st_transform(crs = Albers)` [@pebesma2018]. 
 
 ```{r proj, echo=TRUE}
 Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 
@@ -65,10 +65,6 @@ First, we construct a mesh to approximate the spatial process, which is used in 
 ```{r mesh, echo=TRUE, cache=FALSE, out.width="5.5in"}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 plot(mesh)
-```
-
-```{r plot-mesh}
-
 ```
 
 The result is a mesh with `r mesh$mesh$n` knots. 
@@ -124,13 +120,17 @@ m2 <- sdmTMB(count ~ 1 + nao + (1|year_f),
             data = snow, mesh = mesh)
 ```
 
-```{r load-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE}
-m0 <- readRDS(here::here("owls/snow_w_main_effect_0_150km.rds"))
-m1 <- readRDS(here::here("owls/snow_w_main_effect_1_150km.rds"))
-m2 <- readRDS(here::here("owls/snow_w_main_effect_150km.rds"))
-m <- readRDS(here::here("owls/snow_w_main_effect_150km_reml.rds"))
+```{r save-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=FALSE}
+saveRDS(m0, here::here("data/snow_w_main_effect_0_150km.rds"))
+saveRDS(m1, here::here("data/snow_w_main_effect_1_150km.rds"))
+saveRDS(m2, here::here("data/snow_w_main_effect_150km.rds"))
 ```
 
+```{r load-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE}
+m0 <- readRDS(here::here("data/snow_w_main_effect_0_150km.rds"))
+m1 <- readRDS(here::here("data/snow_w_main_effect_1_150km.rds"))
+m2 <- readRDS(here::here("data/snow_w_main_effect_150km.rds"))
+```
 
 ```{r aic, echo=TRUE, cache=FALSE}
 AIC(m0,m1,m2)
@@ -148,8 +148,13 @@ m <- sdmTMB(count ~ 1 + nao + (1|year_f),
             data = snow, mesh = mesh)
 ```
 
+```{r save-reml-model, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=FALSE}
+saveRDS(m, here::here("data/snow_w_main_effect_150km_reml.rds"))
+```
+
 Print the model to inspect the fit:
 ```{r check, include = FALSE, cache=FALSE, eval=TRUE}
+m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
 m # loading this twice just prevents some excess messages from cluttering the output when printing below
 ```
 
@@ -187,11 +192,11 @@ stan_fit <- tmbstan::tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 99)
 eta <- predict(m, tmbstan_model = stan_fit)
 mu <- m$family$linkinv(as.numeric(eta))
 r_mcmc <- sdmTMB:::qres_nbinom2(m, y = m$data$count, mu = mu)
-saveRDS(r_mcmc, "mcmc_residuals.rds")
+saveRDS(r_mcmc, "data/mcmc_residuals.rds")
 ```
 
 ```{r stan-dat, echo=FALSE, cache=FALSE}
-r_mcmc <- readRDS(here::here("owls/mcmc_residuals.rds"))
+r_mcmc <- readRDS(here::here("data/mcmc_residuals.rds"))
 ```
 
 ```{r stan-qqnorm, out.width = "33%"}
@@ -234,12 +239,12 @@ p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
 p_proj <- p %>% mutate(x = X, y = Y) %>% sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
-We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http://www.naturalearthdata.com/) and transformed them to the correct projection.
+We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from [http://www.naturalearthdata.com/](http//www.naturalearthdata.com/download/10m/physical/ne_10m_lakes.zip) and transformed them to the correct projection.
 
 ```{r shapes}
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>% 
   sf::st_transform(crs = Albers) 
-lakes <- sf::st_read(here::here("owls/ne_10m_lakes"),  quiet = TRUE)
+lakes <- sf::st_read(here::here("data/ne_10m_lakes"),  quiet = TRUE)
 lakes <- lakes[lakes$scalerank==0,] %>% sf::st_transform(crs = Albers) # only large lakes
 ```
 

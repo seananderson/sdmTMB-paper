@@ -4,7 +4,7 @@ author: "|
   Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca], Other authors\n| $^1$Pacific Biological Station Fisheries and Oceans Canada, \n| Nanaimo, BC, Canada\n|
   $^2$Other addresses\n"
 output:
-    # bookdown::word_document2:  
+    # bookdown::word_document2:
     bookdown::pdf_document2:
       toc: false
       number_sections: false
@@ -76,6 +76,7 @@ Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, both due to measured and unmeasured variables [@cressie1993; @cressie2011].
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
 Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions compared to ignoring it [e.g., @shelton2014], and can be of ecological interest itself [e.g., @thorson2019d; @barnett2021].
+Accounting for this residual correlation is important because doing so (1) allows for valid statistical inference [@legendre1989a; @dormann2007], (2) can improve predictions compared to ignoring it [e.g., @shelton2014], and (3) can be of ecological interest itself [e.g., @thorson2019d; @barnett2021].
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data.
 Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
@@ -202,7 +203,8 @@ Derived parameters from the Matérn covariance function can be used to describe 
 # Introductory example with fish survey biomass
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`).
+It usually makes sense to convert the spatial coordinates to an equidistant projection such as UTMs such that distance remains constant throughout the study region (e.g., using `sf::st_transform()`, @pebesma2018).
+<!-- Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data, but it could be added to the pcod appendix too? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, BC, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
