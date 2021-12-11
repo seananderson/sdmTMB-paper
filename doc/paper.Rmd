@@ -238,12 +238,12 @@ Alternatively, we could have created any mesh via the INLA package and supplied 
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
 We can then fit a model with spatial random fields via the function `sdmTMB()`. 
-We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
+We use a penalized smoother for depth as a main effect via `s()` from the mgcv package and choose a basis dimension of 5.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  density ~ s(depth),
+  density ~ s(depth, k = 5),
   data = pcod,
   family = tweedie(link = "log"),
   mesh = mesh,
@@ -261,24 +261,28 @@ print(fit)
 
 ```{}
 #> Spatiotemporal model fit by ML ['sdmTMB']
-#> Formula: density ~ s(depth)
+#> Formula: density ~ s(depth, k = 5)
 #> Mesh: mesh
 #> Data: pcod
 #> Family: tweedie(link = 'log')
 #>             coef.est coef.se
-#> (Intercept)     2.37    0.21
+#> (Intercept)     2.34    0.23
+#> sdepth        -26.96   21.52
 #>
-#> Dispersion parameter: 12.69
+#> Smooth terms:
+#>            Std. Dev.
+#> sds(depth)     34.03
+#>
+#> Dispersion parameter: 12.70
 #> Tweedie p: 1.58
-#> Matern range: 16.39
+#> Matern range: 17.47
 #> Spatial SD: 1.86
-#> ML criterion at convergence: 6402.136
+#> ML criterion at convergence: 6403.637
 ```
 
-The output indicates our model was fit by maximum (marginal) likelihood (`'ML'`).
+The output indicates our model was fit by maximum (marginal) likelihood (`ML`).
 We also see the formula, mesh, fitted data, and family.
-Next we see any estimated fixed effects, the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
-Internally, `s(depth)` creates random effect spline weights and so is not shown here.
+Next we see any estimated main effects including the linear component of the smoother (`sdepth`), the standard deviation on the smoother weights (`sds(depth)`), the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 
 <!--
 EW: TODO I think this could use a bit more hand holding — things to highlight are (1) predictions can be made for a new dataframe with any locations, 
@@ -302,7 +306,7 @@ Here we will turn off the spatial field and structure the spatiotemporal random 
 
 ```{r fit-tv, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
-  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh,
+  density ~ s(depth, k = 5), family = tweedie(link = "log"), data = pcod, mesh = mesh,
   time = "year", spatial = "off", spatiotemporal = "ar1"
 )
 ```
