@@ -45,6 +45,7 @@ d <- sdmTMB_simulate(
   B = c(0)
 )
 
+DPI <- 25
 dir.create("figs", showWarnings = FALSE)
 ggplot(filter(d, year == 1L), aes(X, Y, fill = omega_s)) +
   geom_raster() +
@@ -52,110 +53,162 @@ ggplot(filter(d, year == 1L), aes(X, Y, fill = omega_s)) +
   theme_void() +
   theme(legend.position = "none") +
   coord_fixed()
-ggsave("figs/omega_s.png", width = 3, height = 3)
+ggsave("figs/omega_s.png", width = 3, height = 3, dpi = DPI)
 
 ggplot(filter(d, year == 1L), aes(X, Y, fill = epsilon_st)) +
   geom_raster() + scale_fill_gradient2() + theme_void() +
   theme(legend.position = "none") +
   coord_fixed()
-ggsave("figs/eps_st1.png", width = 3, height = 3)
+ggsave("figs/eps_st1.png", width = 3, height = 3, dpi = DPI)
 
 ggplot(filter(d, year == 2L), aes(X, Y, fill = epsilon_st)) +
   geom_raster() + scale_fill_gradient2() + theme_void() +
   theme(legend.position = "none") +
   coord_fixed()
-ggsave("figs/eps_st2.png", width = 3, height = 3)
+ggsave("figs/eps_st2.png", width = 3, height = 3, dpi = DPI)
 
 ggplot(filter(d, year == 3L), aes(X, Y, fill = epsilon_st)) +
   geom_raster() + scale_fill_gradient2() + theme_void() +
   theme(legend.position = "none") +
   coord_fixed()
-ggsave("figs/eps_st3.png", width = 3, height = 3)
+ggsave("figs/eps_st3.png", width = 3, height = 3, dpi = DPI)
 
-ggplot(filter(d, year == 4L), aes(X, Y, fill = epsilon_st)) +
-  geom_raster() + scale_fill_gradient2() + theme_void() +
+.d <- filter(d, year == 4L)
+.d$epsilon_st <- .d$epsilon_st - mean(.d$epsilon_st)
+ggplot(.d, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() + scale_fill_gradient2(low = scales::muted("purple"), high = scales::muted("green")) + theme_void() +
   theme(legend.position = "none") +
   coord_fixed()
-ggsave("figs/zeta_s.png", width = 3, height = 3)
+ggsave("figs/zeta_s.png", width = 3, height = 3, dpi = DPI)
 
 
-### Main effects plots
+ggplot(.d, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() + scale_fill_viridis_c() + theme_void() +
+  theme(legend.position = "none") +
+  coord_fixed()
+ggsave("figs/zeta_s_viridis.png", width = 3, height = 3, dpi = DPI)
 
-## linear
-sens <- readRDS("all-sensor-data-processed.rds") %>% select(year, X, Y,
-                                                            temp = temperature_c,
-                                                            do = do_mlpl) %>% unique()
-dat <- left_join(pcod, sens) %>% filter(year > 2008)
-dat <- na.omit(dat)
-hist(dat$do)
-plot(dat$do~dat$depth)
-plot(dat$do~dat$temp)
+# ### Main effects plots
 
-dat <- mutate(dat,
-              do_mean = mean(log(do), na.rm = TRUE),
-              do_sd = sd(log(do), na.rm = TRUE),
-              do_scaled = (log(do) - do_mean[1]) / do_sd[1]
-)
+x <- seq(0, 1, length.out = 100)
+y <- x * 2
+plot(x, y)
+d1 <- data.frame(x = x, y = y, type = "a - linear")
 
-dat$group <- as.factor(dat$year)
+x <- seq(-2, 2, length.out = 100)
+y <- -x^2
+plot(x, exp(y))
+d2 <- data.frame(x = x, y = exp(y), type = "b - smooth")
 
-spde <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
-plot(spde)
+# $x < b_{1}$, $s(x) = x \cdot b_{0}$, and for $x > b_{1}$, $s(x) = b_{1} \cdot b_{0}$.
 
-nd <- data.frame(
-  do_scaled = seq(min(dat$do_scaled) + 0.2,
-                  max(dat$do_scaled) - 0.2, length.out = 100),
-  year = 2015 # a chosen year
-)
+bkpt <- function(x, b0, b1) {
+  if (x < b1) y <- x * b0
+  if (x >= b1) y <- b1 * b0
+  y
+}
 
-m1 <- sdmTMB(present ~ 0 + as.factor(year) + (do_scaled), data = dat, mesh = spde, time = "year",
-            family = binomial(link = "logit"),
-            spatial = "on", spatiotemporal = "IID")
-# m1
-p1 <- predict(m1, newdata = nd, se_fit = TRUE, re_form = NA)
+x <- seq(0, 2, length.out = 100)
+y <- sapply(x, bkpt, b0 = 2, b1 = 1)
+plot(x, y)
+d3 <- data.frame(x = x, y = y, type = "c - bkpt")
 
-(pp1 <- p1 %>%
-    ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
-    geom_line() +
-    geom_ribbon(alpha = 0.1) +
-    theme_void())
+d <- bind_rows(d1, d2, d3)
 
-
-## gam
-
-m2 <- sdmTMB(present ~ 0 + as.factor(year) + s(do_scaled), data = dat, mesh = spde, time = "year",
-             family = binomial(link = "logit"),
-             spatial = "on", spatiotemporal = "IID")
-# m2
-p2 <- predict(m2, newdata = nd, se_fit = TRUE, re_form = NA)
-
-(pp2 <- p2 %>%
-  ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
-  geom_line() +
-  geom_ribbon(alpha = 0.1) +
-  theme_void())
+ggplot(filter(d, type == "a - linear"), aes(x, y)) + geom_line(lwd = 2.7) +
+  facet_wrap(~type, scales = "free") +
+  theme_void() +
+  theme(strip.text = element_blank())
+ggsave("figs/main-effects-a.pdf", width = 2.7, height = 2.7)
+ggplot(filter(d, type == "b - smooth"), aes(x, y)) + geom_line(lwd = 2.7) +
+  facet_wrap(~type, scales = "free") +
+  theme_void() +
+  theme(strip.text = element_blank())
+ggsave("figs/main-effects-b.pdf", width = 2.7, height = 2.7)
+ggplot(filter(d, type == "c - bkpt"), aes(x, y)) + geom_line(lwd = 2.7) +
+  facet_wrap(~type, scales = "free") +
+  theme_void() +
+  theme(strip.text = element_blank())
+ggsave("figs/main-effects-c.pdf", width = 2.7, height = 2.7)
 
 
-## breakpoint
 
-m3 <- sdmTMB(present ~ 0 + as.factor(year) + breakpt(do_scaled),
-             data = dat, mesh = spde2, time = "year",
-             family = binomial(link = "logit"),
-             spatial = "on", spatiotemporal = "IID")
-# m3
-p3 <- predict(m3, newdata = nd, se_fit = TRUE, re_form = NA)
-
-(pp3 <- p3 %>%
-  ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
-  geom_line() +
-  geom_ribbon(alpha = 0.1) +
-  theme_void())
-
-pp1 + pp2 + pp3 + patchwork::plot_layout(nrow = 1)
-
-ggsave("figs/fixed-effects-do.pdf", width = 1.5, height = 0.8)
-
-
+#
+# ## linear
+# sens <- readRDS("all-sensor-data-processed.rds") %>% select(year, X, Y,
+#                                                             temp = temperature_c,
+#                                                             do = do_mlpl) %>% unique()
+# dat <- left_join(pcod, sens) %>% filter(year > 2008)
+# dat <- na.omit(dat)
+# hist(dat$do)
+# plot(dat$do~dat$depth)
+# plot(dat$do~dat$temp)
+#
+# dat <- mutate(dat,
+#               do_mean = mean(log(do), na.rm = TRUE),
+#               do_sd = sd(log(do), na.rm = TRUE),
+#               do_scaled = (log(do) - do_mean[1]) / do_sd[1]
+# )
+#
+# dat$group <- as.factor(dat$year)
+#
+# spde <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
+# plot(spde)
+#
+# nd <- data.frame(
+#   do_scaled = seq(min(dat$do_scaled) + 0.2,
+#                   max(dat$do_scaled) - 0.2, length.out = 100),
+#   year = 2015 # a chosen year
+# )
+#
+# m1 <- sdmTMB(present ~ 0 + as.factor(year) + (do_scaled), data = dat, mesh = spde, time = "year",
+#             family = binomial(link = "logit"),
+#             spatial = "on", spatiotemporal = "IID")
+# # m1
+# p1 <- predict(m1, newdata = nd, se_fit = TRUE, re_form = NA)
+#
+# (pp1 <- p1 %>%
+#     ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+#     geom_line() +
+#     geom_ribbon(alpha = 0.1) +
+#     theme_void())
+#
+#
+# ## gam
+#
+# m2 <- sdmTMB(present ~ 0 + as.factor(year) + s(do_scaled), data = dat, mesh = spde, time = "year",
+#              family = binomial(link = "logit"),
+#              spatial = "on", spatiotemporal = "IID")
+# # m2
+# p2 <- predict(m2, newdata = nd, se_fit = TRUE, re_form = NA)
+#
+# (pp2 <- p2 %>%
+#   ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+#   geom_line() +
+#   geom_ribbon(alpha = 0.1) +
+#   theme_void())
+#
+#
+# ## breakpoint
+#
+# m3 <- sdmTMB(present ~ 0 + as.factor(year) + breakpt(do_scaled),
+#              data = dat, mesh = spde2, time = "year",
+#              family = binomial(link = "logit"),
+#              spatial = "on", spatiotemporal = "IID")
+# # m3
+# p3 <- predict(m3, newdata = nd, se_fit = TRUE, re_form = NA)
+#
+# (pp3 <- p3 %>%
+#   ggplot(., aes(do_scaled, est, ymin = (est - 1.96 * est_se), ymax = (est + 1.96 * est_se))) +
+#   geom_line() +
+#   geom_ribbon(alpha = 0.1) +
+#   theme_void())
+#
+# pp1 + pp2 + pp3 + patchwork::plot_layout(nrow = 1)
+#
+# ggsave("figs/fixed-effects-do.pdf", width = 1.5, height = 0.8)
+#
+#
 
 ### IID random intercepts
 
