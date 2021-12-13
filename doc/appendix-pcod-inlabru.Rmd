@@ -41,37 +41,11 @@ spde <- inla.spde2.pcmatern(
 ) 
 ```
 
-
 ```{r plot-mesh, fig.asp=0.9, out.width="4in"}
 plot(spde$mesh)
 ```
 
-
-```{r mesh-sdmTMB, echo = TRUE, cache=FALSE}
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
-```
-
-
 There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work. In the first case, we can create a design matrix and add year effects individually to the formula.
-
-We can fit the model first with `sdmTMB`. Note that this is a model with only the fixed year effects and a single spatial field, with presence-absence as the response.  
-
-```{r}
-sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year),
-  data = pcod,
-  time = "year", mesh = mesh,
-  family = binomial(link = "logit"),
-  spatiotemporal = "off",
-  priors = sdmTMBpriors(
-    matern_st = pc_matern(
-      range_gt = 10, range_prob = 0.05,
-      sigma_lt = 2, sigma_prob = 0.05
-    )
-  )
-)
-sdmtmb_coefs <- tidy(sdmtmb_fit, effects = "fixed")
-```
-
 
 Now we can set up the design matrix for `inlabru`  
 
@@ -96,6 +70,26 @@ fit <- bru(
   family = "binomial", data = dat
 )
 bru_coefs <- fit$summary.fixed[, c("mean", "sd")]
+```
+
+We can also fit the model with `sdmTMB`. Note that this is a model with only the fixed year effects and a single spatial field, with presence-absence as the response.  
+
+```{r sdmtmb}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
+sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year),
+  data = pcod,
+  time = "year", mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(
+    matern_st = pc_matern(
+      range_gt = 10, range_prob = 0.05,
+      sigma_lt = 2, sigma_prob = 0.05
+    )
+  )
+)
+sdmtmb_coefs <- tidy(sdmtmb_fit, effects = "fixed")
 ```
 
 Comparing the fixed effects between `sdmTMB` and `inlabru` shows the estimates are correlated, but not perfectly so  
