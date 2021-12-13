@@ -26,8 +26,18 @@ library(inlabru)
 theme_set(theme_minimal())
 ```
 
-This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru.
+This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru. 
+Once again we will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound.
+The density units are kg/km^2^. 
+This can be converted to tonnes per km2 by dividing by 1000, which can sometimes scale better.
+
+```{r}
+pcod$density_tpkm <- pcod$density/1000
+```
+
+
 We will start by building an identical mesh using INLA.
+Here, X and Y are coordinates in UTM zone 9.
 These same functions that are used internally in the sdmTMB `make_mesh()` function. 
 
 ```{r mesh, echo = TRUE, cache=FALSE}
@@ -50,7 +60,7 @@ There are a couple ways to include the fixed effects with `inlabru`. Unfortunate
 Now we can set up the design matrix for `inlabru`  
 
 ```{r fit-pcod, warning=FALSE, message=FALSE}
-m <- lm(present ~ -1 + as.factor(year), data = pcod)
+m <- lm(density_tpkm ~ -1 + as.factor(year), data = pcod)
 model_mat <- model.matrix(m)
 colnames(model_mat) <- paste0("x", unique(pcod$year))
 dat <- cbind(pcod, model_mat)
@@ -59,15 +69,18 @@ dat <- cbind(pcod, model_mat)
 Next we set up the `components` object for the model. This includes a formula with fixed or random effects (here only fixed) and the design of the spatial random field. The name `spatrf` can be anything, but includes the coordinates, spde model, and how the year effects are shared. 
 
 ```{r}
-components <- present ~ -1 + x2003 + x2004 + x2005 + x2007 +
+components <- density_tpkm ~ -1 + x2003 + x2004 + x2005 + x2007 +
   x2009 + x2011 + x2013 + x2015 + x2017 +
-  spatrf(main = coordinates, model = spde)
-# spatrf(main = coordinates,model = spde, group=year, ngroup=ncol(model_mat),
-#       control.group = list(model = "iid"))
+  # spatrf(main = coordinates, model = spde)
+  spatrf(main = coordinates, model = spde, group=year, ngroup=ncol(model_mat),
+      control.group = list(model = "iid"))
 
 fit <- bru(
   components = components,
-  family = "binomial", data = dat
+  family = "tweedie",
+  # family = "binomial",
+  options = bru_options(bru_verbose = TRUE), 
+  data = dat
 )
 bru_coefs <- fit$summary.fixed[, c("mean", "sd")]
 ```
@@ -77,17 +90,18 @@ We can also fit the model with `sdmTMB`. Note that this is a model with only the
 ```{r sdmtmb}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 
-sdmtmb_fit <- sdmTMB(present ~ -1 + as.factor(year),
+sdmtmb_fit <- sdmTMB(density_tpkm ~ -1 + as.factor(year),
   data = pcod,
   time = "year", mesh = mesh,
-  family = binomial(link = "logit"),
-  spatiotemporal = "off",
-  priors = sdmTMBpriors(
-    matern_st = pc_matern(
-      range_gt = 10, range_prob = 0.05,
-      sigma_lt = 2, sigma_prob = 0.05
-    )
-  )
+  family = tweedie(link = "log"),
+  # family = binomial(link = "logit"),
+  # priors = sdmTMBpriors(
+  #   matern_st = pc_matern(
+  #     range_gt = 10, range_prob = 0.05,
+  #     sigma_lt = 2, sigma_prob = 0.05
+  #   )
+  # ),
+  spatiotemporal = "IID"
 )
 sdmtmb_coefs <- tidy(sdmtmb_fit, effects = "fixed")
 ```
@@ -102,19 +116,19 @@ abline(a = 0, b = 1)
 The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac`
 
 ```{r}
-components <- present ~ 0 +
-  fac(main = year, model = "factor_full") +
-  spatrf(main = coordinates, model = spde)
-
-fit2 <- bru(
-  components = components,
-  family = "binomial", data = dat
-)
-bru_coefs2 <- fit2$summary.random$fac[, c("mean", "sd")]
+# components <- present ~ 0 +
+#   fac(main = year, model = "factor_full") +
+#   spatrf(main = coordinates, model = spde)
+# 
+# fit2 <- bru(
+#   components = components,
+#   family = "binomial", data = dat
+# )
+# bru_coefs2 <- fit2$summary.random$fac[, c("mean", "sd")]
 ```
 
 These estimates are perfectly correlated with the estimates above,
 
 ```{r}
-plot(bru_coefs$mean, bru_coefs2$mean)
+# plot(bru_coefs$mean, bru_coefs2$mean)
 ```
