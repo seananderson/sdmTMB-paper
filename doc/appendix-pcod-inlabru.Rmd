@@ -45,7 +45,7 @@ loc_xy <- as.matrix(pcod[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 
 spde <- inla.spde2.pcmatern(
-  mesh = mesh$mesh,
+  mesh = inla_mesh,
   prior.range = c(10, 0.05), # P(range < 10) = 0.05
   prior.sigma = c(2, 0.05) # P(sigma > 2) = 0.05
 ) 
