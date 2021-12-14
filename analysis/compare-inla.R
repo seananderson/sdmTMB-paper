@@ -5,7 +5,7 @@ d <- pcod_2011
 yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
 nyear <- length(unique(d$year))
 d <- dplyr::left_join(d, yr_lu)
-mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 5)
+mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 7)
 plot(mesh)
 tictoc::tic("INLA")
 spde <- inla.spde2.pcmatern(mesh = mesh$mesh,
@@ -21,10 +21,10 @@ sdat <- inla.stack(
   effects = list(iset, year_factor = as.factor(d$year)),
   tag = 'stdata')
 # Pr(cor > 0) = 0.9:
-# h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
-h.spec <- list(theta = list(prior = 'normal', param = c(0, 1)))
+h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
+# h.spec <- list(theta = list(prior = 'normal', param = c(0, 1)))
 formulae <- y ~ 0 + year_factor + f(i, model = spde, group = i.group,
-  control.group = list(model = 'iid', hyper = h.spec))
+  control.group = list(model = 'ar1', hyper = h.spec))
 # PC prior on the autoreg. param.
 # prec.prior <- list(prior = 'pc.prec', param = c(1, 0.01))
 m_inla <- inla(formulae,
@@ -34,6 +34,7 @@ m_inla <- inla(formulae,
   # control.family = list(hyper = list(theta = prec.prior)),
   control.fixed = list(expand.factor.strategy = 'inla', mean = 0, prec = 1/(100*100)),
   verbose = FALSE,
+  control.inla = list(int.strategy = "eb", strategy = "gaussian"),
   control.compute = list(config = TRUE)
   )
 post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
@@ -49,7 +50,7 @@ summary(m_inla)
 
 tictoc::tic("sdmTMB")
 m <- sdmTMB(present ~ 0 + as.factor(year), data = d, mesh = mesh, time = "year",
-  spatiotemporal = "IID", spatial = "off", family = binomial(link = "logit"),
+  spatiotemporal = "AR1", spatial = "off", family = binomial(link = "logit"),
   priors = sdmTMBpriors(
     matern_st = pc_matern(range_gt = 5, range_prob = 0.05, sigma_lt = 5, sigma_prob = 0.05),
     ar1_rho = normal(0, 1),
