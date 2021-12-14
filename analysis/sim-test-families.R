@@ -5,7 +5,6 @@ library(sdmTMB)
 library(future)
 theme_set(ggsidekick::theme_sleek())
 plan(multisession, workers = floor(availableCores() / 2))
-# options(future.rng.onMisuse = "ignore")
 
 SEED <- 1
 set.seed(SEED)
@@ -144,6 +143,14 @@ est %>% filter(sigma_O.est > 2)
 est <- est %>% filter(max_gradient < 0.002) %>%
   filter(sigma_O.est < 2)
 
+meds <- est %>% reshape2::melt() %>%
+  right_join(true, by = "variable") %>%
+  filter(!(family == "binomial" & variable == "phi.est")) %>%
+  filter(!(family == "poisson" & variable == "phi.est")) %>%
+  mutate(family_link = paste(family, link)) %>%
+  group_by(family_link, variable) %>%
+  mutate(median_value = median(value))
+
 est %>%
   reshape2::melt() %>%
   right_join(true, by = "variable") %>%
@@ -152,7 +159,9 @@ est %>%
   ggplot(aes(value)) +
   facet_grid(vars(paste(family, link)), vars(variable), scales = "free") +
   geom_histogram(bins = 15) +
-  geom_vline(aes(xintercept = true_value), colour = "red")
+  geom_vline(aes(xintercept = true_value), colour = "red") +
+  geom_vline(aes(xintercept = median_value), colour = "blue", data = meds)
+ggsave("figs/sim-test-families-pars.pdf", width = 11, height = 11)
 
 coverage <- est %>%
   filter(family != "poisson") %>%
@@ -184,6 +193,45 @@ est %>%
   filter(family != "binomial") %>%
   worm_plot(phi.lwr, phi.est, phi.upr, phi, expression(phi)) +
   coord_cartesian(xlim = c(phi-0.2, phi+0.2)) +
-  facet_wrap(~paste(family, link), scales = "free")
+  facet_wrap(~paste(family, link), scales = "free_y", ncol = 5)
+ggsave("figs/sim-test-families-phi.pdf", width = 12, height = 7)
+
+est %>%
+  worm_plot(b1.lwr, b1.est, b1.upr, betas[2], "b1") +
+  facet_wrap(~paste(family, link), scales = "free_y", ncol = 5) +
+  coord_cartesian(xlim = c(0.5, 0.9))
+ggsave("figs/sim-test-families-b1.pdf", width = 12, height = 7)
+
+est %>%
+  filter(range.upr < 1000) %>%
+  worm_plot(range.lwr, range.est, range.upr, .range, "range") +
+  facet_wrap(~paste(family, link), scales = "free_y", ncol = 5) +
+  scale_x_log10() +
+  coord_cartesian(xlim = c(0.1, 10))
+ggsave("figs/sim-test-families-sigmaO.pdf", width = 12, height = 7)
+
+est %>%
+  worm_plot(sigma_O.lwr, sigma_O.est, sigma_O.upr, sigma_O, "sigma_O") +
+  facet_wrap(~paste(family, link), scales = "free", ncol = 5) +
+  scale_x_log10()
+ggsave("figs/sim-test-families-range.pdf", width = 12, height = 7)
+
+coverage <- est %>%
+  group_by(family, link) %>%
+  mutate(covered = b1.lwr < betas[2] & b1.upr > betas[2]) %>%
+  summarise(coverage = mean(covered))
+coverage
+
+coverage <- est %>%
+  group_by(family, link) %>%
+  mutate(covered = range.lwr < .range & range.upr > .range) %>%
+  summarise(coverage = mean(covered, na.rm = TRUE))
+coverage
+
+coverage <- est %>%
+  group_by(family, link) %>%
+  mutate(covered = sigma_O.lwr < sigma_O & sigma_O.upr > sigma_O) %>%
+  summarise(coverage = mean(covered, na.rm = TRUE))
+coverage
 
 plan(sequential)
