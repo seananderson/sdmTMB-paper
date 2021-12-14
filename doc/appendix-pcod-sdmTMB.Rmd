@@ -160,6 +160,7 @@ pred2 <- predict(
   area = qcs_grid$area
 )
 ind <- get_index(pred2)
+saveRDS(ind, "sdmTMB-index.rds")
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
@@ -172,6 +173,7 @@ As an alternative, we can use the output from the joint precision matrix simulat
 
 ```{r index-sims, out.width="5in"}
 ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
+saveRDS(ind, "sdmTMB-index-sim.rds")
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +

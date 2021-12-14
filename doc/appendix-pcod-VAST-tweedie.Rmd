@@ -127,7 +127,7 @@ plot(
 
 The saved plots can be perused by browsing the exported image files in the working directory, but here we will read in some key plots as an example. We can start by looking at the location of samples and knots.
 
-```{r plot-knots, echo = TRUE}
+```{r plot-knots, echo = TRUE, out.width = "6in"}
 knitr::include_graphics(here("doc", "appendix-VAST-tweedie", "Data_and_knots.png"))
 ```
 
@@ -147,6 +147,24 @@ if (file.exists(here("doc", "appendix-VAST-tweedie", "Index.png"))) {
   knitr::include_graphics(here("doc", "appendix-VAST-tweedie", "Index.png"))
 }
 ```
+
+```{r compare-w-sdmTMB, out.width = "6in"}
+library(dplyr)
+library(ggplot2)
+vast_i <- read.csv(here("doc/appendix-VAST-tweedie/Index.csv")) %>% 
+  mutate(index = "VAST", year = as.numeric(Time), est = Estimate, se = Std..Error.for.Estimate) %>% select(index, year, est, se)
+sdm_i <- readRDS("sdmTMB-index.rds") %>% mutate(index = "sdmTMB")%>% select(index, year, est, se, lwr,upr)
+both_i <- bind_rows(sdm_i, vast_i) %>% filter(est > 0 )
+
+ggplot(both_i, aes(year, est / 1000, group = index)) +
+  geom_line(aes(year, est / 1000, colour = index)) +
+    geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000, fill= index), alpha = 0.4) +
+  geom_ribbon(aes(ymin = (est - (se*1.96)) / 1000, ymax = (est + (se*1.96)) / 1000, 
+                  fill= index), alpha = 0.4) + 
+  ggsidekick::theme_sleek() +
+  ylab("Biomass (t)")
+```
+
 
 This document was built using:
 
