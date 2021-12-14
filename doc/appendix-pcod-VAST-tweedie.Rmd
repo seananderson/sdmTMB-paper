@@ -43,7 +43,7 @@ FieldConfig <- matrix(c("0", "0", "IID", "Identity", "IID", "IID", "IID", "Ident
 )
 FieldConfig
 
-RhoConfig <- c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
+RhoConfig <- c("Beta1" = 3, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 ```
 
 Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the function 'fit_model' and thus we need to specify the prediction grid (referred to as the "extrapolation grid" in VAST).  Several options are built in, for commonly-used regions, but in this example we'll need to format the Queen Charlotte Sound grid in sdmTMB to be used in VAST and specify `Region = "User"` in make_setting and `"input_grid" = input_grid` in `fit_model()`.
