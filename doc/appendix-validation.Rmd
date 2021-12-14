@@ -1,0 +1,196 @@
+---
+title: "Appendix X: sdmTMB validation"
+output:
+  bookdown::pdf_document2:
+    toc: false
+number_sections: false
+fig_caption: true
+highlight: "monochrome"
+csl: mee.csl
+bibliography: refs.bib
+header-includes:
+  \usepackage[left]{lineno}
+  \usepackage{bm}
+  \usepackage{amssymb}
+---
+
+```{r setup, echo=FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = FALSE,
+  error = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE,
+  autodep = TRUE,
+  cache.comments = FALSE
+)
+```
+
+```{r}
+library(sdmTMB)
+```
+
+The sdmTMB has a number of validation processes to ensure the code is working as expected. This includes unit testing using the testthat package (REF) embedded within the package. This unit testing validates a large number of model configurations against simulated data and comparable models from other packages. We highlight some model validation in particular in this appendix.
+
+In addition to the validation discussed here, Appendix X contains a comparison with VAST and Appendix Y contains a comparison with INLA/inlabru.
+
+This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB. Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package.
+
+# Penalized smoothers
+
+Here, we compare a number of smoother configurations against mgcv. Throughout the section we will turn off spatial random fields so the models should be identical.
+
+## `s(x)`
+
+First, a simple thin plate regression spline with a single variable. We will use simulated data from the mgcv package.
+
+```{r, echo=TRUE}
+set.seed(19203)
+# examples from ?mgcv::gam.models
+dat <- mgcv::gamSim(3, n = 800)
+m_mgcv <- mgcv::gam(y ~ s(x2), data = dat)
+p_mgcv <- predict(m_mgcv)
+dat$X <- runif(nrow(dat)) # fake
+dat$Y <- runif(nrow(dat)) # fake
+spde <- make_mesh(dat, c("X", "Y"), cutoff = 0.1)
+m <- sdmTMB(y ~ s(x2),
+  data = dat,
+  mesh = spde, spatial = "off", spatiotemporal = "off"
+)
+p <- predict(m, newdata = NULL)
+plot(p$est, p_mgcv)
+abline(a = 0, b = 1)
+cor(p$est, p_mgcv)
+```
+
+We can see the predictions match nearly exactly. Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves. Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component. Nonetheless, here the smoothers look very similar except for these scale on the y axis.
+
+```{r, echo=TRUE, fig.asp=1}
+par(mfrow = c(2, 1))
+plot_smooth(m)
+plot(m_mgcv)
+```
+
+## `s(x1, by = x2)`
+
+Next, we compare a model with a continuous `by` argument. This lets the `x2` smoother change depending on the value of `x1`.
+
+```{r, echo=TRUE}
+set.seed(19203)
+# examples from ?mgcv::gam.models
+# continuous by example:
+dat <- mgcv::gamSim(3, n = 800)
+m_mgcv <- mgcv::gam(y ~ s(x2, by = x1), data = dat)
+p_mgcv <- predict(m_mgcv)
+dat$X <- runif(nrow(dat)) # fake
+dat$Y <- runif(nrow(dat)) # fake
+spde <- make_mesh(dat, c("X", "Y"), cutoff = 0.1)
+m <- sdmTMB(y ~ s(x2, by = x1),
+  data = dat,
+  mesh = spde, spatial = "off", spatiotemporal = "off"
+)
+p <- predict(m, newdata = NULL)
+plot(p$est, p_mgcv)
+abline(a = 0, b = 1)
+cor(p$est, p_mgcv)
+```
+
+Again, the results are nearly identical.
+
+## `s(x, y)`
+
+Next, we compare a bivariate smoother, with near identical predictions.
+
+```{r, echo=TRUE}
+m_mgcv <- mgcv::gam(y ~ s(x2, x1), data = dat)
+p_mgcv <- predict(m_mgcv)
+m <- sdmTMB(y ~ s(x2, x1),
+  data = dat,
+  mesh = spde, spatial = "off", spatiotemporal = "off"
+)
+p <- predict(m, newdata = NULL)
+plot(p$est, p_mgcv)
+abline(a = 0, b = 1)
+cor(p$est, p_mgcv)
+```
+
+# IID random intercepts
+
+Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB. Again, we will turn off random fields so the models are comparable.
+
+First, simulate some data. The variables `g` and `h` will represent groups g and h. g will have 50 groups. h will have 20 groups. 
+
+```{r, echo=TRUE}
+predictor_dat <- data.frame(X = runif(1000), Y = runif(1000))
+mesh <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), cutoff = 0.1)
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(),
+  range = 0.5,
+  phi = 0.1,
+  sigma_O = 0.2,
+  seed = 42,
+  B = c(0.5) # B0 = intercept, B1 = a1 slope
+)
+sim_dat$g <- gl(50, 20)
+iid_re_vals_g <- rnorm(50, 0, 0.3)
+sim_dat$h <- gl(20, 50)
+iid_re_vals_h <- rnorm(20, 0, 0.3)
+sim_dat$observed <- sim_dat$observed + iid_re_vals_g[sim_dat$g] + iid_re_vals_h[sim_dat$h]
+```
+
+```{r, echo=TRUE}
+m <- sdmTMB(observed ~ 1 + (1 | g) + (1 | h), mesh = mesh, data = sim_dat, 
+  spatial = "off")
+
+m_glmmTMB <- glmmTMB::glmmTMB(observed ~ 1 + (1 | g) + (1 | h), data = sim_dat)
+```
+
+We can extract the random effect estimates and compare them. We find them to be nearly identical:
+
+```{r, echo=TRUE}
+sdmTMB_pars <- tidy(m, "ran_pars")
+glmmTMB_varcorr <- glmmTMB::VarCorr(m_glmmTMB)
+
+sdmTMB_pars$estimate[sdmTMB_pars$term == "tau_G"][1]
+sqrt(as.numeric(glmmTMB_varcorr$cond$g))
+
+sdmTMB_pars$estimate[sdmTMB_pars$term == "tau_G"][2]
+sqrt(as.numeric(glmmTMB_varcorr$cond$h))
+
+sdmTMB_re <- as.list(m$sd_report, "Estimate")
+glmmTMB_re <- glmmTMB::ranef(m_glmmTMB)$cond
+plot(c(glmmTMB_re$g$`(Intercept)`, glmmTMB_re$h$`(Intercept)`), sdmTMB_re$RE,
+  col = c(rep(1, 50), rep(2, 20)))
+abline(0, 1)
+```
+
+The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis. The 'g' deviations are black and the 'h' ones are red.
+
+# Simulation-testing with various observation families
+
+```{r}
+knitr::include_graphics(here::here("figs", "sim-test-families-pars.pdf"))
+```
+
+```{r}
+knitr::include_graphics(here::here("figs", "sim-test-families-b1.pdf"))
+```
+
+```{r}
+knitr::include_graphics(here::here("figs", "sim-test-families-phi.pdf"))
+```
+
+```{r}
+knitr::include_graphics(here::here("figs", "sim-test-families-range.pdf"))
+```
+
+```{r}
+knitr::include_graphics(here::here("figs", "sim-test-families-sigmaO.pdf"))
+```
+
+
