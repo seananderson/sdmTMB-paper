@@ -46,8 +46,9 @@ FieldConfig
 RhoConfig <- c("Beta1" = 3, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 ```
 
-Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the function 'fit_model' and thus we need to specify the prediction grid (referred to as the "extrapolation grid" in VAST).  Several options are built in, for commonly-used regions, but in this example we'll need to format the Queen Charlotte Sound grid in sdmTMB to be used in VAST and specify `Region = "User"` in make_setting and `"input_grid" = input_grid` in `fit_model()`.
+Note that `"Beta1" = 3` results in a traditional Tweedie model where the dispersion parameter is held constant across years.
 
+Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the function 'fit_model' and thus we need to specify the prediction grid (referred to as the "extrapolation grid" in VAST). Several options are built in for commonly used regions, but in this example we will need to format the Queen Charlotte Sound grid in sdmTMB to be used in VAST and specify `Region = "User"` in `make_setting()` and `"input_grid" = input_grid` in `fit_model()`.
 
 ```{r settings, echo = TRUE}
 # get coordinates in geographic coordinates from UTM projection, after changing units to m
@@ -88,7 +89,7 @@ settings <- make_settings(
 )
 ```
 
-Next we will fit a GLMM (generalized linear mixed effects model).
+Next we will fit the model:
 
 ```{r fit, echo = TRUE, results = FALSE, message = FALSE, warning = FALSE}
  # create folder for saved output:
@@ -123,17 +124,20 @@ We can look at parameter estimates and their standard errors.
 fit$parameter_estimates$SD
 ```
 
-Fit sdmTMB model and compare:
+We will fit an equivalent sdmTMB model and compare. We will use the mesh already created in VAST so the models are identical.
 
 ```{r sdmTMB-example, echo = TRUE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
   mesh = fit$spatial_list$MeshList$isotropic_mesh)
-tictoc::tic()
+
 fit_sdmTMB <- sdmTMB(density ~ 0 + as.factor(year), 
   data = pcod, mesh = mesh, family = tweedie(link = "log"),
   time = "year", spatiotemporal = "iid", spatial = "on")
-tictoc::toc()
+```
 
+We can compare the various parameter estimates. Note that VAST adds the dispersion parameter (`phi` in sdmTMB) in the mean of the Tweedie distribution, so we need to account for that when comparing main-effect estimates.
+
+```{r sdmTMB-VAST-par-compare}
 s1 <- fit$ParHat$beta1_ft[fit$ParHat$beta2_ft != 0]
 s2 <- fit$ParHat$beta2_ft[fit$ParHat$beta2_ft != 0]
 b_VAST <- as.numeric(s1 + s2)
@@ -172,10 +176,12 @@ as.numeric(exp(fit$ParHat$beta1_ft))[1]
 sdmtmb_est$estimate[sdmtmb_est$term == "phi"]
 ```
 
+All estimates are effectively identical.
+
 While making custom plots of individual elements requires a fair bit of work to extract and reformat the necessary components of each output, VAST has a wrapper function that generates the typical plots one may want. While here we stick with the default set of plots, where `plot_set = 3`, one can specify different standard plots to make by changing the setting of this argument (see `?FishStatsUtils::plot_maps`).
 
 ```{r save-plots, echo = TRUE, message = FALSE, warning = FALSE}
-if (!file.exists(here("doc", "appendix-VAST-tweedie", "Data_and_knots.png")) {
+if (!file.exists(here::here("doc", "appendix-VAST-tweedie", "Data_and_knots.png"))) {
   plot(
     fit,
     check_residuals = FALSE,
@@ -207,24 +213,32 @@ if (file.exists(here("doc", "appendix-VAST-tweedie", "Index.png"))) {
 }
 ```
 
-We can compare the index we would get using sdmTMB. Since sdmTMB does not have built-in delta models, we need some way of combining the predictions across the two models. Here, we will do that by simulating from the joint parameter precision matrix and calculating the index with those draws. This should be approximately comparable with the bias-corrected index calculated above with VAST.
+We can compare the index we would get using sdmTMB. To get and equivalent index (not bias corrected), we predict on the survey grid (`qcs_grid`), tell it the area of each grid cell (4 km^2^), and pass the output to `get_index()`.
 
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
 pred <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE, area = 4)
 ind_sdmTMB <- get_index(pred)
 ```
 
-Now, we can compare the indices. We will read in the VAST index from the `Index.csv` file created by the `plot.fit_model()` method above.
+Now, we can compare the indices.
 
 ```{r index-compare, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-vast_i <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
-  mutate(index = "VAST", year = as.numeric(Time), est = Estimate, 
-    se = Std..Error.for.ln.Estimate.) %>% 
-  select(index, year, est, se) %>% 
-  mutate(lwr = exp(log(est) + qnorm(0.025) * se)) %>% 
-  mutate(upr = exp(log(est) + qnorm(0.975) * se))
+vast_i <- data.frame(
+  index = "VAST",
+  log_est = vast_est2$ln_Index_ctl[,,1],
+  se = vast_sd2$ln_Index_ctl[,,1],
+  stringsAsFactors = FALSE
+  )
+no_data <- vast_est1$beta2_ft[1,] == 0
+vast_i <- vast_i[!no_data,]
+vast_i <- vast_i %>%
+  mutate(year = unique(pcod$year)) %>% 
+  mutate(lwr = exp(log_est + qnorm(0.025) * se)) %>% 
+  mutate(upr = exp(log_est + qnorm(0.975) * se)) %>% 
+  mutate(est = exp(log_est))
+
 sdm_i <- ind_sdmTMB %>% mutate(index = "sdmTMB")
 both_i <- bind_rows(sdm_i, vast_i) %>% filter(est > 0)
 ggplot(both_i, aes(x = year, y = est, ymin = lwr, ymax = upr, colour = index)) + 
@@ -233,7 +247,17 @@ ggplot(both_i, aes(x = year, y = est, ymin = lwr, ymax = upr, colour = index)) +
   ylim(0, max(both_i$upr)) +
   coord_cartesian(expand = FALSE) +
   ylab("Biomass (t)")
+
+plot(ind_sdmTMB$est, vast_i$est);abline(0, 1)
+plot(ind_sdmTMB$upr, vast_i$upr);abline(0, 1)
+plot(ind_sdmTMB$lwr, vast_i$lwr);abline(0, 1)
+
+(ind_sdmTMB$est - vast_i$est) / vast_i$est
+(ind_sdmTMB$upr - vast_i$upr) / vast_i$upr
+(ind_sdmTMB$lwr - vast_i$lwr) / vast_i$lwr
 ```
+
+The results are effectively identical. In the ribbon plot above, the lines perfectly cover each other.
 
 This document was built using:
 
