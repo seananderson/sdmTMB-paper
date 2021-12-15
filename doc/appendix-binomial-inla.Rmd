@@ -26,7 +26,7 @@ library(inlabru)
 theme_set(theme_minimal())
 ```
 
-This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru. 
+In this example, we fit a presence-absence species distribution model with only the fixed year effects and spatiotemporal random fields using AR1.  
 Once again we will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound.
 The density units are kg/km^2^. 
 <!-- This can be converted to tonnes per km2 by dividing by 1000, which can sometimes scale better. -->
@@ -56,7 +56,7 @@ spde <- inla.spde2.pcmatern(
 ) 
 ```
 
-```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+```{r plot-mesh, fig.asp=0.9, out.width="3in"}
 plot(spde$mesh)
 ```
 
@@ -96,8 +96,6 @@ m_inla <- inla(formulae,
   )
 
 tictoc::toc()
-
-post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
 
 inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 summary(m_inla)
@@ -147,14 +145,30 @@ m_bru <- bru(
 )
 tictoc::toc()
 
-bru_coefs <- m_bru$summary.random$fac[, c("mean", "sd")]
+# bru_coefs <- m_bru$summary.random$fac[, c("mean", "sd")]
 bru_coefs <- m_bru$summary.fixed[, c("mean", "sd")]
 summary(m_bru)
 ```
 
+Comparing the spatial random effects between `INLA` and `inlabru` shows us that the latter is not estimating well.
+
+```{r}
+m_inla$summary.hyperpar[, c("mean", "sd")]
+m_bru$summary.hyperpar[, c("mean", "sd")]
+```
+
+As a result the fixed effect estimates are also quite different. 
+
+```{r}
+plot(inla_coefs$mean, bru_coefs$mean)
+abline(a = 0, b = 1)
+```
+
+
 # sdmTMB
 
-We can also fit the model with `sdmTMB`. Note that this is a model with only the fixed year effects and a single spatial field, with presence-absence as the response.  
+We can also fit the model with `sdmTMB`. 
+The priors only differ in that... TODO?
 
 ```{r sdmtmb}
 # mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 7)
@@ -173,7 +187,6 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
   ))
 tictoc::toc()
 
-post_sdmTMB <- gather_sims(m, n_sims = 2000L)
 
 sdmtmb_coefs <- tidy(m, effects = "fixed")
 
@@ -185,7 +198,7 @@ tidy(m, conf.int = TRUE)
 tidy(m, "ran_pars", conf.int = TRUE)
 ```
 
-Comparing the fixed effects between `sdmTMB` and `inlabru` shows the estimates are correlated, but not perfectly so  
+Comparing the fixed effects between `sdmTMB` and `inla` shows the estimates are very tightly correlated, but not perfectly so  
 
 ```{r}
 # plot(sdmtmb_coefs$estimate, bru_coefs$mean)
@@ -193,88 +206,53 @@ plot(sdmtmb_coefs$estimate, inla_coefs$mean)
 abline(a = 0, b = 1)
 ```
 
-```{r}
-library(dplyr)
-library(ggplot2)
-year_factor2011_inla <- unlist(lapply(post_inla, function(s) s$latent["year_factor2017:1", 1]))
-year_factor2011_tmb <- filter(post_sdmTMB, .variable == "as.factor.year.2017") %>% pull(.value)
 
-ggplot(bind_rows(data.frame(type = "INLA", post = year_factor2011_inla),
-  data.frame(type = "sdmTMB", post = year_factor2011_tmb)), aes(post, colour = type)) +
-  geom_density()
+
+With sdmTMB, we can extract parameter simulations from the joint precision matrix using `spread_sims()` or `gather_sims()` functions.
+
+```{r sdm-sims}
+post_sdmTMB <- gather_sims(m, n_sims = 2000L)
+
+post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`, 
+                    levels = unique(post_sdmTMB$`.variable`), 
+                    labels = c("2009", "2011", "2013", "2015", "2017", "Range", "AR1 rho", "Random Field SD")))
+```
+
+
+We then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA. 
+From INLA, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the sdmTMB `gather_sims()` function.
+
+```{r inla-densities}
+# post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
+
+x <- list()
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>% as_tibble() %>% mutate(variable = "as.factor.year.2009")
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% as_tibble() %>% mutate(variable = "as.factor.year.2011") 
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% as_tibble() %>% mutate(variable = "as.factor.year.2013") 
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% as_tibble() %>% mutate(variable = "as.factor.year.2015") 
+x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% as_tibble() %>% mutate(variable = "as.factor.year.2017") 
+x[[6]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% as_tibble() %>% mutate(variable = "range") 
+x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% as_tibble() %>% mutate(variable = "sigma_E") 
+x[[8]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% as_tibble() %>% mutate(variable = "ar1_rho") 
+post_inla1 <- do.call(rbind, x)
+
+post_inla2 <- post_inla1 %>% mutate(variable = factor(variable, 
+                    levels = unique(post_inla1$variable), 
+                    labels = c("2009", "2011", "2013", "2015", "2017", "Range", "Random Field SD", "AR1 rho")))
+```
+
+
+```{r compare-plot, out.width="6in"}
+ggplot(post_inla2) + 
+  geom_histogram(data=post_sdmTMB2, aes(.value, after_stat(density)), binwidth = 0.1, fill = "blue", alpha = 0.2) + 
+  geom_line(data=post_inla2, aes(x, y), inherit.aes = F) + 
+  facet_wrap(~variable, scales = "free") +
+  ggsidekick::theme_sleek()
 ```
 
 
 
-```{r}
-ggplot(post_sdmTMB, aes(.value)) + geom_histogram() + facet_wrap(~.variable, scales = "free")
-```
-
-
-```{r}
-x <- inla.smarginal(m_inla$marginals.fixed$year_factor2013)
-b <- filter(post_sdmTMB, .variable == "as.factor.year.2013") %>% pull(.value)
-g2 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
-  ggtitle("Year 2013")
-
-x <- inla.smarginal(m_inla$marginals.fixed$year_factor2011)
-b <- filter(post_sdmTMB, .variable == "as.factor.year.2011") %>% pull(.value)
-g1 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
-  ggtitle("Year 2011")
-
-x <- inla.smarginal(m_inla$marginals.fixed$year_factor2015)
-b <- filter(post_sdmTMB, .variable == "as.factor.year.2015") %>% pull(.value)
-g2015 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
-  ggtitle("Year 2015")
-
-x <- inla.smarginal(m_inla$marginals.fixed$year_factor2017)
-b <- filter(post_sdmTMB, .variable == "as.factor.year.2017") %>% pull(.value)
-g2017 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
-  ggtitle("Year 2017")
-
-x <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`)
-range_post <- filter(post_sdmTMB, .variable == "range") %>% pull(.value)
-g3 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = range_post), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 1.5, fill = "blue", alpha = 0.2) +
-  ggtitle("Range")
-
-x <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`)
-sigma_E_post <- filter(post_sdmTMB, .variable == "sigma_E") %>% pull(.value)
-g4 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = sigma_E_post), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
-  ggtitle("Random Field SD")
-
-x <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`)
-rho_post <- filter(post_sdmTMB, .variable == "ar1_rho") %>% pull(.value)
-g5 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
-  geom_histogram(data = data.frame(x = rho_post), mapping = aes(x, after_stat(density)),
-    inherit.aes = FALSE, binwidth = 0.02, fill = "blue", alpha = 0.2) +
-  ggtitle("AR1 rho")
-
-cowplot::plot_grid(g1, g2, g2015, g2017, g3, g4, g5)
-
-# ------------------
-
-
-```
-
-```{r}
-
-```
-
-
-
-The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac`
+<!-- The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac` -->
 
 ```{r}
 # components <- present ~ 0 +
@@ -288,7 +266,7 @@ The other way to set up the fixed coefficients with `inlabru` is to use the `fac
 # bru_coefs2 <- fit2$summary.random$fac[, c("mean", "sd")]
 ```
 
-These estimates are perfectly correlated with the estimates above,
+<!-- These estimates are perfectly correlated with the estimates above, -->
 
 ```{r}
 # plot(bru_coefs$mean, bru_coefs2$mean)
