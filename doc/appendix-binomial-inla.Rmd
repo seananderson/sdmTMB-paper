@@ -1,0 +1,295 @@
+---
+title: "Appendix 4: species distribution model comparison between inlabru and sdmTMB"
+output:
+  pdf_document:
+    highlight: tango
+---
+
+```{r setup, include = FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.asp = 0.618,
+  cache = TRUE,
+  autodep = TRUE
+)
+```
+
+
+```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+library(INLA)
+library(inlabru)
+theme_set(theme_minimal())
+```
+
+This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru. 
+Once again we will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound.
+The density units are kg/km^2^. 
+<!-- This can be converted to tonnes per km2 by dividing by 1000, which can sometimes scale better. -->
+
+
+```{r}
+d <- pcod %>% filter(year > 2008)
+yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
+d <- dplyr::left_join(d, yr_lu)
+```
+
+We will start by building an identical mesh using INLA.
+Here, X and Y are coordinates in UTM zone 9.
+These same functions that are used internally in the sdmTMB `make_mesh()` function. 
+
+```{r mesh, echo = TRUE, cache=FALSE}
+mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 7)
+
+loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
+inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 7)
+
+spde <- inla.spde2.pcmatern(
+  # mesh = inla_mesh,
+  mesh = mesh$mesh,
+  prior.range = c(5, 0.05), # P(range < 5) = 0.05
+  prior.sigma = c(5, 0.05)  # P(sigma > 5) = 0.05
+) 
+```
+
+```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+plot(spde$mesh)
+```
+
+# INLA 
+
+```{r}
+
+tictoc::tic("INLA")
+nyear <- length(unique(d$year))
+
+iset <- inla.spde.make.index('i', n.spde = spde$n.spde, n.group = nyear)
+
+A <- inla.spde.make.A(mesh = inla_mesh, loc = loc_xy, group = d$i_year)
+
+sdat <- inla.stack(
+  data = list(y = d$present),
+  A = list(A, 1),
+  effects = list(iset, year_factor = as.factor(d$year)),
+  tag = 'stdata')
+# Pr(cor > 0) = 0.9:
+
+h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
+
+formulae <- y ~ 0 + year_factor + f(i, model = spde, group = i.group,
+  control.group = list(model = 'ar1', hyper = h.spec))
+
+# PC prior on the autoreg. param.
+# prec.prior <- list(prior = 'pc.prec', param = c(1, 0.01))
+m_inla <- inla(formulae,
+  data = inla.stack.data(sdat),
+  control.predictor = list(compute = TRUE, A = inla.stack.A(sdat)),
+  family = "binomial",
+  control.fixed = list(expand.factor.strategy = 'inla', mean = 0, prec = 1/(100*100)),
+  verbose = FALSE,
+  control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+  control.compute = list(config = TRUE)
+  )
+
+tictoc::toc()
+
+post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
+
+inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
+summary(m_inla)
+```
+
+# inlabru
+
+*** NOT WORKING YET ***
+
+There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work. In the first case, we can create a design matrix and add year effects individually to the formula.
+
+Now we can set up the design matrix for `inlabru`  
+
+```{r fit-pcod, warning=FALSE, message=FALSE}
+m <- lm(present ~ -1 + as.factor(year), data = d)
+model_mat <- model.matrix(m)
+colnames(model_mat) <- paste0("x", unique(d$year))
+dat <- cbind(d, model_mat)
+```
+
+Next we set up the `components` object for the model. This includes a formula with fixed or random effects (here only fixed) and the design of the spatial random field. The name `spatrf` can be anything, but includes the coordinates, spde model, and how the year effects are shared. 
+
+```{r}
+tictoc::tic("bru")
+components <- present ~ 0 + 
+  x2009 + x2011 + x2013 + x2015 + x2017 +
+  # fac(main = year,  model = "factor_full"
+  #   # , mean = 0, prec = 0.001
+  # ) +
+  # x2009(main=x2009, model="factor_full") +
+  # x2011(main=x2011, model="factor_full") +
+  # x2013(main=x2013, model="factor_full") +
+  # x2015(main=x2015, model="factor_full") +
+  # x2017(main=x2017, model="factor_full") +
+  spatrf(main = coordinates, model = spde, group=i_year, #ngroup=ncol(model_mat),
+      control.group = list(model = 'ar1', hyper = h.spec))
+
+m_bru <- bru(
+  components = components,
+  family = "binomial",
+  options = 
+    bru_options(bru_verbose = TRUE,
+        control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+        control.compute = list(config = TRUE)
+  ),
+  data = dat
+)
+tictoc::toc()
+
+bru_coefs <- m_bru$summary.random$fac[, c("mean", "sd")]
+bru_coefs <- m_bru$summary.fixed[, c("mean", "sd")]
+summary(m_bru)
+```
+
+# sdmTMB
+
+We can also fit the model with `sdmTMB`. Note that this is a model with only the fixed year effects and a single spatial field, with presence-absence as the response.  
+
+```{r sdmtmb}
+# mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 7)
+tictoc::tic("sdmTMB")
+m <- sdmTMB(present ~ 0 + as.factor(year), 
+  data = d, 
+  mesh = mesh, 
+  time = "year",
+  spatial = "off", 
+  spatiotemporal = "AR1", 
+  family = binomial(link = "logit"),
+  priors = sdmTMBpriors(
+    matern_st = pc_matern(range_gt = 5, range_prob = 0.05, sigma_lt = 5, sigma_prob = 0.05),
+    ar1_rho = normal(0, 1),
+    b = normal(0, 100)
+  ))
+tictoc::toc()
+
+post_sdmTMB <- gather_sims(m, n_sims = 2000L)
+
+sdmtmb_coefs <- tidy(m, effects = "fixed")
+
+summary(m)
+```
+
+```{r}
+tidy(m, conf.int = TRUE)
+tidy(m, "ran_pars", conf.int = TRUE)
+```
+
+Comparing the fixed effects between `sdmTMB` and `inlabru` shows the estimates are correlated, but not perfectly so  
+
+```{r}
+# plot(sdmtmb_coefs$estimate, bru_coefs$mean)
+plot(sdmtmb_coefs$estimate, inla_coefs$mean)
+abline(a = 0, b = 1)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+year_factor2011_inla <- unlist(lapply(post_inla, function(s) s$latent["year_factor2017:1", 1]))
+year_factor2011_tmb <- filter(post_sdmTMB, .variable == "as.factor.year.2017") %>% pull(.value)
+
+ggplot(bind_rows(data.frame(type = "INLA", post = year_factor2011_inla),
+  data.frame(type = "sdmTMB", post = year_factor2011_tmb)), aes(post, colour = type)) +
+  geom_density()
+```
+
+
+
+```{r}
+ggplot(post_sdmTMB, aes(.value)) + geom_histogram() + facet_wrap(~.variable, scales = "free")
+```
+
+
+```{r}
+x <- inla.smarginal(m_inla$marginals.fixed$year_factor2013)
+b <- filter(post_sdmTMB, .variable == "as.factor.year.2013") %>% pull(.value)
+g2 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
+  ggtitle("Year 2013")
+
+x <- inla.smarginal(m_inla$marginals.fixed$year_factor2011)
+b <- filter(post_sdmTMB, .variable == "as.factor.year.2011") %>% pull(.value)
+g1 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
+  ggtitle("Year 2011")
+
+x <- inla.smarginal(m_inla$marginals.fixed$year_factor2015)
+b <- filter(post_sdmTMB, .variable == "as.factor.year.2015") %>% pull(.value)
+g2015 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
+  ggtitle("Year 2015")
+
+x <- inla.smarginal(m_inla$marginals.fixed$year_factor2017)
+b <- filter(post_sdmTMB, .variable == "as.factor.year.2017") %>% pull(.value)
+g2017 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = b), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
+  ggtitle("Year 2017")
+
+x <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`)
+range_post <- filter(post_sdmTMB, .variable == "range") %>% pull(.value)
+g3 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = range_post), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 1.5, fill = "blue", alpha = 0.2) +
+  ggtitle("Range")
+
+x <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`)
+sigma_E_post <- filter(post_sdmTMB, .variable == "sigma_E") %>% pull(.value)
+g4 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = sigma_E_post), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.1, fill = "blue", alpha = 0.2) +
+  ggtitle("Random Field SD")
+
+x <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`)
+rho_post <- filter(post_sdmTMB, .variable == "ar1_rho") %>% pull(.value)
+g5 <- ggplot(as.data.frame(x), aes(x, y)) + geom_line() +
+  geom_histogram(data = data.frame(x = rho_post), mapping = aes(x, after_stat(density)),
+    inherit.aes = FALSE, binwidth = 0.02, fill = "blue", alpha = 0.2) +
+  ggtitle("AR1 rho")
+
+cowplot::plot_grid(g1, g2, g2015, g2017, g3, g4, g5)
+
+# ------------------
+
+
+```
+
+```{r}
+
+```
+
+
+
+The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac`
+
+```{r}
+# components <- present ~ 0 +
+#   fac(main = year, model = "factor_full") +
+#   spatrf(main = coordinates, model = spde)
+# 
+# fit2 <- bru(
+#   components = components,
+#   family = "binomial", data = dat
+# )
+# bru_coefs2 <- fit2$summary.random$fac[, c("mean", "sd")]
+```
+
+These estimates are perfectly correlated with the estimates above,
+
+```{r}
+# plot(bru_coefs$mean, bru_coefs2$mean)
+```
