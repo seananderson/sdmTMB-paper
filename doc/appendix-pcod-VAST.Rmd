@@ -95,6 +95,7 @@ pcod$effort <- 1
 pcod <- as.data.frame(pcod) # ensure not a tibble
 f <- here("doc", "appendix-VAST", "vast-cache.rds")
 if (!file.exists(f)) {
+  tictoc::tic()
   fit <- fit_model(
     settings = settings,
     Lat_i = pcod[, "lat"],
@@ -105,6 +106,7 @@ if (!file.exists(f)) {
     input_grid = input_grid,
     working_dir = paste0(here("doc", "appendix-VAST"), "/")
   )
+  tictoc::toc()
   saveRDS(fit, file = f)
 } else {
   fit <- readRDS(f)
@@ -122,17 +124,21 @@ sdmTMB does not have built-in delta models; however, we can fit the two componen
 ```{r sdmTMB-example, echo = TRUE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
   mesh = fit$spatial_list$MeshList$isotropic_mesh)
+tictoc::tic()
 m1 <- sdmTMB(present ~ 0 + as.factor(year), 
   data = pcod, mesh = mesh, family = binomial(link = "logit"),
   time = "year", spatiotemporal = "iid", spatial = "on")
+tictoc::toc()
 m1
 
 dat2 <- subset(pcod, density > 0)
 mesh2 <- make_mesh(dat2, xy_cols = c("X", "Y"),
   mesh = fit$spatial_list$MeshList$isotropic_mesh)
+tictoc::tic()
 m2 <- sdmTMB(density ~ 0 + as.factor(year), 
   data = dat2, mesh = mesh2, family = Gamma(link = "log"),
   time = "year", spatiotemporal = "iid", spatial = "on")
+tictoc::toc()
 m2
 ```
 
@@ -205,22 +211,25 @@ if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
 We can compare the index we would get using sdmTMB. Since sdmTMB does not have built-in delta models, we need some way of combining the predictions across the two models. Here, we will do that by simulating from the joint parameter precision matrix and calculating the index with those draws. This should be approximately comparable with the bias-corrected index calculated above with VAST.
 
 ```{r sdmTMB-sim-index, cache=TRUE, echo=TRUE}
+tictoc::tic()
 set.seed(28239)
-p_bin <- predict(m1, newdata = qcs_grid, sims = 1000)
-p_pos <- predict(m2, newdata = qcs_grid, sims = 1000)
+p_bin <- predict(m1, newdata = qcs_grid, sims = 500)
+p_pos <- predict(m2, newdata = qcs_grid, sims = 500)
 
 p_bin_prob <- plogis(p_bin)
 p_pos_exp <- exp(p_pos)
 p_combined <- log(p_bin_prob * p_pos_exp)
 ind_combined_sims <- get_index_sims(p_combined, area = rep(4, nrow(p_combined)))
+tictoc::toc()
 ```
 
-Now, we can compare the indices. We will read in the VAST index from the `Index.csv` file created by the `plot.fit_model()` method above.
+Now, we can compare the indices. 
+<!-- We will read in the VAST index from the `Index.csv` file created by the `plot.fit_model()` method above. -->
 
 ```{r index-compare, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-vast_i <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
+vast_i1 <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
   mutate(index = "VAST", year = as.numeric(Time), est = Estimate, 
     se = Std..Error.for.ln.Estimate.) %>% 
   select(index, year, est, se) %>% 
@@ -233,6 +242,16 @@ ggplot(both_i, aes(x = year, y = est, ymin = lwr, ymax = upr, colour = index)) +
   geom_line() + 
   ylim(0, max(both_i$upr)) +
   coord_cartesian(expand = FALSE)
+```
+
+```{r}
+plot(ind_sdmTMB$est, vast_i$est);abline(0, 1)
+plot(ind_sdmTMB$upr, vast_i$upr);abline(0, 1)
+plot(ind_sdmTMB$lwr, vast_i$lwr);abline(0, 1)
+
+(ind_sdmTMB$est - vast_i$est) / vast_i$est
+(ind_sdmTMB$upr - vast_i$upr) / vast_i$upr
+(ind_sdmTMB$lwr - vast_i$lwr) / vast_i$lwr
 ```
 
 This document was built using:
