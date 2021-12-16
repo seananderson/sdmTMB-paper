@@ -1,5 +1,5 @@
 ---
-title: "Appendix 4: species distribution model comparison between inla and sdmTMB"
+title: "Appendix 4: species distribution model comparison between INLA and sdmTMB"
 output:
   pdf_document:
     highlight: tango
@@ -22,7 +22,7 @@ library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(INLA)
-library(inlabru)
+# library(inlabru)
 theme_set(ggsidekick::theme_sleek())
 ```
 
