@@ -32,7 +32,7 @@ Once again we will use a data set built into the package: trawl survey data for 
 INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`.
 
 ```{r}
-d <- pcod %>% filter(year >= 2011)
+d <- pcod %>% filter(year >= 2007)
 yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
 d <- dplyr::left_join(d, yr_lu)
 ```
@@ -259,7 +259,7 @@ sdmtmb_coefs <- tidy(m, effects = "fixed")
 
 Comparing the fixed effects between `sdmTMB` and `inla` shows the estimates are very tightly correlated.  
 
-```{r , out.width="4in"}
+```{r , out.width="5.5in"}
 plot(sdmtmb_coefs$estimate, inla_coefs$mean)
 abline(a = 0, b = 1)
 ```
@@ -271,8 +271,8 @@ With sdmTMB, we can extract parameter simulations from the joint precision matri
 post_sdmTMB <- gather_sims(m, n_sims = 2000L)
 
 post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`, 
-                    levels = unique(post_sdmTMB$`.variable`), 
-                    labels = c( "2011", "2013", "2015", "2017", 
+                  levels = unique(post_sdmTMB$`.variable`), 
+                  labels = c( "2007", "2009", "2011", "2013", "2015", "2017", 
                                 "Range", "AR1 rho", "Random Field SD")))
 ```
 
@@ -284,25 +284,29 @@ TODO: maybe say something about why not using `inla.posterior.sample(result = m_
 ```{r inla-densities}
 # post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% 
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2007") 
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2009") 
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% 
   as_tibble() %>% mutate(variable = "as.factor.year.2011") 
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% 
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% 
   as_tibble() %>% mutate(variable = "as.factor.year.2013") 
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% 
+x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% 
   as_tibble() %>% mutate(variable = "as.factor.year.2015") 
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% 
+x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% 
   as_tibble() %>% mutate(variable = "as.factor.year.2017") 
-x[[5]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% 
+x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% 
   as_tibble() %>% mutate(variable = "range") 
-x[[6]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% 
+x[[8]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% 
   as_tibble() %>% mutate(variable = "sigma_E") 
-x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% 
+x[[9]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% 
   as_tibble() %>% mutate(variable = "ar1_rho") 
 post_inla1 <- do.call(rbind, x)
 
 post_inla2 <- post_inla1 %>% mutate(variable = factor(variable, 
-                    levels = unique(post_inla1$variable), 
-                    labels = c( "2011", "2013", "2015", "2017", 
+                  levels = unique(post_inla1$variable), 
+                  labels = c( "2007", "2009", "2011", "2013", "2015", "2017", 
                                 "Range", "Random Field SD", "AR1 rho")))
 ```
 
@@ -320,18 +324,18 @@ ggplot(post_inla2) +
 We can predict on a the grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year. 
 
 ```{r sdm-predictions}
-nd <- filter(qcs_grid, year >= 2011)
+nd <- filter(qcs_grid, year >= 2007)
 pred <- predict(m, newdata = nd) 
 ```
 
-```{r maps, cache=FALSE, out.width="4in"}
+```{r maps, cache=FALSE, out.width="6in"}
 ggplot(pred) + geom_raster(aes(X, Y, fill = plogis(est))) + 
-  facet_wrap(~year) +   scale_fill_viridis_c() + coord_fixed() 
+  facet_wrap(~year) + scale_fill_viridis_c() + coord_fixed() 
 ```
 
 Similar predictions are more complicated to extract from INLA, but can be plotted for the original sample locations.
 
-```{r inla-pred, out.width="4in"}
+```{r inla-pred, out.width="6in"}
 idx <- inla.stack.index(sdat, 'stdata')$data
 d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
 ggplot(d) + geom_point(aes(X, Y, colour = inla_pred), size = 2) + 
