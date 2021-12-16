@@ -467,13 +467,16 @@ Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., ho
 spaMM is limited to a single spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
 <!-- TODO: still true? -->
 There is considerable variability in the available observation likelihoods across packages (Table 1).
+<!-- TODO: add something about the results of the INLA comparison (Appendix 4) and the VAST comparison (Appendix 5) -->
+We provide examples of the syntax and the reproducibility of results achieved when similar models were built using INLA and sdmTMB (Appendix 4) and VAST and sdmTMB (Appendix 5). 
+We ran into problems with AR1 spatiotemporal fields in inlabru, otherwise we would have included both INLA and inlabru syntax. <!-- Change this if we manage to solve the inlabru issue  -->
 
 ```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
 f <- here::here("figs", "timing-spatial.pdf")
 knitr::include_graphics(f)
 ```
 
-We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing)).
+We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Appendix 6 TODO, Fig. \@ref(fig:timing)).
 In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fastest.
 inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
@@ -502,7 +505,7 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary difference is the user interface.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
-Users familiar with INLA may find inlabru approachable (Appendix 4).
+Users familiar with INLA may find inlabru approachable. <!-- ; however, we ran into problems with AR1 spatiotemporal fields in inlabru, so we only provide a comparison with INLA instead (Appendix 4). -->
 Users already familiar with mgcv can fit adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
