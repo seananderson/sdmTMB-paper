@@ -42,9 +42,8 @@ While being described different in each package, the numbers amount to the proba
 
 ```{r set-priors, echo = TRUE, cache=FALSE}
 range_min <- 5
-range_prob <- 0.05
 sigma_max <- 5
-sigma_prob <- 0.05
+prior_prob <- 0.05
 ```
 
 In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., the which defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now sdmTMB only takes a mean and SD (e.g., `ar1_rho = normal(0, 1)`) so we will not set a prior for either model.
@@ -64,14 +63,13 @@ sdm_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
 ```{r inla-mesh, echo = TRUE, cache=FALSE}
 loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
-
 spde <- inla.spde2.pcmatern(
   mesh = inla_mesh, # an smdTMB mesh can be inserted here with sdm_mesh$mesh
-    prior.range = c(range_min, range_prob),
-    prior.sigma = c(sigma_max, sigma_prob)) 
+    prior.range = c(range_min, prior_prob),
+    prior.sigma = c(sigma_max, prior_prob)) 
 ```
 
-```{r plot-inla-mesh, fig.asp=0.9, out.height="3in"}
+```{r plot-inla-mesh, fig.asp=0.9, out.height="2.5in"}
 plot(sdm_mesh);title(main = "sdmTMB mesh");plot(spde$mesh)
 ```
 
@@ -244,8 +242,8 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
   family = binomial(link = "logit"),
   priors = sdmTMBpriors(
     matern_st = pc_matern(
-      range_gt = range_min, range_prob = range_prob, #P(range > 5) = 1-0.05
-      sigma_lt = sigma_max, sigma_prob = sigma_prob #P(sigma < 5) = 1-0.05
+      range_gt = range_min, range_prob = prior_prob, #P(range > 5) = 1-0.05
+      sigma_lt = sigma_max, sigma_prob = prior_prob #P(sigma < 5) = 1-0.05
     ),
     b = normal(0, 100)
   ))
@@ -286,20 +284,20 @@ TODO: maybe say something about why not using `inla.posterior.sample(result = m_
 ```{r inla-densities}
 # post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% as_tibble() %>% 
-  mutate(variable = "as.factor.year.2011") 
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% as_tibble() %>% 
-  mutate(variable = "as.factor.year.2013") 
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% as_tibble() %>% 
-  mutate(variable = "as.factor.year.2015") 
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% as_tibble() %>% 
-  mutate(variable = "as.factor.year.2017") 
-x[[5]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% as_tibble() %>% 
-  mutate(variable = "range") 
-x[[6]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% as_tibble() %>% 
-  mutate(variable = "sigma_E") 
-x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% as_tibble() %>% 
-  mutate(variable = "ar1_rho") 
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2011") 
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2013") 
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2015") 
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% 
+  as_tibble() %>% mutate(variable = "as.factor.year.2017") 
+x[[5]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% 
+  as_tibble() %>% mutate(variable = "range") 
+x[[6]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% 
+  as_tibble() %>% mutate(variable = "sigma_E") 
+x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% 
+  as_tibble() %>% mutate(variable = "ar1_rho") 
 post_inla1 <- do.call(rbind, x)
 
 post_inla2 <- post_inla1 %>% mutate(variable = factor(variable, 
@@ -316,38 +314,28 @@ ggplot(post_inla2) +
   geom_line(data=post_inla2, aes(x, y), inherit.aes = F) + 
   facet_wrap(~variable, scales = "free") 
 ```
-# Distribution map
 
-We can predict on a the grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to produce a map of occurrence probabilities in each year. 
+# Annual distribution maps
+
+We can predict on a the grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year. 
 
 ```{r sdm-predictions}
 nd <- filter(qcs_grid, year >= 2011)
 pred <- predict(m, newdata = nd) 
-
-plot_map <- function(dat, column) {
-ggplot(dat, aes_string("X", "Y", fill = column)) +
-    geom_raster() +
-    facet_wrap(~year) +
-    coord_fixed()
-}
 ```
 
-```{r maps, cache=FALSE, out.width="6in"}
-plot_map(pred, "plogis(est)") +
-  scale_fill_viridis_c() +
-  ggtitle("Prediction (fixed effects + all random effects)")
+```{r maps, cache=FALSE, out.width="4in"}
+ggplot(pred) + geom_raster(aes(X, Y, fill = plogis(est))) + 
+  facet_wrap(~year) +   scale_fill_viridis_c() + coord_fixed() 
 ```
+
 Similar predictions are more complicated to extract from INLA, but can be plotted for the original sample locations.
 
-```{r inla-pred, out.width="6in"}
+```{r inla-pred, out.width="4in"}
 idx <- inla.stack.index(sdat, 'stdata')$data
-
 d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
-
-ggplot(d) + geom_point(aes(X, Y, colour = inla_pred), size = 2) + facet_wrap(~year) + 
-  scale_colour_viridis_c() +
-  coord_fixed() +
-  ggtitle("Prediction (fixed effects + all random effects)")
+ggplot(d) + geom_point(aes(X, Y, colour = inla_pred), size = 2) + 
+  facet_wrap(~year) + scale_colour_viridis_c() + coord_fixed() 
 ```
 
 <!-- predict.inla? -->
