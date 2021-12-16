@@ -333,7 +333,7 @@ ggplot(pred) + geom_raster(aes(X, Y, fill = plogis(est))) +
   facet_wrap(~year) + scale_fill_viridis_c() + coord_fixed() 
 ```
 
-Similar predictions are more complicated to extract from INLA, but can be plotted for the original sample locations.
+Similar predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
 
 ```{r inla-pred, out.width="6in"}
 idx <- inla.stack.index(sdat, 'stdata')$data
