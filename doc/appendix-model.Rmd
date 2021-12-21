@@ -33,19 +33,35 @@ knitr::opts_chunk$set(
 
 This appendix uses the following notation conventions:
 
-* Greek symbols for parameters
+* Greek symbols for parameters,
 
-* Bold symbols for vectors or matrices
+* the Latin/Roman alphabet for data,
 
-* $\phi$ for all distribution dispersion parameters for consistency with the code
+* bold symbols for vectors or matrices,
 
-* $\mathbb{E}[y]$ to define the expected value (mean) of variable $y$
+* $\phi$ for all distribution dispersion parameters for consistency with the code,
 
-* $\mathrm{Var}[y]$ to define the expected variance of the variable $y$
+* $\mathbb{E}[y]$ to define the expected value (mean) of variable $y$,
 
-* An $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\omega$ vs. $\omega^*$).
+* $\mathrm{Var}[y]$ to define the expected variance of the variable $y$, and
 
-```{r, results='asis'}
+* a $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\omega$ vs. $\omega^*$).
+
+We include tables of all major indices (Table \@ref(tab:indices)) and symbols (Table \@ref(tab:symbols)).
+
+```{r indices}
+library(magrittr)
+subscripts <- tibble::tribble(
+  ~Symbol, ~Description,
+  "$\\s$", "Index for space; a vector of x and y coordinates",
+  "$t$", "Index for time",
+  "$g$", "Group"
+)
+knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex", booktabs = TRUE) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+```{r symbols, results='asis'}
 symbols <- tibble::tribble(
   ~Symbol, ~Description,
   "$y$", "Observed response data",
@@ -92,15 +108,7 @@ knitr::kable(symbols, caption = "Symbol notation and descriptions.", escape = FA
   ))
 ```
 
-```{r}
-subscripts <- tibble::tribble(
-  ~Symbol, ~Description,
-  "$\\s$", "Index for space; a vector of x and y coordinates",
-  "$t$", "Index for time",
-  "$g$", "Group"
-)
-knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex", booktabs = TRUE)
-```
+\clearpage
 
 # sdmTMB model structure
 
@@ -290,6 +298,13 @@ Usually, $\bm{X}_{3,t}$ would represent a predictor that is constant spatially f
 Currently, $\bm{X}_{3,t}$ is restricted to a single covariate, supplied by a one-sided formula to `spatial_varying`.
 For example `spatial_varying = ~ 0 + x`, where `0` omits the intercept.
 
+The random fields are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\zeta$):
+
+$$
+\boldsymbol{\zeta} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\zeta^2 \boldsymbol{Q}^{-1}_\zeta\right).
+$$
+
+
 ## IID random or multi-level intercepts
 
 $$
@@ -300,7 +315,7 @@ $$
 $$
 
 where $\alpha_g$ is an example optional "random" intercept---an intercept
-centered on zero that varies by level $g$ and is constrained by
+with mean zero that varies by level $g$ and is constrained by
 $\sigma_\alpha$. This is defined by the `formula` argument via the `(1 | g)`
 syntax as in lme4 or glmmTMB. There can be multiple random intercepts. 
 E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorrelated from each other.
@@ -454,7 +469,7 @@ Example: `family = student(link = "log", df = 7)`
 
 ## [Tweedie](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga262f3c2d1cf36f322a62d902a608aae0)
 
-[Source code](https://kaskr.github.io/adcomp/tweedie_8cpp_source.html) as in [cplm](https://CRAN.R-project.org/package=cplm) package. <https://link.springer.com/article/10.1007/s11222-012-9343-7>
+[Source code](https://kaskr.github.io/adcomp/tweedie_8cpp_source.html) as in the [cplm](https://CRAN.R-project.org/package=cplm) package [@zhang2013a].
 
 $$
 \operatorname{Tweedie} \left(\mu, p, \phi \right), \: 1 < p < 2
