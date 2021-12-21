@@ -469,8 +469,6 @@ Example: `family = student(link = "log", df = 7)`
 
 ## [Tweedie](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga262f3c2d1cf36f322a62d902a608aae0)
 
-[Source code](https://kaskr.github.io/adcomp/tweedie_8cpp_source.html) as in the [cplm](https://CRAN.R-project.org/package=cplm) package [@zhang2013a].
-
 $$
 \operatorname{Tweedie} \left(\mu, p, \phi \right), \: 1 < p < 2
 $$
@@ -479,6 +477,8 @@ where $\mu$ is the mean, $p$ is the power parameter constrained between 1 and 2,
 The Tweedie distribution can be helpful for modelling data that positive and continuous but also contains zeros.
 
 Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ to constrain it between 1 and 2 and \texttt{thetaf} is estimated as an unconstrained variable.
+
+The [source code](https://kaskr.github.io/adcomp/tweedie_8cpp_source.html) is implemented as in the [cplm](https://CRAN.R-project.org/package=cplm) package [@zhang2013a] and is based on @dunn2005.
 
 Example: `family = tweedie(link = "log")`
 
@@ -519,7 +519,7 @@ $$
 
 ## Anisoptropy
 
-TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance REF, and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance [@fuglstad2015a], and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$.
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled. 
 
