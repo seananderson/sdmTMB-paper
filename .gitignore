@@ -20,3 +20,4 @@ packageDesc*
 settings.txt
 doc/compile.R
 figs/
+temp-*
