@@ -427,26 +427,45 @@ Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ 
 The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as 
 
 $$
-\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1} (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right),$$
+\Phi\left( s_j,s_k \right) = \tau^2/\Gamma(\nu)2^{\nu - 1} (\kappa d_{jk})^\nu K_\nu \left( \kappa d_{jk} \right),
+$$
 <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
 
 where $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents a scaling parameter that controls the decorrelation distance (REF).
 The parameter $\nu$ controls the smoothness of the covariance function.
 We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
-  
-## Projection 'A' matrix
 
-TODO
+Internally, the random fields are assumed to follow a Gaussian Markov random field. For example, the spatial random field case:
+
+$$
+\boldsymbol{\omega} \sim \mathrm{MVN}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}\right)
+$$
+where $\boldsymbol{Q}$ is a sparse precision matrix.
+  
+## Projection '$\boldsymbol{A}$' matrix
+
+The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates the values at the locations of the observed or predicted data [@lindgren2015]:
+
+$$
+\boldsymbol{\omega}^* = \boldsymbol{A} \boldsymbol{\omega}
+$$
+The matrix $\boldsymbol{A}$ has a row for each data point or prediction point and a column for each knot.
+Three non-zero elements on each row define the weight of the neighbouring 3 knot locations.
+The same bilinear interpolation happens for any spatiotemporal random fields and $\boldsymbol{\epsilon}_t$.
 
 ## Anisoptropy
 
-TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the boolean `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance (Fuglstad et al. 2015), and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the boolean `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance REF, and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled. 
 
 ## Barrier mesh
 
-In some cases the spatial domain of interest may be complex and bordered by land or water (e.g., coastlines, islands, lakes). SPDE models allow for barriers to be included via barrier meshes. With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`. The barriers must be constructed as `sf` objects with polygons defining the barriers. See `?sdmTMB::add_barrier_mesh` for examples.
+In some cases the spatial domain of interest may be complex and bordered by land or water (e.g., coastlines, islands, lakes). 
+SPDE models allow for barriers to be included via barrier meshes. 
+With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`. 
+The barriers must be constructed as `sf` objects [@pebesma2018] with polygons defining the barriers. 
+See `?sdmTMB::add_barrier_mesh` for examples.
 
 TODO DETAILS ON  METHOD HERE
 
