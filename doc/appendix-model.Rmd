@@ -165,6 +165,13 @@ $$
 $$
 The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatial SD` in the model output or as `sigma_O` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
 
+Internally, the random fields follow a Gaussian Markov random field (GMRF):
+
+$$
+\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right)
+$$
+where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
+  
 ## Spatiotemporal random fields
 
 Spatiotemporal random fields are included by default if there are multiple time elements (`time` argument is not `NULL`) and can be set to IID (`'iid'`; default), AR1 (`'ar1'`), random walk (`'rw'`), or off (`'off'`) via the `spatiotemporal` argument.
@@ -188,9 +195,15 @@ $$
 where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
 The random fields are assumed independent across time slices. 
 
+Similarly to the spatial random fields, these spatiotemporal random fields (and all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$):
+
+$$
+\boldsymbol{\epsilon}_t \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right)
+$$
+
 ### AR(1) spatiotemporal random fields
 
-AR(1) spatiotemporal random fields (`spatiotemporal = 'ar1'`) add a parameter defining the correlation between random field deviations from one time slice to the next. 
+First-order auto regressive, AR(1), spatiotemporal random fields (`spatiotemporal = 'ar1'`) add a parameter defining the correlation between random field deviations from one time slice to the next. 
 They are defined as
 
 $$
@@ -202,9 +215,10 @@ $$
 \end{aligned}
 $$
 where $\rho$ is the correlation between subsequent spatiotemporal random fields. 
-The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance.
+The $\rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2}$ term scales the spatiotemporal variance by the correlation such that it represents the steady-state marginal variance.
 The correlation $\rho$ allows for mean-reverting spatiotemporal fields, and is constrained to be $-1 < \rho < 1$.
-Internally, the parameter is estimated as `ar1_phi`, which is unconstrained. The parameter `ar1_phi` is transformed to $\rho$ with $\rho = 2 \left( \mathrm{logit}^{-1}(\texttt{ar1\_phi}) - 1 \right)$.
+Internally, the parameter is estimated as `ar1_phi`, which is unconstrained. 
+The parameter `ar1_phi` is transformed to $\rho$ with $\rho = 2 \left( \mathrm{logit}^{-1}(\texttt{ar1\_phi}) - 1 \right)$.
 
 ### Random walk spatiotemporal random fields (RW)
 
@@ -296,6 +310,8 @@ where $O_{\s,t}$ is an offset term---a **log transformed** variable without a co
 
 # Observation model families
 
+Here we describe the main observation families that are available in sdmTMB and comment on their parametrization, statistical properties, utility, and code representation in sdmTMB.
+
 ## [Binomial](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaee11f805f02bc1febc6d7bf0487671be)
 
 $$
@@ -341,9 +357,9 @@ Example: `family = Gamma(link = "log")`
 ## [Gaussian](https://kaskr.github.io/adcomp/dnorm_8hpp.html)
 
 $$
-\operatorname{Normal} \left( \mu, \phi \right)
+\operatorname{Normal} \left( \mu, \phi^2 \right)
 $$
-where $\mu$ is the mean and $\phi$ is the standard deviation (following Stan convention of standard deviation not variance).
+where $\mu$ is the mean and $\phi$ is the standard deviation.
 The variance is $\phi^2$.
 
 Example: `family = Gaussian(link = "identity")`
@@ -370,8 +386,7 @@ $$
 
 where $\mu$ is the mean and $\phi$ is the dispersion parameter.
 The variance scales quadratically with the mean $\mathrm{Var}[y] = \mu + \mu^2 / \phi$ [@hilbe2011].
-
-Internally parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
+Internally, the distribution is parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
 
 Example: `family = nbinom2(link = "log")`
 
@@ -383,8 +398,7 @@ $$
 
 where $\mu$ is the mean and $\phi$ is the dispersion parameter.
 The variance scales linearly with the mean $\mathrm{Var}[y] = \mu + \mu / \phi$ [@hilbe2011].
-
-Internally parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
+Internally, the distribution is parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
 
 Example: `family = nbinom1(link = "log")`
 
@@ -418,7 +432,9 @@ $$
 where $\mu$ is the mean, $p$ is the power parameter constrained between 1 and 2, and $\phi$ is the dispersion parameter.
 The Tweedie distribution can be helpful for modelling data that positive and continuous but also contains zeros.
 
-Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ to constrain it between 1 and 2 and \texttt{thetaf} is fit as an unconstrained variable.
+Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ to constrain it between 1 and 2 and \texttt{thetaf} is estimated as an unconstrained variable.
+
+Example: `family = tweedie(link = "log")`
 
 # Random field details
 
@@ -431,43 +447,50 @@ $$
 $$
 <!-- TODO: paraphrase this to avoid self plagiarizing the synopsis report! -->
 
-where $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma function, $K_\nu$ represents the Bessel function, $d_{jk}$ represents the Euclidean distance between locations $s_j$ and $s_k$, and $\kappa$ represents a scaling parameter that controls the decorrelation distance (REF).
-The parameter $\nu$ controls the smoothness of the covariance function.
-We set $\nu = 1$, which lets us take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+where $\tau^2$ controls the spatial variance,
+$\nu$ controls the smoothness,
+$\Gamma$ represents the Gamma function,
+$d_{jk}$ represents the distance between locations $s_j$ and $s_k$,
+$K_\nu$ represents the modified Bessel function of the second kind,
+and $\kappa$ controls the spatial correlation range.
+The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
 
-Internally, the random fields are assumed to follow a Gaussian Markov random field. For example, the spatial random field case:
-
-$$
-\boldsymbol{\omega} \sim \mathrm{MVN}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}\right)
-$$
-where $\boldsymbol{Q}$ is a sparse precision matrix.
-  
 ## Projection '$\boldsymbol{A}$' matrix
 
 The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates the values at the locations of the observed or predicted data [@lindgren2015]:
 
 $$
-\boldsymbol{\omega}^* = \boldsymbol{A} \boldsymbol{\omega}
+\boldsymbol{\omega}^* = \boldsymbol{A} \boldsymbol{\omega},
 $$
+where $\boldsymbol{\omega}^*$ represents the values of the spatial random fields at the observed locations or predicted data locations.
 The matrix $\boldsymbol{A}$ has a row for each data point or prediction point and a column for each knot.
-Three non-zero elements on each row define the weight of the neighbouring 3 knot locations.
-The same bilinear interpolation happens for any spatiotemporal random fields and $\boldsymbol{\epsilon}_t$.
+Three non-zero elements on each row define the weight of the neighbouring 3 knot locations for location $s$.
+The same bilinear interpolation happens for any spatiotemporal random fields and $\boldsymbol{\epsilon}_t$:
+
+$$
+\boldsymbol{\epsilon}_t^* = \boldsymbol{A} \boldsymbol{\epsilon}_t.
+$$
 
 ## Anisoptropy
 
-TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the boolean `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance REF, and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance REF, and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled. 
 
 ## Barrier mesh
 
 In some cases the spatial domain of interest may be complex and bordered by land or water (e.g., coastlines, islands, lakes). 
-SPDE models allow for barriers to be included via barrier meshes. 
+SPDE models allow for barriers to be included via barrier meshes [@bakka2019]. 
 With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`. 
 The barriers must be constructed as `sf` objects [@pebesma2018] with polygons defining the barriers. 
 See `?sdmTMB::add_barrier_mesh` for examples.
 
-TODO DETAILS ON  METHOD HERE
+The barrier mesh implementation requires the user to select a fraction value (`range_fraction` argument) that defines the fraction of the usual spatial range when crossing the barrier [@bakka2019]. 
+For example, if the range was estimated at 10 km, `range_fraction = 0.2` would assume that the range was 2 km across the barrier. 
+This would let the spatial correlation decay 5 times faster with distance. 
+From experimentation, values around 0.1 or 0.2 seem to work well but values much lower than 0.1 can result in convergence issues.
+
+The website <https://haakonbakkagit.github.io/btopic128.html> provides an illustration with INLA. The implementation within TMB was borrowed from code written by Olav Nikolai Breivik and Hans Skaug at <https://github.com/skaug/tmb-case-studies>.
 
 # Optimization details
 
@@ -479,8 +502,25 @@ Like AD Model Builder, TMB allows for parameters to be fit in phases and we incl
 
 In some cases, a single call to `stats::nlminb()` may not be result in convergence (or a small maximum gradient), and the algorithm may need to be run multiple times. In the `sdmTMB::sdmTMBcontrol()` function, we include an argument `nlminb_loops` that will restart the optimization at the previous best values. The number of `nlminb_loops` should generally be small (e.g. 2 or 3 initially), and defaults to 1. For some sdmTMB models, the Hessian may also be unstable and need to be re-evaluated. We do this optionally with the `stats::optimHess()` routine after the call to `stats::nlminb()`. The `stats::optimHess()` function implements a Newton optimization routine to find the Hessian, and we include the argument `newton_loops` in `sdmTMB::sdmTMBcontrol()` to allow for multiple function evaluations (each starting at the previous best value). By default, this is not included and `newton_loops` is set to 0.
 
+# Optimization
+
+The sdmTMB model is fit by maximum marginal likelihood.
+Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
+Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
+After rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
+
+Optimization with `stats::nlminb()` involves specifying the number of iterations and evaluations (`eval.max` and `iter.max`) and the tolerances (`abs.tol`, `rel.tol`, `x.tol`, `xf.tol`)---a greater number of iterations and smaller tolerance thresholds increase the chance that the optimal solution is found, but more evaluations translates into longer computation time.
+Additionally, multiple function calls to `stats::nlminb()` may aid convergence; we include `nlminb_loops` as an argument to the control list in `sdmTMB()` (e.g., `sdmTMB(..., control = sdmTMBcontrol(nlmbinb_loops = 2))`), where each call is initialized at the best parameter vector from the previous iteration.
+Similarly, additional optimization with a Newton solver (`stats::optimHess()`) can be implemented by adding `newton_loops` in the control list.
+If a model is already fit, the function `sdmTMB::run_extra_optimization()` can run additional optimization loops with either routine to further reduce the maximum gradient.
+
 # Assessing convergence
 
-Much of the guidance around diagnostics and `glmmTMB` also applies to `sdmTMB`, e.g. [https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html). Warnings of non-positive-definite Hessian matrices (accompanied by parameters with NAs for standard errors) often mean models are improperly specified given the data used. Optimization with `stats::nlminb()` involves specifying the number of iterations and evaluations (`eval.max` and `iter.max`) and the tolerances (`abs.tol`, `rel.tol`, `x.tol`, `xf.tol`) -- more iterations and smaller tolerance thresholds ensure that the optimal solution is found, but more evaluations translates into longer computation time. Additionally, multiple function calls to `stats::nlminb()` may aid convergence; we include `nlmbinb_loops` as an argument to `sdmTMB()`, where each call is initialized at the best parameter vector from the previous iteration. Alternatively, `sdmTMB()` may be called repeatedly, using different random seeds.  
+Much of the guidance around diagnostics and glmmTMB also applies to `sdmTMB`, e.g. [https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html). 
+Warnings of non-positive-definite Hessian matrices (accompanied by parameters with `NA`s for standard errors) often mean models are improperly specified given the data.
+Standard errors can be observed in the output of `print.sdmTMB()` or by checking `fit$sd_report`.
+The maximum gradient of the marginal likelihood with respect to fixed-effect parameters can be checked by inspecting (`fit$gradients`).
+Guidance varies, but the maximum gradient should likely be at least $< 0.001$ before assuming the fitting routine is consistent with convergence.
+If maximum gradients are already relatively small, they can often be reduced further with additional optimization calls beginning at the previous best parameter vector as described above with `sdmTMB::run_extra_optimization()`.
 
 # References
