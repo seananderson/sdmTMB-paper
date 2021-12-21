@@ -5,6 +5,7 @@ output:
     toc: false
 number_sections: false
 fig_caption: true
+urlcolor: blue
 highlight: "monochrome"
 csl: mee.csl
 bibliography: refs.bib
@@ -34,33 +35,61 @@ This appendix uses the following notation conventions:
 
 * Greek symbols for parameters
 
-* Bold lowercase for vectors
-
-* Bold uppercase for matrices
+* Bold symbols for vectors or matrices
 
 * $\phi$ for all distribution dispersion parameters for consistency with the code
+
+* $\mathbb{E}[y]$ to define the expected value (mean) of variable $y$
+
+* $\mathrm{Var}[y]$ to define the expected variance of the variable $y$
+
+* An $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\omega$ vs. $\omega^*$).
 
 ```{r, results='asis'}
 symbols <- tibble::tribble(
   ~Symbol, ~Description,
-  "$\\phi$", "A dispersion parameter for a distribution",
-  "$\\mu$", "Mean",
   "$y$", "Observed response data",
+  "$\\mu$", "Mean",
+  "$\\phi$", "A dispersion parameter for a distribution",
   "$f$", "Link function",
-  "$\\omega_{\\s}$", "Spatial random field at point $\\s$",
-  "$\\zeta_{\\s, t}$", "Spatially varying coefficient random field at point $\\s$ and time $t$",
-  "$\\epsilon_{\\s, t}$", "Spatiotemporal random field",
-  "$\\boldsymbol{\\Sigma}_\\omega$", "Spatial random field covariance matrix",
-  "$\\boldsymbol{\\Sigma}_\\epsilon$", "Spatiotemporal random field covariance matrix",
-  "$\\boldsymbol{\\Sigma}_\\zeta$", "Spatially varying coefficient random field covariance matrix",
+  "$f^{-1}$", "Inverse link function",
   "$\\boldsymbol{\\beta}$", "Parameter vector",
-  "$\\boldsymbol{X}$", "Model predictor matrix",
-  "$\\alpha_g$", "IID random intercept deviations",
+  "$\\boldsymbol{X}$", "A predictor model matrix",
+  "$O_{\\s, t}$", "An offset variable at point $\\s$ and time $t$",
+  
+  "$\\omega_{\\s}$", "Spatial random field at point $\\s$ (knot)",
+  "$\\omega_{\\s}^*$", "Spatial random field at point $\\s$ (interpolated)",
+  "$\\zeta_{\\s, t}$", "Spatially varying coefficient random field at point $\\s$ and time $t$ (knot)",
+  "$\\zeta_{\\s, t}^*$", "Spatially varying coefficient random field at point $\\s$ and time $t$ (interpolated)",
+  "$\\epsilon_{\\s, t}$", "Spatiotemporal random field at point $\\s$ and time $t$ (knot)",
+  "$\\epsilon_{\\s, t}^*$", "Spatiotemporal random field at point $\\s$ and time $t$ (interpolated)",
+  "$\\delta_{\\s,t}$", "AR1 or random walk spatiotemporal deviations (knot)",
+  "$\\alpha_g$", "IID random intercept deviation for group $g$",
+  
+  "$\\boldsymbol{\\Sigma}_\\omega$", "Spatial random field covariance matrix",
+  "$\\boldsymbol{\\Sigma}_\\zeta$", "Spatially varying coefficient random field covariance matrix",
+  "$\\boldsymbol{\\Sigma}_\\epsilon$", "Spatiotemporal random field covariance matrix",
+  "$\\boldsymbol{Q}_\\omega$", "Spatial random field precision matrix",
+  "$\\boldsymbol{Q}_\\zeta$", "Spatially varying coefficient random field precision matrix",
+  "$\\boldsymbol{Q}_\\epsilon$", "Spatiotemporal random field precision matrix",
+  
   "$\\sigma_\\alpha^2$", "IID random intercept variance",
-  "$\\delta_{\\s,t}$", "AR1 or random walk spatiotemporal deviations",
+  "$\\sigma_\\epsilon^2$", "Spatiotemporal random field marginal variance",
+  "$\\sigma_\\omega^2$", "Spatial random field marginal variance",
+  "$\\sigma_\\zeta^2$", "Spatially varying coefficient random field marginal variance",
   "$\\rho$", "Correlation between random fields in subsequent time steps"
 )
-knitr::kable(symbols, caption = "Symbol notation and descriptions", escape = FALSE, format = "latex", booktabs = TRUE)
+knitr::kable(symbols, caption = "Symbol notation and descriptions.", escape = FALSE, format = "latex", booktabs = TRUE,
+   linesep = c(
+    rep('', 7), # y, mean etc.
+    '\\addlinespace',
+    rep('', 7), # fields
+    '\\addlinespace',
+    rep('', 5), # covariance stuff
+    '\\addlinespace',
+    rep('', 2), # bayes
+    '\\addlinespace'
+  ))
 ```
 
 ```{r}
@@ -73,15 +102,16 @@ subscripts <- tibble::tribble(
 knitr::kable(subscripts, caption = "Subscript notation", escape = FALSE, format = "latex", booktabs = TRUE)
 ```
 
-# Combined model structure
+# sdmTMB model structure
 
 The complete sdmTMB model can be written as:
 
 $$
 \begin{aligned}
-\mathbb{E}(y_{\s,t}) &= \mu_{\s,t},\\
+\mathbb{E}[y_{\s,t}] &= \mu_{\s,t},\\
 \mu_{\bm{s},t} &=
 f^{-1} \left( \bm{X}_{1,\bm{s},t} \bm{\beta} +
+O_{\s,t} +
 \bm{\alpha}_g +
 \bm{X}_{2,\bm{s},t} \gamma_t +
 \bm{X}_{3,t} \zeta_{\bm{s}} +
@@ -92,19 +122,19 @@ $$
 
 where
 
-* $\mathbb{E}$ indicates expected value;
 * $y_{\s,t}$ represents the response data at point $\s$ and time $t$;
 * $\mu$ represents the mean;
 * $f$ represents a link function (e.g., log or logit) and $f^{-1}$ represents its inverse;
 * $\bm{X}_{1}$, $\bm{X}_{2}$, and $\bm{X}_{3}$ represent design matrices;
 * $\bm{\beta}$ represents a vector of fixed-effect coefficients;
+* $O_{\s,t}$ represents an offset: a covariate (usually log transformed) with a coefficient fixed at one;
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
 * $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-Next, we will split this model apart to describe the various parts in more detail using $\ldots$ to represent the other optional components.
+A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using $\ldots$ to represent the other optional components.
 
 ## Main effects
 
@@ -170,7 +200,7 @@ Internally, the random fields follow a Gaussian Markov random field (GMRF):
 $$
 \boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right)
 $$
-where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
+where $\boldsymbol{Q}_\omega$ is a sparse precision matrix and $\sigma_\omega^2$ is the marginal variance.
   
 ## Spatiotemporal random fields
 
@@ -364,7 +394,7 @@ The variance is $\phi^2$.
 
 Example: `family = Gaussian(link = "identity")`
 
-## [Lognormal](https://github.com/pbs-assess/sdmTMB/blob/28a93496a93b12e5a2f73f703bc96afbf14d86c1/src/sdmTMB.cpp#L22-L30)
+## [Lognormal](https://github.com/pbs-assess/sdmTMB/blob/18a39eabc111e2179fa589f942c8820d87ad10df/src/utils.h#L47-L54)
 
 $$
 \operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi \right)
@@ -378,19 +408,7 @@ TODO: did this get reversed above? Isn't it set up so the mean(x) is mu?
 
 Example: `family = lognormal(link = "log")`
 
-## [Negative Binomial 2 (NB2)](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga76266c19046e04b651fce93aa0810351)
-
-$$
-\operatorname{NB2} \left( \mu, \phi \right)
-$$
-
-where $\mu$ is the mean and $\phi$ is the dispersion parameter.
-The variance scales quadratically with the mean $\mathrm{Var}[y] = \mu + \mu^2 / \phi$ [@hilbe2011].
-Internally, the distribution is parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
-
-Example: `family = nbinom2(link = "log")`
-
-## [Negative Binomial 1 (NB1)](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga76266c19046e04b651fce93aa0810351)
+## [Negative Binomial 1 (NB1)](https://github.com/pbs-assess/sdmTMB/blob/18a39eabc111e2179fa589f942c8820d87ad10df/src/sdmTMB.cpp#L577-L582)
 
 $$
 \operatorname{NB1} \left( \mu, \phi \right)
@@ -402,6 +420,19 @@ Internally, the distribution is parameterized as the [robust version](https://ka
 
 Example: `family = nbinom1(link = "log")`
 
+## [Negative Binomial 2 (NB2)](https://kaskr.github.io/adcomp/group__R__style__distribution.html#ga76266c19046e04b651fce93aa0810351)
+
+$$
+\operatorname{NB2} \left( \mu, \phi \right)
+$$
+
+where $\mu$ is the mean and $\phi$ is the dispersion parameter.
+The variance scales quadratically with the mean $\mathrm{Var}[y] = \mu + \mu^2 / \phi$ [@hilbe2011].
+The NB2 parametrization is more commonly seen in ecology than the NB1.
+Internally, the distribution is parameterized as the [robust version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa23e3ede4669d941b0b54314ed42a75c) in TMB.
+
+Example: `family = nbinom2(link = "log")`
+
 ## [Poisson](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaa1ed15503e1441a381102a8c4c9baaf1)
 
 $$
@@ -411,7 +442,7 @@ where $\mu$ represents the mean and $\mathrm{Var}[y] = \mu$.
 
 Example: `family = poisson(link = "log")`
 
-## [Student-t](https://github.com/pbs-assess/sdmTMB/blob/28a93496a93b12e5a2f73f703bc96afbf14d86c1/src/sdmTMB.cpp#L11-L20)
+## [Student-t](https://github.com/pbs-assess/sdmTMB/blob/18a39eabc111e2179fa589f942c8820d87ad10df/src/utils.h#L37-L45)
 
 $$
 \operatorname{Student-t} \left( \mu, \phi, \nu \right)
@@ -436,7 +467,7 @@ Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ 
 
 Example: `family = tweedie(link = "log")`
 
-# Random field details
+# Gaussian random fields
 
 ## Matern parameterization
 
@@ -457,7 +488,7 @@ The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Diff
 
 ## Projection '$\boldsymbol{A}$' matrix
 
-The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates the values at the locations of the observed or predicted data [@lindgren2015]:
+The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates from the knot locations to the values at the locations of the observed or predicted data [@lindgren2015]:
 
 $$
 \boldsymbol{\omega}^* = \boldsymbol{A} \boldsymbol{\omega},
@@ -490,33 +521,36 @@ For example, if the range was estimated at 10 km, `range_fraction = 0.2` would a
 This would let the spatial correlation decay 5 times faster with distance. 
 From experimentation, values around 0.1 or 0.2 seem to work well but values much lower than 0.1 can result in convergence issues.
 
-The website <https://haakonbakkagit.github.io/btopic128.html> provides an illustration with INLA. The implementation within TMB was borrowed from code written by Olav Nikolai Breivik and Hans Skaug at <https://github.com/skaug/tmb-case-studies>.
+[This website](https://haakonbakkagit.github.io/btopic128.html) by Francesco Serafini and Haakon Bakka provides an illustration with INLA.
+The implementation within TMB was borrowed from code written by Olav Nikolai Breivik and Hans Skaug at the [TMB Case Studies](https://github.com/skaug/tmb-case-studies) Github site.
 
-# Optimization details
+# Optimization 
+
+## Optimization details
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template calculates the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
 
-Like AD Model Builder, TMB allows for parameters to be fit in phases and we include the `multiphase` argument in `sdmTMB::sdmTMBcontrol()` to allow this. For high dimensional models (lots of fixed and random effects), phased estimation may be faster and result in more stable convergence. In sdmTMB, phased estimation proceeds by first estimating all fixed effect parameters contributing to the likelihood (holding random effects constant at initial values). In the second phase, the random effect parameters (and their variances) are also estimated. Fixed effect parameters are also estimated in the second phase, and initialized at their estimates from the first phase.  
+Like AD Model Builder, TMB allows for parameters to be fit in phases and we include the `multiphase` argument in `sdmTMB::sdmTMBcontrol()` to allow this. 
+For high-dimensional models (many of fixed and random effects), phased estimation may be faster and result in more stable convergence. 
+In sdmTMB, phased estimation proceeds by first estimating all fixed-effect parameters contributing to the likelihood (holding random effects constant at initial values). 
+In the second phase, the random-effect parameters (and their variances) are also estimated. 
+Fixed-effect parameters are also estimated in the second phase and are initialized at their estimates from the first phase.  
 
-In some cases, a single call to `stats::nlminb()` may not be result in convergence (or a small maximum gradient), and the algorithm may need to be run multiple times. In the `sdmTMB::sdmTMBcontrol()` function, we include an argument `nlminb_loops` that will restart the optimization at the previous best values. The number of `nlminb_loops` should generally be small (e.g. 2 or 3 initially), and defaults to 1. For some sdmTMB models, the Hessian may also be unstable and need to be re-evaluated. We do this optionally with the `stats::optimHess()` routine after the call to `stats::nlminb()`. The `stats::optimHess()` function implements a Newton optimization routine to find the Hessian, and we include the argument `newton_loops` in `sdmTMB::sdmTMBcontrol()` to allow for multiple function evaluations (each starting at the previous best value). By default, this is not included and `newton_loops` is set to 0.
-
-# Optimization
-
-The sdmTMB model is fit by maximum marginal likelihood.
-Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
-Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
-After rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
-
-Optimization with `stats::nlminb()` involves specifying the number of iterations and evaluations (`eval.max` and `iter.max`) and the tolerances (`abs.tol`, `rel.tol`, `x.tol`, `xf.tol`)---a greater number of iterations and smaller tolerance thresholds increase the chance that the optimal solution is found, but more evaluations translates into longer computation time.
-Additionally, multiple function calls to `stats::nlminb()` may aid convergence; we include `nlminb_loops` as an argument to the control list in `sdmTMB()` (e.g., `sdmTMB(..., control = sdmTMBcontrol(nlmbinb_loops = 2))`), where each call is initialized at the best parameter vector from the previous iteration.
-Similarly, additional optimization with a Newton solver (`stats::optimHess()`) can be implemented by adding `newton_loops` in the control list.
+In some cases, a single call to `stats::nlminb()` may not be result in convergence (e.g., the maximum gradient of the marginal likelihood with respect to fixed-effect parameters is not small enough yet), and the algorithm may need to be run multiple times. 
+In the `sdmTMB::sdmTMBcontrol()` function, we include an argument `nlminb_loops` that will restart the optimization at the previous best values. 
+The number of `nlminb_loops` should generally be small (e.g., 2 or 3 initially), and defaults to 1. 
+For some sdmTMB models, the Hessian may also be unstable and need to be re-evaluated. 
+We do this optionally with the `stats::optimHess()` routine after the call to `stats::nlminb()`. 
+The `stats::optimHess()` function implements a Newton optimization routine to find the Hessian, and we include the argument `newton_loops` in `sdmTMB::sdmTMBcontrol()` to allow for multiple function evaluations (each starting at the previous best value). 
+By default, this is not included and `newton_loops` is set to 0.
 If a model is already fit, the function `sdmTMB::run_extra_optimization()` can run additional optimization loops with either routine to further reduce the maximum gradient.
 
-# Assessing convergence
+## Assessing convergence
 
-Much of the guidance around diagnostics and glmmTMB also applies to `sdmTMB`, e.g. [https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html). 
+Much of the guidance around diagnostics and glmmTMB also applies to sdmTMB, e.g. [the glmmTMB vignette on troubleshooting](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html). 
+Optimization with `stats::nlminb()` involves specifying the number of iterations and evaluations (`eval.max` and `iter.max`) and the tolerances (`abs.tol`, `rel.tol`, `x.tol`, `xf.tol`)---a greater number of iterations and smaller tolerance thresholds increase the chance that the optimal solution is found, but more evaluations translates into longer computation time.
 Warnings of non-positive-definite Hessian matrices (accompanied by parameters with `NA`s for standard errors) often mean models are improperly specified given the data.
 Standard errors can be observed in the output of `print.sdmTMB()` or by checking `fit$sd_report`.
 The maximum gradient of the marginal likelihood with respect to fixed-effect parameters can be checked by inspecting (`fit$gradients`).
