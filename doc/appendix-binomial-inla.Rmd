@@ -1,5 +1,5 @@
 ---
-title: "Appendix 4: species distribution model comparison between INLA and sdmTMB"
+title: "Appendix 4: Species distribution model comparison between INLA and sdmTMB"
 output:
   pdf_document:
     highlight: tango
@@ -84,7 +84,6 @@ We use weak priors on the fixed effects (`mean = 0, prec = 1/(100*100)`), which 
 
 ```{r inla}
 tictoc::tic("INLA") # start timing
-
 nyear <- length(unique(d$year))
 iset <- inla.spde.make.index("i", n.spde = spde$n.spde, n.group = nyear)
 A <- inla.spde.make.A(mesh = inla_mesh, loc = loc_xy, group = d$i_year)

@@ -598,7 +598,7 @@ Appendix 1: sdmTMB statistical model description\
 Appendix 2: Example of index standardization of fishery-independent survey data with sdmTMB\
 Appendix 3: Example of a spatially varying effect of climate on citizen science count data with sdmTMB\
 Appendix 4: Species distribution model comparison between INLA and sdmTMB\
-Appendix 5: Example of index standardization of fishery-independent survey data with VAST\
+Appendix 5: Comparison of index standardization of fishery-independent survey data with VAST and sdmTMB\
 Appendix 6: sdmTMB model validation and speed-testing methods
 <!--
 All submissions with more than one author must include an Authors’ contributions statement. All persons listed as authors on a paper are expected to meet ALL of the following criteria for authorship:

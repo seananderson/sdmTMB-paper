@@ -1,5 +1,5 @@
 ---
-title: "Appendix 5: example of index standardization of fishery-independent survey data with VAST"
+title: "Appendix 5: Comparison of index standardization of fishery-independent survey data with VAST and sdmTMB"
 output:
   pdf_document:
     highlight: tango

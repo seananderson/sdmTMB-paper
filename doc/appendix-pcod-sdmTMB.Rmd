@@ -1,5 +1,5 @@
 ---
-title: "Appendix 2: example of index standardization of fishery-independent survey data with sdmTMB"
+title: "Appendix 2: Example of index standardization of fishery-independent survey data with sdmTMB"
 output:
   pdf_document:
     highlight: tango
