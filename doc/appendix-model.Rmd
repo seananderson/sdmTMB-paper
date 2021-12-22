@@ -46,7 +46,7 @@ This appendix uses the following notation conventions:
 
 * $\mathrm{Var}[y]$ to define the expected variance of the variable $y$,
 
-* a $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\boldsymbol{\omega}$ vs. $\boldsymbol{\omega}^*$), and
+* a $^*$ superscript represents interpolated or projected values as opposed to values at knot locations (e.g., $\boldsymbol{\omega}$ vs. $\boldsymbol{\omega}^*$), and
 
 * where possible, notation has been chosen to match VAST [@thorson2019] to maintain consistency (e.g., $\boldsymbol{\omega}$ for spatial fields and $\boldsymbol{\epsilon}_t$ for spatiotemporal fields).
 
@@ -145,13 +145,14 @@ where
 * $\bm{X}_{1}$, $\bm{X}_{2}$, and $\bm{X}_{3}$ represent design matrices;
 * $\bm{\beta}$ represents a vector of fixed-effect coefficients;
 * $O_{\s,t}$ represents an offset: a covariate (usually log transformed) with a coefficient fixed at one;
-* $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
+* $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$; 
+<!-- should alpha_g be bold as in the equation above? -->
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
 * $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using $\ldots$ to represent the other optional components.
+A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
 
 ## Main effects
 
@@ -171,7 +172,8 @@ Within these smooths, the same syntax commonly used in `mgcv::s()` can be applie
 
 While mgcv can fit unpenalized (e.g., B-splines) or penalized splines (P-splines), sdmTMB only implements penalized splines. 
 The penalized splines are constructed in sdmTMB using the function `mgcv::smooth2random()`, which transforms splines into random effects (and associated design matrices) that are estimable in a mixed-effects modelling framework.
-This is the same approach as is implemented in the R packages gamm4 (REF) and brms (REF).
+This is the same approach as is implemented in the R packages gamm4 [@wood2020] and brms [@burkner2017].
+<!-- There are too other options for the brms ref, burkner2018 and burkner2021 -->
 
 ### Linear break-point threshold models
 
