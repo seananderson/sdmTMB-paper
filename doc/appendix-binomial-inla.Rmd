@@ -22,14 +22,14 @@ library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(INLA)
-# library(inlabru)
-theme_set(ggsidekick::theme_sleek())
+theme_set(theme_light())
 ```
+<!-- # library(inlabru) -->
 
-In this example, we fit a presence-absence species distribution model with fixed effect intercepts for year and spatiotemporal random fields using AR1. 
-This will be fit with a binomial distribution and a logit link. 
-Once again we will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound.
-INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`.
+In this example, we fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1). 
+We will use a binomial distribution and a logit link. 
+We will use a data set built into the package: trawl survey data for Pacific cod in Queen Charlotte Sound as described in earlier appendices.
+INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
 
 ```{r}
 d <- pcod %>% filter(year >= 2007)
@@ -37,8 +37,8 @@ yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
 d <- dplyr::left_join(d, yr_lu)
 ```
 
-In this example, we will use identical priors for the range and random field SD (aka. sigma) for models built in INLA and with sdmTMB.
-While being described different in each package, the numbers amount to the probability the range is below a lower limit (e.g., `P(range < 5) = 0.05`) and that the sigma is above an upper limit (e.g., `P(sigma > 5) = 0.05`).
+In this example, we will use Penalized Complexity (PC) priors on the range and random field standard deviation ("sigma") for models built in INLA and sdmTMB.
+The values amount to the probability the range is below a lower limit (e.g., `P(range < 5) = 0.05`) and that the sigma is above an upper limit (e.g., `P(sigma > 5) = 0.05`).
 
 ```{r set-priors, echo = TRUE, cache=FALSE}
 range_min <- 5
@@ -46,15 +46,15 @@ sigma_max <- 5
 prior_prob <- 0.05
 ```
 
-In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., the which defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now sdmTMB only takes a mean and SD (e.g., `ar1_rho = normal(0, 1)`) so we will not set a prior for either model.
+In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `ar1_rho = normal(0, 1)`).
 
 ```{r}
-h.spec <- list(rho = list(prior = 'pccor1', param = c(0, 0.9)))
+h.spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
 ```
 
-We will start by building an identical meshes using both sdmTMB and INLA.
+We will start by building identical meshes using both sdmTMB and INLA.
 Here, X and Y are coordinates in UTM zone 9.
-These same functions that are used internally in the sdmTMB `make_mesh()` function. 
+These same functions are used internally in the sdmTMB `make_mesh()` function. 
 
 ```{r sdm-mesh, echo = TRUE, cache=FALSE}
 sdm_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
@@ -65,56 +65,54 @@ loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 spde <- inla.spde2.pcmatern(
   mesh = inla_mesh, # an smdTMB mesh can be inserted here with sdm_mesh$mesh
-    prior.range = c(range_min, prior_prob),
-    prior.sigma = c(sigma_max, prior_prob)) 
+  prior.range = c(range_min, prior_prob),
+  prior.sigma = c(sigma_max, prior_prob)
+)
 ```
 
 ```{r plot-inla-mesh, fig.asp=0.9, out.height="2.5in"}
-plot(sdm_mesh);title(main = "sdmTMB mesh");plot(spde$mesh)
+plot(sdm_mesh)
+title(main = "sdmTMB mesh")
+plot(spde$mesh)
 ```
-
 
 # INLA 
 
-Data preparation for INLA models includes a formulae, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
-TODO: explain further, including `control.inla = list(int.strategy = "eb", strategy = "gaussian")` 
-TODO: We use very weak priors on the fixed effects (`mean = 0, prec = 1/(100*100)`)?
-
+Data preparation for INLA models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
+We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with TMB (REF).
+We use weak priors on the fixed effects (`mean = 0, prec = 1/(100*100)`), which amounts to a `Normal(0, 100^2)` prior.
 
 ```{r inla}
-tictoc::tic("INLA")
+tictoc::tic("INLA") # start timing
 
 nyear <- length(unique(d$year))
-
-iset <- inla.spde.make.index('i', n.spde = spde$n.spde, n.group = nyear)
-
+iset <- inla.spde.make.index("i", n.spde = spde$n.spde, n.group = nyear)
 A <- inla.spde.make.A(mesh = inla_mesh, loc = loc_xy, group = d$i_year)
-
 sdat <- inla.stack(
   data = list(y = d$present),
   A = list(A, 1),
   effects = list(iset, year_factor = as.factor(d$year)),
-  tag = 'stdata')
+  tag = "stdata"
+)
 
-formulae <- y ~ 0 + year_factor + f(i, model = spde, group = i.group,
-  control.group = list(model = 'ar1'))
-  # control.group = list(model = 'ar1', hyper = h.spec))
+formula <- y ~ 0 + year_factor + f(i,
+  model = spde, group = i.group,
+  control.group = list(model = "ar1", hyper = h.spec)
+)
 
-m_inla <- inla(formulae,
+m_inla <- inla(formula,
   data = inla.stack.data(sdat),
   control.predictor = list(compute = TRUE, A = inla.stack.A(sdat)),
   family = "binomial",
   control.family = list(link = "logit"),
-  control.fixed = list(expand.factor.strategy = 'inla', mean = 0, prec = 1/(100*100)),
+  control.fixed = list(expand.factor.strategy = "inla", mean = 0, prec = 1 / (100 * 100)),
   verbose = FALSE,
   control.inla = list(int.strategy = "eb", strategy = "gaussian"),
   control.compute = list(config = TRUE)
-  )
-
-tictoc::toc()
+)
+tictoc::toc() # stop timing
 
 summary(m_inla)
-# saves fixed effect coefs
 inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 ```
 
@@ -227,31 +225,30 @@ inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 
 # sdmTMB
 
-We then fit a very similar model with `sdmTMB()`. 
+We will now fit a nearly identical model with `sdmTMB()` (the AR(1) correlation parameter prior is different).
 We again use very weak priors on the fixed effects.
 
 ```{r sdmtmb, warning=FALSE, message=FALSE}
 tictoc::tic("sdmTMB")
-
-m <- sdmTMB(present ~ 0 + as.factor(year), 
-  data = d, 
-  mesh = sdm_mesh, 
+m <- sdmTMB(present ~ 0 + as.factor(year),
+  data = d,
+  mesh = sdm_mesh,
   time = "year",
-  spatial = "off", 
-  spatiotemporal = "AR1", 
+  spatial = "off",
+  spatiotemporal = "ar1",
   family = binomial(link = "logit"),
   priors = sdmTMBpriors(
     matern_st = pc_matern(
-      range_gt = range_min, range_prob = prior_prob, #P(range > 5) = 1-0.05
-      sigma_lt = sigma_max, sigma_prob = prior_prob #P(sigma < 5) = 1-0.05
+      range_gt = range_min, range_prob = prior_prob,
+      sigma_lt = sigma_max, sigma_prob = prior_prob
     ),
-    b = normal(0, 100)
-  ))
-
+    b = normal(0, 100),
+    ar1_rho = normal(0, 2)
+  )
+)
 tictoc::toc()
 summary(m)
 tidy(m, "ran_pars", conf.int = TRUE)
-# saves fixed effect coefs
 sdmtmb_coefs <- tidy(m, effects = "fixed")
 ```
 
@@ -264,82 +261,101 @@ plot(sdmtmb_coefs$estimate, inla_coefs$mean)
 abline(a = 0, b = 1)
 ```
 
-
-With sdmTMB, we can extract parameter simulations from the joint precision matrix using `spread_sims()` or `gather_sims()` functions.
+With sdmTMB, we can extract parameter simulations from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions.
 
 ```{r sdm-sims}
 post_sdmTMB <- gather_sims(m, n_sims = 2000L)
 
-post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`, 
-                  levels = unique(post_sdmTMB$`.variable`), 
-                  labels = c( "2007", "2009", "2011", "2013", "2015", "2017", 
-                                "Range", "AR1 rho", "Random Field SD")))
+post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`,
+  levels = unique(post_sdmTMB$`.variable`),
+  labels = c(
+    "2007", "2009", "2011", "2013", "2015", "2017",
+    "Range", "AR1 rho", "Random Field SD"
+  )
+))
 ```
 
-
-We then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA. 
+We can then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA. 
 From INLA, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the sdmTMB `gather_sims()` function.
-TODO: maybe say something about why not using `inla.posterior.sample(result = m_inla, n = 400L)`?
+Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the posterior.
+<!-- # post_inla <- inla.posterior.sample(result = m_inla, n = 400L) -->
 
 ```{r inla-densities}
-# post_inla <- inla.posterior.sample(result = m_inla, n = 400L)
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2007") 
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2009") 
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2011") 
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2013") 
-x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2015") 
-x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>% 
-  as_tibble() %>% mutate(variable = "as.factor.year.2017") 
-x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>% 
-  as_tibble() %>% mutate(variable = "range") 
-x[[8]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>% 
-  as_tibble() %>% mutate(variable = "sigma_E") 
-x[[9]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>% 
-  as_tibble() %>% mutate(variable = "ar1_rho") 
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2007")
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2009")
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2011")
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2013")
+x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2015")
+x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>%
+  as_tibble() %>%
+  mutate(variable = "as.factor.year.2017")
+x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>%
+  as_tibble() %>%
+  mutate(variable = "range")
+x[[8]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>%
+  as_tibble() %>%
+  mutate(variable = "sigma_E")
+x[[9]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>%
+  as_tibble() %>%
+  mutate(variable = "ar1_rho")
 post_inla1 <- do.call(rbind, x)
-
-post_inla2 <- post_inla1 %>% mutate(variable = factor(variable, 
-                  levels = unique(post_inla1$variable), 
-                  labels = c( "2007", "2009", "2011", "2013", "2015", "2017", 
-                                "Range", "Random Field SD", "AR1 rho")))
+post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
+  levels = unique(post_inla1$variable),
+  labels = c(
+    "2007", "2009", "2011", "2013", "2015", "2017",
+    "Range", "Random Field SD", "AR1 rho"
+  )
+))
 ```
 
-
 ```{r compare-plot, out.width="6in"}
-ggplot(post_inla2) + 
-  geom_histogram(data=post_sdmTMB2, aes(.value, after_stat(density)), bins = 30, 
-                 fill = "blue", alpha = 0.2) + 
-  geom_line(data=post_inla2, aes(x, y), inherit.aes = F) + 
-  facet_wrap(~variable, scales = "free") 
+ggplot(post_inla2) +
+  geom_histogram(
+    data = post_sdmTMB2, aes(.value, after_stat(density)), bins = 30,
+    fill = "blue", alpha = 0.2
+  ) +
+  geom_line(data = post_inla2, aes(x, y), inherit.aes = F) +
+  facet_wrap(~variable, scales = "free")
 ```
 
 # Annual distribution maps
 
-We can predict on a the grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year. 
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space. 
 
 ```{r sdm-predictions}
 nd <- filter(qcs_grid, year >= 2007)
-pred <- predict(m, newdata = nd) 
+pred <- predict(m, newdata = nd)
 ```
 
 ```{r maps, cache=FALSE, out.width="6in"}
-ggplot(pred) + geom_raster(aes(X, Y, fill = plogis(est))) + 
-  facet_wrap(~year) + scale_fill_viridis_c() + coord_fixed() 
+ggplot(pred) +
+  geom_raster(aes(X, Y, fill = plogis(est))) +
+  facet_wrap(~year) +
+  scale_fill_viridis_c() +
+  coord_fixed()
 ```
 
 Similar predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
 
 ```{r inla-pred, out.width="6in"}
-idx <- inla.stack.index(sdat, 'stdata')$data
+idx <- inla.stack.index(sdat, "stdata")$data
 d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
-ggplot(d) + geom_point(aes(X, Y, colour = inla_pred), size = 2) + 
-  facet_wrap(~year) + scale_colour_viridis_c() + coord_fixed() 
+ggplot(d) +
+  geom_point(aes(X, Y, colour = inla_pred), size = 2) +
+  facet_wrap(~year) +
+  scale_colour_viridis_c() +
+  coord_fixed()
 ```
 
 <!-- predict.inla? -->
