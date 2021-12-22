@@ -97,7 +97,8 @@ Because there does not appear to be much correlation between years, year will be
 We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "iid"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
 The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 
 If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`.
-Since these models will take a while to fit, in practice, we might set `silent = FALSE` to monitor optimization progress.
+Since these models will take a while to fit, in practice, we might set `silent = FALSE` to monitor optimization progress. 
+However, we will maintain the default `silent = TRUE` to avoid cluttering the document with the output.
 
 ```{r rds1, echo=FALSE, cache=FALSE}
 rds_saved <- file.exists(here::here("data/snow_w_main_effect_0_150km.rds"))
@@ -110,7 +111,8 @@ m0 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial = "on",
   spatiotemporal = "IID",
   family = poisson(link = "log"),
-  data = snow, mesh = mesh
+  data = snow, mesh = mesh,
+  silent = TRUE
 )
 ```
 
@@ -121,7 +123,8 @@ m1 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial = "on",
   spatiotemporal = "IID",
   family = nbinom1(link = "log"),
-  data = snow, mesh = mesh
+  data = snow, mesh = mesh,
+  silent = TRUE
 )
 ```
 
@@ -132,7 +135,8 @@ m2 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial = "on",
   spatiotemporal = "IID",
   family = nbinom2(link = "log"),
-  data = snow, mesh = mesh
+  data = snow, mesh = mesh,
+  silent = TRUE
 )
 ```
 
@@ -169,7 +173,8 @@ m <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatiotemporal = "iid",
   family = nbinom2(link = "log"),
   reml = TRUE,
-  data = snow, mesh = mesh
+  data = snow, mesh = mesh,
+  silent = TRUE
 )
 ```
 
