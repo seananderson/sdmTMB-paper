@@ -400,7 +400,7 @@ We provide several approaches to assist this process:
 (4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
-Simulation-based residuals [@DHARMa], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
+Simulation-based residuals [@dharma], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
 (5) The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 <!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
