@@ -3,7 +3,7 @@ title: "Appendix 1: sdmTMB statistical model description"
 output:
   bookdown::pdf_document2:
     toc: true
-    number_sections: false
+    number_sections: true
 fig_caption: true
 urlcolor: blue
 highlight: "monochrome"
@@ -329,7 +329,7 @@ This is defined via the `time_varying` argument, assuming that the `time` argume
 For example, `time_varying ~ 0 + x`.
 The first value is given an implicit uniform prior. 
 I.e., the same variable should not appear in the fixed effect formula since the initial value is estimated as part of the time-varying formula.
-The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and the intercept should be omitted from the main effects (`~ + 0` or `~ -1`).
+The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and, this case, the intercept should be omitted from the main effects (`formula ~ + 0 + ...` or `formula ~ -1 + ...`).
 
 ## IID random or multi-level intercepts
 
