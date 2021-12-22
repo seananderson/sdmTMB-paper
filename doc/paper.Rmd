@@ -33,11 +33,23 @@ editor_options:
   markdown:
     wrap: sentence
 abstract: |
-    | \noindent Point 1: set the context for and purpose of the work;
-    | Point 2: indicate the approach and methods;
-    | Point 3: outline the main results;
-    | Point 4: identify the conclusions and the wider implications.
+    | \noindent 1. Analyzing geostatistical data---spatially referenced observations---is increasingly common in ecology for applications such as species distribution models (SDMs). These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs (generalized linear mixed effects models) with Gaussian random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
+    | 2: We introduce the R package sdmTMB, which implements predictive-process SPDE-based (stochastic partial differential equation) spatial and spatiotemporal models, with an interface familiar to those who have used lme4 or glmmTMB. Estimation is performed with maximum marginal likelihood with Template Model Builder (TMB).
+    | 3: We describe the basic functionality of sdmTMB and the statistical model, illustrate its use through two case studies, and compare the package to related software. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a user-friendly interface familiar to many R users, (2) estimation is often faster than alternatives, (3) sdmTMB allows for simple out-of-sample model validation, (4) non-stationary processes are easily constructed with a formula interface (time-varying coefficients, spatially varying coefficients [SVC]), and (5) sdmTMB includes features not available as a combination in related packages (penalized smoothers and break-point effects, anisotropy, population index standardization).
+    | 4: We hope that user-friendly interfaces such as sdmTMB open this useful class of models to a wider audience of users.
+    | Keywords: Gaussian Markov random fields, generalized linear mixed effects models, INLA, species distribution modelling, R package, Template Model Builder
 ---
+
+<!-- Point 1: set the context for and purpose of the work; -->
+<!-- Point 2: indicate the approach and methods; -->
+<!-- Point 3: outline the main results; -->
+<!-- Point 4: identify the conclusions and the wider implications. -->
+
+<!-- This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software. -->
+<!-- These data sometimes include a discrete time dimension, such as yearly samples.  -->
+<!-- Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes and improve ecological management. -->
+<!-- These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate. -->
+<!-- We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users. -->
 
 ```{r pkg-checks, include=FALSE, echo=FALSE}
 # if (!require("rnaturalearthhires", quietly = TRUE)) {
