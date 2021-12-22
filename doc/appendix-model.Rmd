@@ -2,8 +2,8 @@
 title: "Appendix 1: sdmTMB statistical model description"
 output:
   bookdown::pdf_document2:
-    toc: false
-number_sections: false
+    toc: true
+    number_sections: false
 fig_caption: true
 urlcolor: blue
 highlight: "monochrome"
@@ -26,8 +26,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 \newcommand{\s}{\boldsymbol{s}}
+
+\clearpage
 
 # Notation conventions
 
@@ -93,7 +94,12 @@ symbols <- tibble::tribble(
   "$\\sigma_\\epsilon^2$", "Spatiotemporal random field marginal variance",
   "$\\sigma_\\omega^2$", "Spatial random field marginal variance",
   "$\\sigma_\\zeta^2$", "Spatially varying coefficient random field marginal variance",
-  "$\\rho$", "Correlation between random fields in subsequent time steps"
+  "$\\kappa_\\omega$", "Spatial decorrelation rate",
+  "$\\kappa_\\epsilon$", "Spatiotemporal decorrelation rate",
+  
+  "$\\rho$", "Correlation between random fields in subsequent time steps",
+  "$\\boldsymbol{A}$", "A sparse projection matrix to bilinearly interpolate between knot and data locations",
+  "$\\boldsymbol{H}$", "A 2-parameter rotation matrix used to define anisotropy"
 )
 knitr::kable(symbols, caption = "Symbol notation and descriptions.", escape = FALSE, format = "latex", booktabs = TRUE,
    linesep = c(
@@ -103,8 +109,9 @@ knitr::kable(symbols, caption = "Symbol notation and descriptions.", escape = FA
     '\\addlinespace',
     rep('', 5), # covariance stuff
     '\\addlinespace',
-    rep('', 2), # bayes
-    '\\addlinespace'
+    rep('', 5), # more covariance stuff
+    '\\addlinespace',
+    rep('', 99) # end
   ))
 ```
 
@@ -305,21 +312,6 @@ $$
 $$
 
 
-## IID random or multi-level intercepts
-
-$$
-\begin{aligned}
-  \mu_{\s,t} &= f^{-1} \left( \ldots + \alpha_{g} + \ldots \right),\\
-  \alpha_g &\sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right),\\
-\end{aligned}
-$$
-
-where $\alpha_g$ is an example optional "random" intercept---an intercept
-with mean zero that varies by level $g$ and is constrained by
-$\sigma_\alpha$. This is defined by the `formula` argument via the `(1 | g)`
-syntax as in lme4 or glmmTMB. There can be multiple random intercepts. 
-E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorrelated from each other.
-
 ## Time-varying regression parameters
 
 Parameters can be modelled as time varying (a random walk) according to the form
@@ -338,6 +330,22 @@ For example, `time_varying ~ 0 + x`.
 The first value is given an implicit uniform prior. 
 I.e., the same variable should not appear in the fixed effect formula since the initial value is estimated as part of the time-varying formula.
 The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and the intercept should be omitted from the main effects (`~ + 0` or `~ -1`).
+
+## IID random or multi-level intercepts
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \alpha_{g} + \ldots \right),\\
+  \alpha_g &\sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right),\\
+\end{aligned}
+$$
+
+where $\alpha_g$ is an example optional "random" intercept---an intercept
+with mean zero that varies by level $g$ and is constrained by
+$\sigma_\alpha$. This is defined by the `formula` argument via the `(1 | g)`
+syntax as in lme4 or glmmTMB. There can be multiple random intercepts. 
+E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorrelated from each other.
+
 
 ## Offset terms
 
@@ -498,10 +506,15 @@ $\nu$ controls the smoothness,
 $\Gamma$ represents the Gamma function,
 $d_{jk}$ represents the distance between locations $s_j$ and $s_k$,
 $K_\nu$ represents the modified Bessel function of the second kind,
-and $\kappa$ controls the spatial correlation range.
+and $\kappa$ controls the spatial correlation range (decorrelation rate).
 The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+Internally, the parameter $\kappa$ and $\tau$ are converted to range and marginal standard deviation $\sigma$ as $\textrm{range} = \sqrt{8} / \kappa$ and $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
 
-## Projection '$\boldsymbol{A}$' matrix
+In the case of a spatiotemporal model with both spatial and spatiotemporal fields, if `share_range` is `TRUE` in `sdmTMB()` (the default), then a single $\kappa$ and range are estimated with separate $\sigma_\omega$ and $\sigma_\epsilon$. This often makes sense since the data are often only weakly informative about $\kappa$.
+If `share_range = FALSE`, then separate $\kappa_\omega$ and $\kappa_\epsilon$ are estimated.
+The spatially varying coefficient field always shares $\kappa$ with the spatial random field.
+
+## Projection $\boldsymbol{A}$ matrix
 
 The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates from the knot locations to the values at the locations of the observed or predicted data [@lindgren2015]:
 
