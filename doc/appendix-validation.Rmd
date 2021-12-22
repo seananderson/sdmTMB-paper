@@ -30,19 +30,25 @@ knitr::opts_chunk$set(
 
 # Overall description of sdmTMB validation
 
-The sdmTMB has a number of validation processes to ensure the code is working as expected. This includes unit testing using the testthat package (REF) embedded within the package. This unit testing validates a large number of model configurations against simulated data and comparable models from other packages. We highlight some model validation in particular in this appendix.
+The sdmTMB package has a number of validation processes to ensure the code is working as expected. 
+This includes unit testing using testthat [@testthat] embedded within the package. 
+This unit testing validates a large number of model configurations against simulated data and comparable models from other packages. 
+We highlight some model validation in particular in this appendix.
 
-In addition to the validation discussed here, Appendix X contains a comparison with VAST and Appendix Y contains a comparison with INLA/inlabru.
+In addition to the validation discussed here, Appendix 5 contains a comparison with VAST and Appendix 4 contains a comparison with INLA/inlabru.
 
-This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB. Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package.
+This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB. 
+Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package.
 
 ## Penalized smoothers
 
-Here, we compare a number of smoother configurations against mgcv. Throughout the section we will turn off spatial random fields so the models should be identical.
+Here, we compare a number of smoother configurations against mgcv [@wood2017a]. 
+Throughout the section, we will turn off spatial random fields so the models should be comparable.
 
 ### `s(x)`
 
-First, a simple thin plate regression spline with a single variable. We will use simulated data from the mgcv package.
+First, a simple thin plate regression spline with a single variable. 
+We will use simulated data from the mgcv package.
 
 ```{r, echo=TRUE}
 library(sdmTMB)
@@ -67,7 +73,10 @@ abline(a = 0, b = 1)
 cor(p$est, p_mgcv)
 ```
 
-We can see the predictions match nearly exactly. Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves. Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component. Nonetheless, here the smoothers look very similar except for these scale on the y axis.
+We can see the predictions match nearly exactly. 
+Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves. 
+Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component. 
+Nonetheless, here the smoothers look very similar except for these scale on the y axis.
 
 ```{r, echo=TRUE, fig.asp=1}
 par(mfrow = c(2, 1))
@@ -77,7 +86,8 @@ plot(m_mgcv)
 
 ### `s(x1, by = x2)`
 
-Next, we compare a model with a continuous `by` argument. This lets the `x2` smoother change depending on the value of `x1`.
+Next, we compare a model with a continuous `by` argument. 
+This lets the `x2` smoother change depending on the value of `x1`.
 
 ```{r, echo=TRUE}
 set.seed(19203)
@@ -120,9 +130,13 @@ cor(p$est, p_mgcv)
 
 ## IID random intercepts
 
-Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB. Again, we will turn off random fields so the models are comparable.
+Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB [@brooks2017]. 
+Again, we will turn off random fields so the models are comparable.
 
-First, simulate some data. The variables `g` and `h` will represent groups g and h. g will have 50 groups. h will have 20 groups. 
+First, simulate some data. 
+The variables `g` and `h` will represent groups g and h. 
+g will have 50 groups. 
+h will have 20 groups. 
 
 ```{r, echo=TRUE}
 predictor_dat <- data.frame(X = runif(1000), Y = runif(1000))
@@ -152,7 +166,8 @@ m <- sdmTMB(observed ~ 1 + (1 | g) + (1 | h), mesh = mesh, data = sim_dat,
 m_glmmTMB <- glmmTMB::glmmTMB(observed ~ 1 + (1 | g) + (1 | h), data = sim_dat)
 ```
 
-We can extract the random effect estimates and compare them. We find them to be nearly identical:
+We can extract the random effect estimates and compare them. 
+We find them to be nearly identical:
 
 ```{r, echo=TRUE}
 sdmTMB_pars <- tidy(m, "ran_pars")
@@ -171,7 +186,8 @@ plot(c(glmmTMB_re$g$`(Intercept)`, glmmTMB_re$h$`(Intercept)`), sdmTMB_re$RE,
 abline(0, 1)
 ```
 
-The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis. The 'g' deviations are black and the 'h' ones are red.
+The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis. 
+The 'g' deviations are black and the 'h' ones are red.
 
 ## Simulation-testing with various observation families
 
@@ -198,4 +214,3 @@ knitr::include_graphics(here::here("figs", "sim-test-families-sigmaO.pdf"))
 # Supplemental methods for speed-testing related packages
 
 TODO: Fig. 2 methods description
-
