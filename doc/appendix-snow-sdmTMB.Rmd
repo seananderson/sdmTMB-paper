@@ -149,16 +149,18 @@ if (!rds_saved) {
 ```
 
 ```{r load-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE}
-m0 <- readRDS(here::here("data/snow_w_main_effect_0_150km.rds"))
-m1 <- readRDS(here::here("data/snow_w_main_effect_1_150km.rds"))
-m2 <- readRDS(here::here("data/snow_w_main_effect_150km.rds"))
+if (rds_saved) {
+  m0 <- readRDS(here::here("data/snow_w_main_effect_0_150km.rds"))
+  m1 <- readRDS(here::here("data/snow_w_main_effect_1_150km.rds"))
+  m2 <- readRDS(here::here("data/snow_w_main_effect_150km.rds"))
+}
 ```
 
 ```{r aic, echo=TRUE, cache=FALSE}
 AIC(m0, m1, m2)
 ```
 
-The `nbinom2` distribution appears to have the best fit. 
+According to AIC, the `nbinom2()` (negative binomial, NB2) distribution appears to have the most parsimonious fit. 
 We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model. 
 
 ```{r rds2, echo=FALSE, cache=FALSE}
@@ -185,16 +187,19 @@ if (!rds_saved2) {
 ```
 
 Print the model to inspect the fit:
+
 ```{r check, include = FALSE, cache=FALSE, eval=TRUE}
-m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
-m # loading this twice just prevents some excess messages from cluttering the output when printing below
+if (rds_saved2) {
+  m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
+}
+# m # loading this twice just prevents some excess messages from cluttering the output when printing below
 ```
 
 ```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
 print(m)
 ```
 
-View the confidence intervals on both fixed and random parameter estimates using `tidy()`.
+View the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`.
 
 ```{r tidy}
 tidy(m, conf.int = TRUE)
@@ -250,7 +255,6 @@ r_nb2 <- DHARMa::createDHARMa(
 DHARMa::testZeroInflation(r_nb2, plot = FALSE)
 ```
 
-<!-- \clearpage -->
 Check the spatiotemporal distribution of the residuals. 
 
 ```{r plot-resids, fig.width = 8, cache=FALSE}
@@ -261,8 +265,6 @@ ggplot(pred, aes(X, Y, colour = resid)) +
   scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
   theme(axis.text = element_blank(), axis.ticks = element_blank())
 ```
-
-<!-- \clearpage -->
 
 # Plotting spatial predictions
 
