@@ -1,5 +1,5 @@
 ---
-title: "Appendix X: sdmTMB validation"
+title: "Appendix 6: sdmTMB model validation and speed-testing methods"
 output:
   bookdown::pdf_document2:
     toc: false

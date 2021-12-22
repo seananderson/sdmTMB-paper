@@ -1,7 +1,7 @@
 ,sdmTMB,VAST,mgcv,INLA,inlabru,spBayes,Hmsc,spaMM
 # predictor stuff,,,,,,,,
-Spatially varying coefficients,1,1,1,1,1,1,0,0
 Time-varying coefficients,1,0*,1,1,1,1,0,0
+Spatially varying coefficients (SVC),1,1,1,1,1,1,0,0
 GAMs*,1,0,1,1,1,0,0,0
 Threshold covariates,1,0,0,0,1,0,0,0
 Offsets,1,1,1,1,1,1,0,1
@@ -35,5 +35,6 @@ Priors/penalties,1,0,0,1,1,1,1,0
 Matern PC priors,1,0,0,1,1,0,0,0
 # Additional stuff,,,,,,,,
 Spatial (or spatial dynamic) factor analysis,0,1,0,0,0,0,0,0
+Empirical Orthogonal Function (EOF) analysis,0,1,0,0,0,0,0,0
 Built-in area-weighted index standardization,1,1,0,0,0,0,0,0
-Built in cross-validation,1,1,0,0*,0,0,1,0
+Built in cross-validation,1,1,0,0,0,0,1,0
