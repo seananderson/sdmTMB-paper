@@ -44,9 +44,11 @@ This appendix uses the following notation conventions:
 
 * $\mathbb{E}[y]$ to define the expected value (mean) of variable $y$,
 
-* $\mathrm{Var}[y]$ to define the expected variance of the variable $y$, and
+* $\mathrm{Var}[y]$ to define the expected variance of the variable $y$,
 
-* a $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\omega$ vs. $\omega^*$).
+* a $^*$ superscript to represent interpolated or projected values as opposed to values at knot locations (e.g., $\boldsymbol{\omega}$ vs. $\boldsymbol{\omega}^*$), and
+
+* where possible, notation has been chosen to match VAST [@thorson2019] to maintain consistency (e.g., $\boldsymbol{\omega}$ for spatial fields and $\boldsymbol{\epsilon}_t$ for spatiotemporal fields).
 
 We include tables of all major indices (Table \@ref(tab:indices)) and symbols (Table \@ref(tab:symbols)).
 
@@ -223,7 +225,7 @@ Spatiotemporal random fields are included by default if there are multiple time 
 These text values are case insensitive.
 
 Spatiotemporal random fields are represented by $\boldsymbol{\epsilon}_t$ within sdmTMB. 
-This has been chosen to match the representation in VAST (REF). 
+This has been chosen to match the representation in VAST [@thorson2019]. 
 The marginal standard deviation of $\boldsymbol{\epsilon}_t$ is indicated by `Spatiotemporal SD` in the model output or as `sigma_E` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
 
 ### IID spatiotemporal random fields
