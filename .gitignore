@@ -21,3 +21,4 @@ settings.txt
 doc/compile.R
 figs/
 temp-*
+!mcmc_residuals.rds
