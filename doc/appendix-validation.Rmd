@@ -2,7 +2,7 @@
 title: "Appendix 6: sdmTMB model validation and speed-testing methods"
 output:
   bookdown::pdf_document2:
-    toc: false
+    toc: true
 number_sections: false
 fig_caption: true
 highlight: "monochrome"
@@ -28,9 +28,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r}
-library(sdmTMB)
-```
+# Overall description of sdmTMB validation
 
 The sdmTMB has a number of validation processes to ensure the code is working as expected. This includes unit testing using the testthat package (REF) embedded within the package. This unit testing validates a large number of model configurations against simulated data and comparable models from other packages. We highlight some model validation in particular in this appendix.
 
@@ -38,13 +36,17 @@ In addition to the validation discussed here, Appendix X contains a comparison w
 
 This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB. Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package.
 
-# Penalized smoothers
+## Penalized smoothers
 
 Here, we compare a number of smoother configurations against mgcv. Throughout the section we will turn off spatial random fields so the models should be identical.
 
-## `s(x)`
+### `s(x)`
 
 First, a simple thin plate regression spline with a single variable. We will use simulated data from the mgcv package.
+
+```{r, echo=TRUE}
+library(sdmTMB)
+```
 
 ```{r, echo=TRUE}
 set.seed(19203)
@@ -73,7 +75,7 @@ plot_smooth(m)
 plot(m_mgcv)
 ```
 
-## `s(x1, by = x2)`
+### `s(x1, by = x2)`
 
 Next, we compare a model with a continuous `by` argument. This lets the `x2` smoother change depending on the value of `x1`.
 
@@ -99,7 +101,7 @@ cor(p$est, p_mgcv)
 
 Again, the results are nearly identical.
 
-## `s(x, y)`
+### `s(x, y)`
 
 Next, we compare a bivariate smoother, with near identical predictions.
 
@@ -116,7 +118,7 @@ abline(a = 0, b = 1)
 cor(p$est, p_mgcv)
 ```
 
-# IID random intercepts
+## IID random intercepts
 
 Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB. Again, we will turn off random fields so the models are comparable.
 
@@ -171,7 +173,7 @@ abline(0, 1)
 
 The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis. The 'g' deviations are black and the 'h' ones are red.
 
-# Simulation-testing with various observation families
+## Simulation-testing with various observation families
 
 ```{r}
 knitr::include_graphics(here::here("figs", "sim-test-families-pars.pdf"))
@@ -193,4 +195,7 @@ knitr::include_graphics(here::here("figs", "sim-test-families-range.pdf"))
 knitr::include_graphics(here::here("figs", "sim-test-families-sigmaO.pdf"))
 ```
 
+# Supplemental methods for speed-testing related packages
+
+TODO: Fig. 2 methods description
 
