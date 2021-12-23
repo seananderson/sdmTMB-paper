@@ -22,20 +22,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Introduction
+
 ```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
 library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(sf)
-```
-
-```{r theme, echo=FALSE}
-theme_set(theme_light() + theme( # modifications for plotting sf data
-  legend.position = "top", legend.justification = c(0, 0), # move legend to top left
-  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
-  panel.grid.major = element_line(colour = "grey90"), # for lat/lons
-  axis.title = element_blank()
-)) # lat/lon is clear from axis text
 ```
 
 This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
@@ -50,9 +43,11 @@ The reasons for the interannual variation in the number of individuals migrating
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 On average a positive NAO index results in colder and drier conditions in northern Canada and mild and wetter conditions in the eastern United States [@liu2021]. 
 For this analysis, we have defined survey year as the year prior to/ending during the survey window. 
-For these years, we have retrieved mean annual climate indices from the [University of East Anglia's Climatic Research Unit](https://crudata.uea.ac.uk/cru/data/nao/). 
+For these years, we have retrieved mean annual climate indices from the University of East Anglia's Climatic Research Unit <https://crudata.uea.ac.uk/cru/data/nao/>. 
 Because both productivity and the choice of wintering location could be influenced by climate, we will test for a spatially variable effect of annual mean NAO index between 1979 and 2020 on winter owl abundance. 
 Our model will span the southern boundary of their winter distribution in North America, the only portion of their range well surveyed by CBCs. 
+
+# Preparation of spatial data
 
 ```{r load-data, cache=FALSE} 
 snow <- readRDS(here::here("data/SNOW_data.rds"))
@@ -188,11 +183,11 @@ if (!rds_saved2) {
 
 Print the model to inspect the fit:
 
-```{r check, include = FALSE, cache=FALSE, eval=TRUE}
+```{r check, echo=FALSE, include = FALSE, cache=FALSE, eval=TRUE}
 if (rds_saved2) {
   m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
+  m # loading this twice just prevents some excess messages from cluttering the output when printing below
 }
-# m # loading this twice just prevents some excess messages from cluttering the output when printing below
 ```
 
 ```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
@@ -242,7 +237,8 @@ qqline(r_mcmc)
 ```
 
 We can also test for zero-inflation using the `simulate.sdmTMB` function and a couple functions from the DHARMa package.
-<!-- If our data was zero-inflated ... maybe make suggestions or even link to an example for how to do a delta model in sdmTMB?-->
+If our data was zero-inflated we might needed to use a delta (aka. hurdle) model instead. 
+This is not built in to sdmTMB, but can be achieve using the steps in the vignette [Fitting delta models with sdmTMB](https://https://pbs-assess.github.io/sdmTMB/articles/delta-models.html).
 
 ```{r zero-test, echo=TRUE, message=FALSE}
 s_nb2 <- simulate(m, nsim = 500)
@@ -255,11 +251,21 @@ r_nb2 <- DHARMa::createDHARMa(
 DHARMa::testZeroInflation(r_nb2, plot = FALSE)
 ```
 
-Check the spatiotemporal distribution of the residuals. 
+Next, we modify a theme to plot spatiotemporal data and check the distribution of these residuals:
+
+```{r theme, cache=FALSE}
+theme_set(theme_bw() + theme(
+  legend.position = "top", legend.justification = c(0, 0), # move legend to top left
+  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
+  strip.background = element_rect(fill = NA, colour = NA), # de-emphasize facet labels
+  panel.grid.major = element_line(colour = "grey90"), # for lat/lons
+  axis.title = element_blank() # lat/lon is clear from axis text
+)) 
+```
 
 ```{r plot-resids, fig.width = 8}
 ggplot(pred, aes(X, Y, colour = resid)) +
-  geom_point(size = 0.5) +
+  geom_point(size = 0.25) +
   facet_wrap(~year) +
   coord_fixed() +
   scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
@@ -272,9 +278,7 @@ To produce pretty maps of these predictions, we back transformed the spatial coo
 
 ```{r proj-p}
 p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
-p_proj <- p %>%
-  mutate(x = X, y = Y) %>%
-  sf::st_as_sf(coords = c("x", "y"), crs = Albers)
+p_proj <- p %>% mutate(x = X, y = Y) %>% sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
 We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from <http://www.naturalearthdata.com/> and transformed them to the correct projection.
@@ -335,12 +339,10 @@ ggplot(data = p_proj) +
 These are the predictions of winter owl counts that incorporate all fixed effects and random effects. 
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
-
 ```{r plot-all-effects, echo=TRUE, eval=TRUE}
-ggplot(data = filter(p_proj, year > 1978)) +
+ggplot(data = p_proj) +
   geom_point(
-    data = filter(p, year > 1978), aes(X, Y, colour = exp(est)),
-    size = 0.4, alpha = 0.5
+    data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5
   ) +
   coord_sf(
     xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000),
@@ -360,7 +362,7 @@ ggplot(data = filter(p_proj, year > 1978)) +
 <!-- Note that for all of these annually varying predictions, we are showing only the most recent 25 years.  -->
 
 \clearpage
-## Other components of predicted counts
+## Other components of predictions
 
 In addition to the spatially varying effect that we started with, there are three other components that go into the overall predictions that we can plot spatially. 
 
