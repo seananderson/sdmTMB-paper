@@ -385,7 +385,7 @@ We provide several approaches to assist this process:
 <!-- The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. -->
 <!-- Validation of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation: -->
 (2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
+(3) A sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
 (4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
@@ -464,7 +464,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 # Package comparisons
 
 There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
-sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes as a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
 To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
@@ -489,10 +489,11 @@ In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fa
 inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
 With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
-Results with up to an order of magnitude more data slightly shift the lines up without affecting the overall pattern substantially (not shown).
+Results with up to an order of magnitude more data slightly shift the lines up without affecting the qualitative pattern (not shown).
 Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
+<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
 
 (ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons ranges across 20 random iterations.
