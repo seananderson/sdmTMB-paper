@@ -95,7 +95,7 @@ Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a; @rossi1992; @tilman1997spatial], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, due to measured and unmeasured variables [@cressie1993; @diggle2007; @cressie2011].
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
 Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions  [e.g., @shelton2014], and can be of ecological interest itself by for example, identifying locations with similar population responses [e.g., @thorson2019d; @barnett2021].
-<!-- LB: seems like we needed some explicit example of why it would be of ecological interest itself to those who are unfamiliar, so I added allusion to local trends...but maybe also mentioning quantification of patchiness or something similar?. More generally, it might be good to expand on the utility of such models for applied ecology, if we can find room within the tight word limit?" -->
+<!-- LB: seems like we needed some explicit example of why it would be of ecological interest itself to those who are unfamiliar, so I added allusion to local trends...but maybe also mentioning quantification of patchiness or something similar?. More generally, it might be good to expand on the utility of such models for applied ecology, if we can find room within the tight word limit? -->
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data [@rue2005gmrf; @diggle2007; @cressie2011].
 Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
@@ -347,6 +347,7 @@ knitr::include_graphics(pcodfig)
 # Spatially varying coefficient example with citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
+<!-- not familiar with this "irruptive" terminology, please define -->
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution. 
@@ -363,7 +364,7 @@ fit_owls <- sdmTMB(
 ```
 
 We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao)).
-This result would be consistent with owls closer to the Atlantic coast and those migrating the furthest south being the most effected by NAO. 
+This indicates that the owls most effected by NAO were those closer to the Atlantic coast and those migrating the furthest south. 
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. 
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
@@ -458,7 +459,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
     escape = FALSE
   )
 ```
-<!-- LB: VAST does allow use of penalized splines, but this requires the splines package and effects package for visualization, e.g.: https://github.com/James-Thorson-NOAA/VAST/wiki/Specify-covariates-and-visualize-responses -->
+<!-- LB: VAST does allow use of basis splines, but this requires the splines package and effects package for visualization, e.g.: https://github.com/James-Thorson-NOAA/VAST/wiki/Specify-covariates-and-visualize-responses -->
 
 # Package comparisons
 
