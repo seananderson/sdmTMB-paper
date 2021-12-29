@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Introduction
+# Background
 
 This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
 We will use counts of Snowy Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc]. 
@@ -133,6 +133,8 @@ m2 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   silent = TRUE
 )
 ```
+
+# Model validation
 
 ```{r save-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=TRUE}
 if (!rds_saved) {
@@ -270,6 +272,24 @@ ggplot(pred, aes(X, Y, colour = resid)) +
   scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
   theme(axis.text = element_blank(), axis.ticks = element_blank())
 ```
+
+<!-- # ```{r} -->
+<!-- # library(future) -->
+<!-- # plan(multisession) -->
+<!-- # m_cv <- sdmTMB_cv(count ~ 1 + nao + (1 | year_f), -->
+<!-- #   spatial_varying = ~ 0 + nao, -->
+<!-- #   time = "year",  -->
+<!-- #   spatial = "on",  -->
+<!-- #   spatiotemporal = "iid", -->
+<!-- #   family = nbinom2(link = "log"), -->
+<!-- #   # reml = TRUE, -->
+<!-- #   use_initial_fit = TRUE, -->
+<!-- #   data = snow, mesh = mesh, -->
+<!-- #   k_folds = 10 -->
+<!-- # ) -->
+<!-- # m_cv -->
+<!-- # ``` -->
+
 
 # Plotting spatial predictions
 
