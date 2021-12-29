@@ -137,11 +137,7 @@ Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes 
 
 ```{r diagram, fig.cap="(ref:diagram-fig)"}
 dir.create("figs", showWarnings = FALSE)
-f <- here::here("figs", "diagram-2021-12-10.pdf")
-if (!file.exists(f)) {
-  download.file("https://www.dropbox.com/s/lvoem3ahwkftzjy/diagram-2021-12-10.pdf?dl=1", 
-    destfile = f)
-}
+f <- here::here("figs", "diagram.pdf")
 knitr::include_graphics(f)
 ```
 
@@ -344,11 +340,7 @@ these values are shown in link (log) space and represent spatially correlated de
 <!-- LB: I wasn't sure which panel the statement about omitting the spatial random field applied to, but moved things around. -->
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
-pcodfig <- here::here("figs", "pcod-fig.pdf")
-if (!file.exists(pcodfig)) {
-  download.file("https://www.dropbox.com/s/s8kl4u49p27qqhy/pcod-fig.pdf?dl=1", 
-    destfile = pcodfig)
-}
+pcodfig <- here::here("figs", "pcod-fig2.pdf")
 knitr::include_graphics(pcodfig)
 ```
 
@@ -378,11 +370,7 @@ Points represent all count locations and circle area is scaled to the mean numbe
 The effect is multiplicative on owl count per NOA unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
-owl <- here::here("figs", "owl-nao-effect-2021-12-22.pdf")
-if (!file.exists(owl)) {
-  download.file("https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAAlaKQArhqP9IHvUSxEq_qWa/owl-nao-effect-2021-12-22.pdf?dl=0", 
-    destfile = owl)
-}
+owl <- here::here("figs", "owl-nao-effect.png")
 knitr::include_graphics(owl)
 ```
 
