@@ -512,7 +512,7 @@ mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 <!-- EW: TODO Not sure if Heaton included CAR models, but we might want to talk about them briefly because there’s a lot of packages that include that functionality - including NIMBLE, etc.  -->
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
-Assuming a given package can fit the model of interest (Table 1), we suggest the primary difference is the user interface.
+Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface and speed.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
 Users familiar with INLA may find inlabru approachable. <!-- ; however, we ran into problems with AR1 spatiotemporal fields in inlabru, so we only provide a comparison with INLA instead (Appendix 4). -->
 Users already familiar with mgcv can fit adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
@@ -565,7 +565,7 @@ We may introduce explicit delta models, but many such models can already be fit 
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019].
-These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
+These data present statistical challenges to modelling them effectively and efficiently as appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
 # Acknowledgements
