@@ -335,13 +335,12 @@ We could generate a population index that is independent of sampling locations b
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
 The circle area corresponds to density of Pacific Cod for individual trawls.
-The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
-These predictions are made omitting the spatial random field.
 (B) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
 (C) Overall prediction: these estimates represent the combination of all fixed and random effects.
-(D) Conditional effect of depth modelled as a penalized smoother.
-(E) Standardized area-weighted population index derived from a spatiotemporal version of this model.
+(D) Conditional effect of depth modelled as a penalized smoother. These predictions are made omitting the spatial random field.
+(E) Standardized area-weighted population index derived from a spatiotemporal version of this model. The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
+<!-- LB: I wasn't sure which panel the statement about omitting the spatial random field applied to, but moved things around. -->
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
 pcodfig <- here::here("figs", "pcod-fig.pdf")
