@@ -377,9 +377,9 @@ Points represent all count locations and circle area is scaled to the mean numbe
 The effect is multiplicative on owl count per NOA unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
-owl <- here::here("figs", "owl_nao_effect.pdf")
+owl <- here::here("figs", "owl-nao-effect-2021-12-22.pdf")
 if (!file.exists(owl)) {
-  download.file("https://www.dropbox.com/s/fz1iw0a0diohyxc/owl_nao_effect.pdf?dl=1", 
+  download.file("https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAAlaKQArhqP9IHvUSxEq_qWa/owl-nao-effect-2021-12-22.pdf?dl=0", 
     destfile = owl)
 }
 knitr::include_graphics(owl)
@@ -469,6 +469,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
     escape = FALSE
   )
 ```
+<!-- LB: VAST does allow use of penalized splines, but this requires the splines package and effects package for visualization, e.g.: https://github.com/James-Thorson-NOAA/VAST/wiki/Specify-covariates-and-visualize-responses -->
 
 # Package comparisons
 
