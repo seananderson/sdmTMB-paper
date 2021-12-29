@@ -379,7 +379,7 @@ The effect is multiplicative on owl count per NOA unit.
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl-nao-effect-2021-12-22.pdf")
 if (!file.exists(owl)) {
-  download.file("https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAAlaKQArhqP9IHvUSxEq_qWa/owl-nao-effect-2021-12-22.pdf?dl=0", 
+  download.file("https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAAlaKQArhqP9IHvUSxEq_qWa/owl-nao-effect-2021-12-22.pdf?dl=1", 
     destfile = owl)
 }
 knitr::include_graphics(owl)
