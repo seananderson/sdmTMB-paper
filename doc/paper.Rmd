@@ -94,7 +94,7 @@ knitr::opts_chunk$set(
 Ecological data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about ecological processes [@legendre1989a; @rossi1992; @tilman1997spatial], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, due to measured and unmeasured variables [@cressie1993; @diggle2007; @cressie2011].
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
-Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions  [e.g., @shelton2014], and can be of ecological interest itself by for example, identifying locations with similar population responses [e.g., @thorson2019d; @barnett2021].
+Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions  [e.g., @shelton2014], and can be of ecological interest itself by, for example, identifying locations with similar population responses [e.g., @thorson2019d; @barnett2021].
 <!-- LB: seems like we needed some explicit example of why it would be of ecological interest itself to those who are unfamiliar, so I added allusion to local trends...but maybe also mentioning quantification of patchiness or something similar?. More generally, it might be good to expand on the utility of such models for applied ecology, if we can find room within the tight word limit? -->
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data [@rue2005gmrf; @diggle2007; @cressie2011].
@@ -196,7 +196,7 @@ We include additional flexibility in specifying the linear fixed effect matrix: 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
-After rapid model exploration with maximum likelihood, one can optionally pass a sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
+After rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
 
 sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
@@ -364,7 +364,7 @@ fit_owls <- sdmTMB(
 ```
 
 We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao)).
-This indicates that the owls most effected by NAO were those closer to the Atlantic coast and those migrating the furthest south. 
+This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. 
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
@@ -385,7 +385,7 @@ We provide several approaches to assist this process:
 <!-- The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. -->
 <!-- Validation of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation: -->
 (2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-(3) A sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
+(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
 (4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
