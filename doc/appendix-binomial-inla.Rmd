@@ -300,14 +300,17 @@ ggplot(d) +
   coord_fixed()
 ```
 
-Or, we can make the prediction with inlabru:
+Or, we can make the prediction with inlabru. To do that, we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and use the inverse-link transformation `plogis()`:
 
-```{r inla-pred, out.width="6in"}
+```{r inlabru-pred, out.width="6in"}
 nd_bru <- nd
 nd_bru <- dplyr::left_join(nd_bru, yr_lu)
 sp::coordinates(nd_bru) <- c("X", "Y")
 nd_bru <- as(nd_bru, "SpatialPixelsDataFrame")
-pred_bru <- predict(m_bru, data = nd_bru)
-
-nrow(pred_bru$Predictor)
+pred_bru <- predict(m_bru, data = nd_bru, formula = ~ plogis(f + fac))
+ggplot(as.data.frame(pred_bru)) +
+  geom_raster(aes(X, Y, fill = mean)) +
+  facet_wrap(~year) +
+  scale_fill_viridis_c() +
+  coord_fixed()
 ```
