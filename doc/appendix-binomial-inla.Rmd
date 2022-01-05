@@ -77,7 +77,7 @@ plot(spde$mesh)
 ```
 
 # INLA 
-
+<-- EW: missing a citation in REF below -->
 Data preparation for INLA models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
 We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with TMB (REF).
 We use weak priors on the fixed effects (`mean = 0, prec = 1/(100*100)`), which amounts to a `Normal(0, 100^2)` prior.
