@@ -22,12 +22,12 @@ library(ggplot2)
 library(dplyr)
 library(sdmTMB)
 library(INLA)
+library(inlabru)
 theme_set(theme_light())
 ```
-<!-- # library(inlabru) -->
 
-In this example, we fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1). 
-We will use a binomial distribution and a logit link. 
+In this example, we will fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
+We will use a binomial distribution and a logit link.
 We will use a data set built into the package: trawl survey data for Pacific cod in Queen Charlotte Sound as described in earlier appendices.
 INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
 
@@ -46,41 +46,44 @@ sigma_max <- 5
 prior_prob <- 0.05
 ```
 
-In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `ar1_rho = normal(0, 1)`).
+In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `sdmTMBpriors(ar1_rho = normal(0, 1))`).
 
 ```{r}
-h.spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
+h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
 ```
 
 We will start by building identical meshes using both sdmTMB and INLA.
 Here, X and Y are coordinates in UTM zone 9.
-These same functions are used internally in the sdmTMB `make_mesh()` function. 
+These same functions are used internally in the sdmTMB `make_mesh()` function.
 
 ```{r sdm-mesh, echo = TRUE, cache=FALSE}
-sdm_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
+sdmTMB_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
 ```{r inla-mesh, echo = TRUE, cache=FALSE}
 loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 spde <- inla.spde2.pcmatern(
-  mesh = inla_mesh, # an smdTMB mesh can be inserted here with sdm_mesh$mesh
+  mesh = inla_mesh, # an smdTMB mesh could be inserted here with `sdmTMB_mesh$mesh`
   prior.range = c(range_min, prior_prob),
   prior.sigma = c(sigma_max, prior_prob)
 )
 ```
 
+Here, the meshes should be the same:
+
 ```{r plot-inla-mesh, fig.asp=0.9, out.height="2.5in"}
-plot(sdm_mesh)
+plot(sdmTMB_mesh)
 title(main = "sdmTMB mesh")
-plot(spde$mesh)
+plot(spde$mesh, main = "")
+title(main = "INLA mesh")
 ```
 
-# INLA 
-<-- EW: missing a citation in REF below -->
+# INLA
+
 Data preparation for INLA models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
-We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with TMB (REF).
-We use weak priors on the fixed effects (`mean = 0, prec = 1/(100*100)`), which amounts to a `Normal(0, 100^2)` prior.
+We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with TMB.
+We use weak priors on the factor fixed effects (`mean = 0, prec = 1/(100*100)`), which amounts to a `Normal(0, 100^2)` prior.
 
 ```{r inla}
 tictoc::tic("INLA") # start timing
@@ -96,7 +99,7 @@ sdat <- inla.stack(
 
 formula <- y ~ 0 + year_factor + f(i,
   model = spde, group = i.group,
-  control.group = list(model = "ar1", hyper = h.spec)
+  control.group = list(model = "ar1", hyper = h_spec)
 )
 
 m_inla <- inla(formula,
@@ -105,7 +108,6 @@ m_inla <- inla(formula,
   family = "binomial",
   control.family = list(link = "logit"),
   control.fixed = list(expand.factor.strategy = "inla", mean = 0, prec = 1 / (100 * 100)),
-  verbose = FALSE,
   control.inla = list(int.strategy = "eb", strategy = "gaussian"),
   control.compute = list(config = TRUE)
 )
@@ -115,112 +117,54 @@ summary(m_inla)
 inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 ```
 
-<!-- # inlabru -->
+# inlabru
 
-<!-- *** NOT WORKING YET *** -->
+There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work.
+One option is to create a design matrix and add year effects individually to the formula.
+The other way to set up the fixed coefficients with inlabru is to use the `factor_full` (or `factor_contrast`) model (seen below within `fac()`).
+Note that this option causes the location of the factor fixed-effect parameter estimates to end up in `summary.random$fac`.
 
-<!-- There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work. In the first case, we can create a design matrix and add year effects individually to the formula. -->
-
-
-<!-- Now we can set up the design matrix for `inlabru`   -->
-
-<!-- ```{r echo = F} -->
-<!-- m <- lm(present ~ -1 + as.factor(year), data = d) -->
-<!-- model_mat <- model.matrix(m) -->
-<!-- colnames(model_mat) <- paste0("x", unique(d$year)) -->
-<!-- dat <- cbind(d, model_mat) %>% mutate(x = X, y = Y) -->
-
-<!-- # dat <- dat %>% sf::st_as_sf(coords = c("x", "y")) -->
-
-<!-- coordinates(dat) <- c("x", "y") -->
-<!-- dat <- as(dat, "SpatialPointsDataFrame") -->
-<!-- ``` -->
-
-<!-- Next we set up the `components` object for the model. This includes a formula with fixed or random effects (here only fixed) and the design of the spatial random field. The name `spatrf` can be anything, but includes the coordinates, spde model, and how the year effects are shared.  -->
-
-<!-- ```{r eval = F, echo = F} -->
-<!-- components <- present ~ 0 +  -->
-<!--     x2009 + x2011 + x2013 + x2015 + x2017  +  -->
-<!--     # x2009(main=x2009, model="linear") + -->
-<!--     # x2011(main=x2011, model="linear") + -->
-<!--     # x2013(main=x2013, model="linear") + -->
-<!--     # x2015(main=x2015, model="linear") + -->
-<!--     # x2017(main=x2017, model="linear") + -->
-<!--     spatrf(coordinates, model = spde, group = year, ngroup=length(unique(d$year)), -->
-<!--       control.group = list(model = 'ar1', hyper = h.spec)) -->
-
-<!-- m_bru <- bru( -->
-<!--   components = components, -->
-<!--   family = "binomial", -->
-<!--   options =  -->
-<!--    list(bru_verbose = TRUE,  -->
-<!--         control.fixed = list(expand.factor.strategy = 'inla'), -->
-<!--         control.family = list(link = "logit"), -->
-<!--         control.inla = list(int.strategy = "eb", strategy = "gaussian"), -->
-<!--         control.compute = list(config = TRUE) -->
-<!--   ), -->
-<!--   data = dat -->
-<!-- ) -->
-
-<!-- bru_coefs <- m_bru$summary.fixed[, c("mean", "sd")] -->
-<!-- summary(m_bru) -->
-<!-- ``` -->
+```{r}
+dat <- as.data.frame(d)
+sp::coordinates(dat) <- c("X", "Y")
+dat <- as(dat, "SpatialPointsDataFrame")
+```
 
 
-<!-- The other way to set up the fixed coefficients with `inlabru` is to use the `fac` argument. Note the location of the parameters changes from to `summary.random$fac` -->
+```{r}
+tictoc::tic("bru")
+components <- present ~ 0 +
+  f(
+    main = coordinates, model = spde, group = i_year,
+    control.group = list(model = "ar1", hyper = h.spec)
+  ) +
+  fac(main = year, model = "factor_full")
 
-<!-- ```{r } -->
-<!-- tictoc::tic("bru") -->
+m_bru <- bru(
+  components = components,
+  family = "binomial",
+  data = dat,
+  options =
+    list(
+      bru_verbose = TRUE,
+      control.fixed = list(expand.factor.strategy = "inla", mean = 0, prec = 1 / (100 * 100)),
+      control.family = list(link = "logit"),
+      control.inla = list(int.strategy = "eb", strategy = "gaussian")
+    )
+)
+tictoc::toc()
+```
 
-<!-- components <- present ~ 0 + -->
-<!--   spatrf(main = coordinates, model = spde, group = dat$year, ngroup=length(unique(dat$year)), -->
-<!--       control.group = list(model = 'ar1')) + -->
-<!--       # control.group = list(model = 'ar1', hyper = h.spec)) + -->
-<!--   # fac(main = year,  model = "iid", -->
-<!--   #     hyper = list(prec = list(initial = log(1e-6), -->
-<!--   #                            fixed = TRUE)) -->
-<!--   # ) -->
-<!--   fac(main = year,  model = "factor_full") -->
+```{r}
+summary(m_bru)
 
-<!-- m_bru <- bru( -->
-<!--   components = components, -->
-<!--   family = "binomial", -->
-<!--   options =  -->
-<!--    list(bru_verbose = TRUE,  -->
-<!--         control.fixed = list(expand.factor.strategy = 'inla'), -->
-<!--         control.family = list(link = "logit"), -->
-<!--         control.inla = list(int.strategy = "eb", strategy = "gaussian"), -->
-<!--         control.compute = list(config = TRUE) -->
-<!--   ), -->
-<!--   data = dat -->
-<!-- ) -->
-<!-- tictoc::toc() -->
+m_inla$summary.hyperpar[, c("mean", "sd")]
+m_bru$summary.hyperpar[, c("mean", "sd")]
 
-<!-- bru_coefs <- m_bru$summary.random$fac[, c("mean", "sd")] -->
-<!-- summary(m_bru) -->
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- m_bru <- bru_rerun(m_bru, options = list()) -->
-<!-- summary(m_bru) -->
-<!-- ``` -->
-
-
-<!-- Comparing the spatial random effects between `INLA` and `inlabru` shows us that the latter is not estimating well. -->
-
-<!-- ```{r} -->
-<!-- m_inla$summary.hyperpar[, c("mean", "sd")] -->
-<!-- m_bru$summary.hyperpar[, c("mean", "sd")] -->
-<!-- ``` -->
-
-<!-- As a result the fixed effect estimates are also quite different.  -->
-
-<!-- ```{r} -->
-<!-- plot(inla_coefs$mean, bru_coefs$mean) -->
-<!-- abline(a = 0, b = 1) -->
-<!-- ``` -->
-
+bru_coefs <- m_bru$summary.random$fac[, c("ID", "mean", "sd")]
+m_inla$summary.fixed[,c("mean", "sd")]
+bru_coefs
+```
 
 # sdmTMB
 
@@ -231,7 +175,7 @@ We again use very weak priors on the fixed effects.
 tictoc::tic("sdmTMB")
 m <- sdmTMB(present ~ 0 + as.factor(year),
   data = d,
-  mesh = sdm_mesh,
+  mesh = sdmTMB_mesh,
   time = "year",
   spatial = "off",
   spatiotemporal = "ar1",
@@ -248,22 +192,22 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
 tictoc::toc()
 summary(m)
 tidy(m, "ran_pars", conf.int = TRUE)
-sdmtmb_coefs <- tidy(m, effects = "fixed")
+sdmTMB_coefs <- tidy(m, effects = "fixed")
 ```
 
 # Comparison
 
-Comparing the fixed effects between `sdmTMB` and `inla` shows the estimates are very tightly correlated.  
+Comparing the fixed effects between `sdmTMB()` and `inla()` shows the estimates are very tightly correlated.
 
 ```{r , out.width="5.5in"}
-plot(sdmtmb_coefs$estimate, inla_coefs$mean)
+plot(sdmTMB_coefs$estimate, inla_coefs$mean)
 abline(a = 0, b = 1)
 ```
 
 With sdmTMB, we can extract parameter simulations from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions.
 
 ```{r sdm-sims}
-post_sdmTMB <- gather_sims(m, n_sims = 2000L)
+post_sdmTMB <- gather_sims(m, n_sims = 2000)
 
 post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`,
   levels = unique(post_sdmTMB$`.variable`),
@@ -274,10 +218,9 @@ post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`,
 ))
 ```
 
-We can then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA. 
+We can then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA.
 From INLA, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the sdmTMB `gather_sims()` function.
 Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the posterior.
-<!-- # post_inla <- inla.posterior.sample(result = m_inla, n = 400L) -->
 
 ```{r inla-densities}
 x <- list()
@@ -330,7 +273,7 @@ ggplot(post_inla2) +
 
 # Annual distribution maps
 
-We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space. 
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space.
 
 ```{r sdm-predictions}
 nd <- filter(qcs_grid, year >= 2007)
@@ -357,23 +300,20 @@ ggplot(d) +
   coord_fixed()
 ```
 
-<!-- predict.inla? -->
+Or, we can make the prediction with inlabru:
 
-<!-- ```{r} -->
-<!-- pgrid <- inla.mesh.projector(inla_mesh) -->
+```{r inla-pred, out.width="6in"}
+# pxl <- pixels(spde$mesh)
+# pred_bru <- predict(m_bru, pxl)
 
-<!-- predict(m_inla, pgrid) -->
-<!-- ``` -->
+nd_bru <- nd
+sp::coordinates(nd_bru) <- c("X", "Y")
+nd_bru <- as(nd_bru, "SpatialPointsDataFrame")
+pred_bru <- predict(m_bru, nd_bru)
 
-<!-- # ```{r epsilon, cache=FALSE, out.width="6in"} -->
-<!-- # plot_map(pred, "epsilon_st") + -->
-<!-- #   ggtitle("Spatiotemporal random effects only") + -->
-<!-- #   scale_fill_gradient2() -->
-<!-- # ``` -->
-<!-- #  -->
-<!-- # ```{r resids, out.width="3in"} -->
-<!-- # p <- predict(m) -->
-<!-- # p$resid <- residuals(m) -->
-<!-- # qqnorm(p$resid) -->
-<!-- # qqline(p$resid) -->
-<!-- # ``` -->
+# ggplot(d) +
+#   geom_point(aes(X, Y, colour = ??), size = 2) +
+#   facet_wrap(~year) +
+#   scale_colour_viridis_c() +
+#   coord_fixed()
+```
