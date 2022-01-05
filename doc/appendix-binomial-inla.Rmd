@@ -303,17 +303,11 @@ ggplot(d) +
 Or, we can make the prediction with inlabru:
 
 ```{r inla-pred, out.width="6in"}
-# pxl <- pixels(spde$mesh)
-# pred_bru <- predict(m_bru, pxl)
-
 nd_bru <- nd
+nd_bru <- dplyr::left_join(nd_bru, yr_lu)
 sp::coordinates(nd_bru) <- c("X", "Y")
-nd_bru <- as(nd_bru, "SpatialPointsDataFrame")
-pred_bru <- predict(m_bru, nd_bru)
+nd_bru <- as(nd_bru, "SpatialPixelsDataFrame")
+pred_bru <- predict(m_bru, data = nd_bru)
 
-# ggplot(d) +
-#   geom_point(aes(X, Y, colour = ??), size = 2) +
-#   facet_wrap(~year) +
-#   scale_colour_viridis_c() +
-#   coord_fixed()
+nrow(pred_bru$Predictor)
 ```
