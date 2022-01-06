@@ -1,8 +1,10 @@
 ---
-title: "Appendix 4: Species distribution model comparison between INLA and sdmTMB"
+title: "Appendix 4: Dynamic species distribution model comparison between INLA, inlabru, and sdmTMB"
 output:
   pdf_document:
     highlight: tango
+    toc: true
+    number_sections: true
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -46,7 +48,7 @@ sigma_max <- 5
 prior_prob <- 0.05
 ```
 
-In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `sdmTMBpriors(ar1_rho = normal(0, 1))`).
+In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `priors = sdmTMBpriors(ar1_rho = normal(0, 1))`).
 
 ```{r}
 h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
@@ -75,7 +77,7 @@ Here, the meshes should be the same:
 ```{r plot-inla-mesh, fig.asp=0.9, out.height="2.5in"}
 plot(sdmTMB_mesh)
 title(main = "sdmTMB mesh")
-plot(spde$mesh, main = "")
+plot(spde$mesh, main = "", asp = 1)
 title(main = "INLA mesh")
 ```
 
@@ -122,7 +124,7 @@ inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work.
 One option is to create a design matrix and add year effects individually to the formula.
 The other way to set up the fixed coefficients with inlabru is to use the `factor_full` (or `factor_contrast`) model (seen below within `fac()`).
-Note that this option causes the location of the factor fixed-effect parameter estimates to end up in `summary.random$fac`.
+This option causes the location of the factor fixed-effect parameter estimates to end up in `summary.random$fac`.
 
 ```{r}
 dat <- as.data.frame(d)
@@ -136,7 +138,7 @@ tictoc::tic("bru")
 components <- present ~ 0 +
   f(
     main = coordinates, model = spde, group = i_year,
-    control.group = list(model = "ar1", hyper = h.spec)
+    control.group = list(model = "ar1", hyper = h_spec)
   ) +
   fac(main = year, model = "factor_full")
 
@@ -169,7 +171,7 @@ bru_coefs
 # sdmTMB
 
 We will now fit a nearly identical model with `sdmTMB()` (the AR(1) correlation parameter prior is different).
-We again use very weak priors on the fixed effects.
+We again use very weak priors on the factor fixed effects.
 
 ```{r sdmtmb, warning=FALSE, message=FALSE}
 tictoc::tic("sdmTMB")
@@ -187,40 +189,54 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
     ),
     b = normal(0, 100),
     ar1_rho = normal(0, 2)
-  )
+  ),
+  reml = TRUE # to match INLA "eb" `int.strategy`
 )
 tictoc::toc()
-summary(m)
+```
+
+```{r sdmtmb-coefs}
+print(m)
 tidy(m, "ran_pars", conf.int = TRUE)
-sdmTMB_coefs <- tidy(m, effects = "fixed")
+sdmTMB_coefs <- tidy(m, effects = "fixed", conf.int = TRUE)
 ```
 
 # Comparison
 
-Comparing the fixed effects between `sdmTMB()` and `inla()` shows the estimates are very tightly correlated.
+Comparing the fixed effects between `sdmTMB()` and `inla()` shows the estimates are very similar:
 
-```{r , out.width="5.5in"}
-plot(sdmTMB_coefs$estimate, inla_coefs$mean)
-abline(a = 0, b = 1)
+```{r coef-plot, out.width="5.5in"}
+inla_coefs <- m_inla$summary.fixed[, c("0.025quant", "mean", "0.975quant")] %>% 
+  rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>% 
+  mutate(term = unique(sdmTMB_coefs$term), model = "INLA")
+
+bru_coefs <- m_bru$summary.random$fac[, c("0.025quant", "mean", "0.975quant")] %>% 
+  rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>% 
+  mutate(term = unique(sdmTMB_coefs$term), model = "inlabru")
+
+dplyr::bind_rows(mutate(sdmTMB_coefs, model = "sdmTMB"), inla_coefs, bru_coefs) %>% 
+  ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, colour = model)) +
+  geom_pointrange(position = position_dodge(width = 0.2)) +
+  theme(axis.title.y = element_blank())
 ```
 
-With sdmTMB, we can extract parameter simulations from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions.
+With sdmTMB, we can extract simulated draws from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions:
 
-```{r sdm-sims}
+```{r sdmTMB-sims}
+set.seed(1)
 post_sdmTMB <- gather_sims(m, n_sims = 2000)
-
-post_sdmTMB2 <- post_sdmTMB %>% mutate(variable = factor(`.variable`,
-  levels = unique(post_sdmTMB$`.variable`),
-  labels = c(
-    "2007", "2009", "2011", "2013", "2015", "2017",
-    "Range", "AR1 rho", "Random Field SD"
+post_sdmTMB <- post_sdmTMB %>% 
+  mutate(variable = 
+      factor(`.variable`,
+        levels = unique(post_sdmTMB$`.variable`),
+        labels = c(seq(2007, 2017, 2), "Range", "AR1 rho", "Random Field SD")
+      )
   )
-))
 ```
 
 We can then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA.
 From INLA, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the sdmTMB `gather_sims()` function.
-Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the posterior.
+Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the INLA model posterior.
 
 ```{r inla-densities}
 x <- list()
@@ -251,7 +267,7 @@ x[[8]] <- inla.smarginal(m_inla$marginals.hyperpar$`Stdev for i`) %>%
 x[[9]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>%
   as_tibble() %>%
   mutate(variable = "ar1_rho")
-post_inla1 <- do.call(rbind, x)
+post_inla1 <- dplyr::bind_rows(x)
 post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
   levels = unique(post_inla1$variable),
   labels = c(
@@ -264,10 +280,10 @@ post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
 ```{r compare-plot, out.width="6in"}
 ggplot(post_inla2) +
   geom_histogram(
-    data = post_sdmTMB2, aes(.value, after_stat(density)), bins = 30,
+    data = post_sdmTMB, aes(.value, after_stat(density)), bins = 30,
     fill = "blue", alpha = 0.2
   ) +
-  geom_line(data = post_inla2, aes(x, y), inherit.aes = F) +
+  geom_line(data = post_inla2, aes(x, y), inherit.aes = FALSE) +
   facet_wrap(~variable, scales = "free")
 ```
 
