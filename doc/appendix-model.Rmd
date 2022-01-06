@@ -33,13 +33,13 @@ knitr::opts_chunk$set(
 
 # Notation conventions
 
-This appendix uses the following notation conventions:
+This appendix uses the following notation conventions, generally following the guidance in @edwards2019:
 
 * Greek symbols for parameters,
 
-* the Latin/Roman alphabet for data,
+* the Latin/Roman alphabet for data (except $\boldsymbol{Q}$ and $\boldsymbol{H}$, which are used by convention),
 
-* bold symbols for vectors or matrices,
+* bold symbols for vectors or matrices (e.g., $\boldsymbol{\omega}$ is a vector and $\omega_{\s}$ is the value of $\boldsymbol{\omega}$ at point in space $\s$),
 
 * $\phi$ for all distribution dispersion parameters for consistency with the code,
 
@@ -130,11 +130,11 @@ $$
 \mu_{\bm{s},t} &=
 f^{-1} \left( \bm{X}_{1,\bm{s},t} \bm{\beta} +
 O_{\s,t} +
-\bm{\alpha}_g +
+\alpha_g +
 \bm{X}_{2,\bm{s},t} \gamma_t +
 \bm{X}_{3,t} \zeta_{\bm{s}} +
-\omega_{\bm{s}} +
-\epsilon_{\bm{s},t} \right),
+\omega_{\s} +
+\epsilon_{\s,t} \right),
 \end{aligned}
 $$
 
@@ -148,12 +148,9 @@ where
 * $O_{\s,t}$ represents an offset: a covariate (usually log transformed) with a coefficient fixed at one;
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$; 
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
-* $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
-* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
-* $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
-
-<!-- should alpha_g be bold as in the equation above? -->
-<!-- EW: yes -- alpha_g should be bolded here -->
+* $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
+* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
+* $\epsilon_{\s,t}$ represents a spatiotemporal component (a random field), $\epsilon_{\s,t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
 A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
 
@@ -207,13 +204,13 @@ The parameter $s50$ is unconstrained but $s95$ is constrained to be larger than 
 These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
 
 ## Spatial random fields
-<!-- EW: edited omega in this section to be bolded and subscripted with s, for consistency with above --> 
-Spatial random fields, $\omega_{\bm{s}}$, are included if `spatial = 'on'` and omitted if `spatial = 'off'`.
+
+Spatial random fields, $\omega_{\s}$, are included if `spatial = 'on'` and omitted if `spatial = 'off'`.
 
 $$
 \begin{aligned}
-\mu_{\bm{s},t} &= f^{-1} \left( \ldots + \boldsymbol{\omega_s} + \ldots \right),\\
-\boldsymbol{\omega_s} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\ 
+\mu_{\bm{s},t} &= f^{-1} \left( \ldots + \omega_{\s} + \ldots \right),\\
+\boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\ 
 \end{aligned}
 $$
 The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatial SD` in the model output or as `sigma_O` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
@@ -221,7 +218,7 @@ The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatia
 Internally, the random fields follow a Gaussian Markov random field (GMRF):
 
 $$
-\boldsymbol{\omega_s} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right)
+\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right)
 $$
 where $\boldsymbol{Q}_\omega$ is a sparse precision matrix and $\sigma_\omega^2$ is the marginal variance.
   
@@ -235,23 +232,23 @@ This has been chosen to match the representation in VAST [@thorson2019].
 The marginal standard deviation of $\boldsymbol{\epsilon}_t$ is indicated by `Spatiotemporal SD` in the model output or as `sigma_E` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
 
 ### IID spatiotemporal random fields
-<!-- EW: as above, I changed epsilon to be subscripted with s throughout this section-->
+
 IID spatiotemporal random fields (`spatiotemporal = 'iid'`) can be represented as
 
 $$
 \begin{aligned}
-\mu_{\bm{s},t} &= f^{-1} \left( \ldots + \boldsymbol{\epsilon_{\s,t}} + \ldots \right),\\
-\boldsymbol{\epsilon_{\s,t}} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right).
+\mu_{\bm{s},t} &= f^{-1} \left( \ldots + \epsilon_{\s,t} + \ldots \right),\\
+\boldsymbol{\epsilon_{t}} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right).
 \end{aligned}
 $$
 
-where $\boldsymbol{\epsilon_{\s,t}}$ represent random field deviations at point $\s$ and time $t$.
+where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
 The random fields are assumed independent across time slices. 
 
 Similarly to the spatial random fields, these spatiotemporal random fields (and all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$):
 
 $$
-\boldsymbol{\epsilon_{\s,t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right)
+\boldsymbol{\epsilon_{t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right)
 $$
 
 ### AR(1) spatiotemporal random fields
@@ -263,8 +260,8 @@ $$
 \begin{aligned}
 \mu_{\s,t} &= f^{-1} \left( \ldots + \delta_{\s,t} \ldots \right),\\
 \boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
-\boldsymbol{\delta}_{t>1} &= \rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2} \boldsymbol{\epsilon_{\s,t}},  \:
-\boldsymbol{\epsilon_{\s,t}} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\boldsymbol{\delta}_{t>1} &= \rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2} \boldsymbol{\epsilon_{t}},  \:
+\boldsymbol{\epsilon_{t}} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
 where $\rho$ is the correlation between subsequent spatiotemporal random fields. 
@@ -281,21 +278,13 @@ $$
 \begin{aligned}
 \mu_{\s,t} &= f^{-1} \left( \ldots + \delta_{\s,t} + \ldots \right),\\
 \boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
-\boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon_{\s,t-1}},  \:
-\boldsymbol{\epsilon_{\s,t-1}} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\boldsymbol{\delta}_{t>1} &= \boldsymbol{\delta}_{t-1} +  \boldsymbol{\epsilon_{t-1}},  \:
+\boldsymbol{\epsilon_{t-1}} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$
 
 where the distribution of the spatiotemporal field in the initial time step is the same as for the AR(1) model, but the absence of the $\rho$ parameter allows the spatiotemporal field to be non-stationary in time.
 Note that, in contrast to the AR(1) parametrization, the variance is no longer the steady-state marginal variance.
-
-<!-- * $\alpha_g$, are defined by an lme4-style formula, e.g. `formula = y ~ x + (1 | g)`, where `g` represents a column with grouping factors. -->
-
-<!-- * $\gamma_{t}$, time-varying coefficients, are defined by the `time_varying` formula argument. -->
-
-<!-- * $\zeta_{\bm{s}}$, IID random intercepts, are defined by the `spatial_varying` formula argument. -->
-
-<!-- * $f$ and $f^-1$ functions are defined by the `family` argument. E.g., `family = Gamma(link = "log")`. -->
 
 ## Spatially varying coefficients (SVC)
 
@@ -340,7 +329,7 @@ I.e., the same variable should not appear in the fixed effect formula since the 
 The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and, this case, the intercept should be omitted from the main effects (`formula ~ + 0 + ...` or `formula ~ -1 + ...`).
 
 ## IID random or multi-level intercepts
-<!-- EW: make alpha bold here, as above?-->
+
 $$
 \begin{aligned}
   \mu_{\s,t} &= f^{-1} \left( \ldots + \alpha_{g} + \ldots \right),\\
@@ -349,11 +338,10 @@ $$
 $$
 
 where $\alpha_g$ is an example optional "random" intercept---an intercept
-with mean zero that varies by level $g$ and is constrained by
-$\sigma_\alpha$. This is defined by the `formula` argument via the `(1 | g)`
-syntax as in lme4 or glmmTMB. There can be multiple random intercepts. 
+with mean zero that varies by level $g$ and is constrained by $\sigma_\alpha$. 
+This is defined by the `formula` argument via the `(1 | g)` syntax as in lme4 or glmmTMB. 
+There can be multiple random intercepts, despite only showing one above.
 E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorrelated from each other.
-
 
 ## Offset terms
 
@@ -413,7 +401,6 @@ Example: `family = Beta(link = "logit")`
 $$
 \operatorname{Gamma} \left( \phi, \frac{\mu}{\phi}  \right)
 $$
-<!-- EW: check this, I think the Gamma variance should be mu * phi2 -->
 where $\phi$ represents the Gamma shape and $\mu / \phi$ represents the scale. 
 The mean is $\mu$ and variance is $\mu \cdot \phi^2$.
 
@@ -435,16 +422,15 @@ Code defined [within TMB](https://kaskr.github.io/adcomp/dnorm_8hpp.html).
 
 ## Lognormal
 
-$$
-\operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi \right)
-$$
+<!-- \operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi^2 \right) -->
 
-where $\mu$ and $\phi$ are the mean and standard deviation of the natural log of the random variable. 
-If $\boldsymbol{x}$ is lognormally distributed, $\mathbb{E}[\log(\boldsymbol{x})] = \mu$ and $\mathrm{Var}[\log(\boldsymbol{x})] = \phi$.
-This translates to $\mathbb{E}[\boldsymbol{x}] = \exp(\mu + \phi^2 / 2)$ and $\mathrm{Var}[\boldsymbol{x}] = \left(\exp(\phi^2) - 1 \right) \cdot \exp(2 \mu + \phi^2)$.
+sdmTMB uses the bias-corrected lognormal distribution where $\phi$ represents the standard deviation in log-space:
 
-TODO: did this get reversed above? Isn't it set up so the mean(x) is mu?
-<!-- EW: the lognormal definition above includes the bias correction phi2/2, but that's not in the standard implementations in R, etc. I think I used those R functions or referenced Wikipedia in writing the equations out. So we should pick one or the other. I think just changing the definition to not include the bias correction would keep it consistent with R, https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Lognormal.html-->
+$$
+\operatorname{Lognormal} \left( \log \mu - \frac{\phi^2}{2}, \phi^2 \right).
+$$
+Because of the bias correction, $\mathbb{E}[y] = \mu$ and $\mathrm{Var}[\log y] = \phi^2$.
+
 Code defined [within sdmTMB](https://github.com/pbs-assess/sdmTMB/blob/18a39eabc111e2179fa589f942c8820d87ad10df/src/utils.h#L47-L54) based on the TMB `dnorm()` normal density.
 
 Example: `family = lognormal(link = "log")`
