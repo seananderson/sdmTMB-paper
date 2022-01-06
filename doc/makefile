@@ -4,6 +4,6 @@ REFS = refs
 all: $(TEXT).pdf
 
 %.pdf: %.Rmd $(REFS).bib
-	Rscript -e "source('compile.R')"
+	Rscript -e "rmarkdown::render('paper.Rmd')"
 continuous:
 	while true; do make --silent; sleep 3; done

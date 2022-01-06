@@ -192,7 +192,7 @@ Our data frame `pcod` (built into the package) has a column `year` for the year 
 
 ```{r, include=FALSE}
 # simplify for paper
-pcod <- dplyr::select(pcod, year, density, depth, X, Y)
+# pcod <- dplyr::select(sdmTMB::pcod, year, density, depth, X, Y)
 ```
 
 ```{r, echo=TRUE, eval=FALSE}
@@ -348,7 +348,7 @@ We provide several approaches to assist this process:
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
 Simulation-based residuals [@dharma], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
-(5) The `simulate.sdmTMB()` method can simulate from fitted models [e.g., for DHARMa residuals, @DHARMa] and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+(5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 
 <!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
