@@ -3,7 +3,7 @@
 Time-varying coefficients,1,0*,1,1,1,1,0,0
 Spatially varying coefficients (SVC),1,1,1,1,1,1,0,0
 GAMs*,1,0,1,1,1,0,0,0
-Threshold covariates,1,0,0,0,1,0,0,0
+Threshold covariates,1,0,0,0,1*,0,0,0
 Offsets,1,1,1,1,1,1,0,1
 # Coefficients influenced by phylogeny,0,0,0,?,?,0,1,0
 # Correlation stuff,,,,,,,,
@@ -25,7 +25,7 @@ Censored Poisson distribution,1,0,0,1,1,0,0,0
 # other likelihood stuff,,,,,,,,
 log Gaussian Cox processes,0,0,0,1,1,0,0,0
 Multivariate responses,0,1,0,1,1,1,1,1
-Built-in delta/hurdle models,0,1,0,1,1,0,0,1
+Built-in delta/hurdle models,0*,1,0*,1,1,0,0,1
 Poisson-link delta model,0,1,0,0*,0*,0,0,0
 Likelihood weights,1,0,1,1,1,1,0,1
 Maximum/marginal likelihood,1,1,1,0,0,0,0,0
@@ -37,4 +37,4 @@ Matern PC priors,1,0,0,1,1,0,0,0
 Spatial (or spatial dynamic) factor analysis,0,1,0,0,0,0,0,0
 Empirical Orthogonal Function (EOF) analysis,0,1,0,0,0,0,0,0
 Built-in area-weighted index standardization,1,1,0,0,0,0,0,0
-Built in cross-validation,1,1,0,0,0,0,1,0
+Built in cross-validation,1,0,0,0,0,0,1,0

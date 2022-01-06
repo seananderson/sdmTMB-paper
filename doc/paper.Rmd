@@ -41,7 +41,7 @@ editor_options:
     wrap: sentence
 abstract: |
     | \noindent 1. Geostatistical data---spatially referenced observations related to some continuous spatial phenomenon--are ubiquitous in ecology and can reveal ecological processes and inform management decisions through applications such as species distribution models (SDMs). However, appropriate models to analyze such data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
-    | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), but can be extended to penalized likelihood or Bayesian inference. We describe sdmTMB and statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
+    | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
     | 3. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) sdmTMB provides simple out-of-sample cross validation; (4) non-stationary processes (time-varying and  spatially varying coefficients) are easily constructed with a formula interface; and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, abundance index standardization).
     | 4. We hope that sdmTMB's user-friendly interface will open this useful class of models to a wider audience within species distribution modelling and beyond.
     | Keywords: Gaussian Markov random fields, generalized linear mixed effects models, INLA, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder
@@ -373,6 +373,9 @@ row.names(d) <- NULL
 d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
 d$Hmsc <- NULL
 
+d$INLA <- NULL
+names(d)[names(d) == "inlabru"] <- "INLA/inlabru"
+
 knitr::kable(d, format = "latex", caption = "Comparison of functionality between seven R packages that can fit geostatistical GLMMs.",
   booktabs = TRUE,
   linesep = c(
@@ -391,12 +394,14 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
     number = c(
       "Technically possible but non-trivial",
       "Penalized smoother GAMs",
+      "inlabru but not INLA",
       "Spatiotemporal fields as random walk only",
       "SPDE approach as in Miller et al. (2019)",
       "Does have predictive process knots",
       "Zero-inflated NB2 only",
       "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}",
-      "Technically possible but non-trivial",
+      "Hurdle models possible by fitting components separately",
+      "Hurdle models possible by fitting components separately",
       "Technically possible but non-trivial"
     ),
     escape = FALSE
@@ -438,7 +443,7 @@ inlabru was the least affected by mesh resolution and beyond 500 nodes was faste
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
 With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
 Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown).
-Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
+Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
