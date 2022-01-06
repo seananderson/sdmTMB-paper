@@ -1,10 +1,10 @@
 ---
 title: "sdmTMB: Fast, flexible, and user-friendly spatial and spatiotemporal generalized linear mixed-effects models"
 author: "|
-  Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca], 
-  Eric J. Ward$^2$, 
-  Philina A. English$^1$, 
-  Lewis A. K. Barnett$^3$\n| 
+  Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca],
+  Eric J. Ward$^2$,
+  Philina A. English$^1$,
+  Lewis A. K. Barnett$^3$\n|
   $^1$Pacific Biological Station, Fisheries and Oceans Canada, Nanaimo, BC, Canada\n|
   $^2$Northwest Fisheries Science Center, National Marine Fisheries Service,\n|
       National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n|
@@ -40,11 +40,11 @@ editor_options:
   markdown:
     wrap: sentence
 abstract: |
-    | \noindent 1. Geostatistical data---spatially referenced observations with some underlying spatial process---are commonly collected in ecology and have much potential for revealing ecological processes and improving conservation and management, expanding on the time series analyses often used for such efforts by quantifying spatial and spatiotemporal relationships. Geostatistical data are used in a diversity of applications, including species distribution models (SDMs); however, appropriate models for analyzing these data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
-    | 2: Here, we introduce the R package sdmTMB, which implements predictive-process SPDE-based (stochastic partial differential equation) spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB). We describe the basic functionality of sdmTMB and the statistical model employed, illustrate its use through two case studies, and compare the functionality, speed, and interface to related software.
-    | 3:  We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) provides simple out-of-sample model validation; (4) non-stationary processes are easily constructed with a formula interface (time-varying coefficients, spatially varying coefficients); and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, population abundance index standardization).
-    | 4: We hope that user-friendly interfaces such as sdmTMB open this useful class of models to a wider audience of users.
-    | Keywords: Gaussian Markov random fields, generalized linear mixed effects models, INLA, species distribution modelling, R package, Template Model Builder
+    | \noindent 1. Geostatistical data are spatially referenced observations of some spatial process---they might also be collected across time. Such data are common in ecology and can reveal ecological processes and improve conservation and management through applications such as species distribution models (SDMs). However, appropriate models to analyze geostatistical data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
+    | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB). We describe the basic functionality of sdmTMB and the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
+    | 3. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) sdmTMB provides simple out-of-sample model validation; (4) non-stationary processes are easily constructed with a formula interface (time-varying coefficients, spatially varying coefficients); and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, population abundance index standardization).
+    | 4. We hope that user-friendly interfaces such as sdmTMB open this useful class of models to a wider audience of users.
+    | Keywords: Gaussian Markov random fields, generalized linear mixed effects models, INLA, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder
 ---
 
 <!-- Point 1: set the context for and purpose of the work; -->
@@ -52,31 +52,7 @@ abstract: |
 <!-- Point 3: outline the main results; -->
 <!-- Point 4: identify the conclusions and the wider implications. -->
 
-<!-- This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software. -->
-<!-- These data sometimes include a discrete time dimension, such as yearly samples.  -->
-<!-- Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes and improve ecological management. -->
-<!-- These data present statistical challenges to modelling them effectively and efficiently; appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate. -->
-<!-- We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users. -->
-
-```{r pkg-checks, include=FALSE, echo=FALSE}
-# if (!require("rnaturalearthhires", quietly = TRUE)) {
-#   stop("Please install 'rnaturalearthhires'.\n",
-#   "`remotes::install_github('ropensci/rnaturalearthhires')`")
-# }
-# if (!require("ggsidekick", quietly = TRUE)) {
-#   stop("Please install 'ggsidekick'.\n",
-#   "`remotes::install_github('seananderson/ggsidekick')`")
-# }
-```
-
-```{r, echo = FALSE, include = FALSE, message = FALSE, warning = FALSE}
-library(here)
-library(ggplot2)
-# theme_set(theme_minimal())
-theme_set(ggsidekick::theme_sleek())
-library(dplyr)
-library(sdmTMB)
-```
+<!-- TODO: emphasize the niche carved out: a fast, flexible, easy-to-use, predictive-process univariate spatial or spatiotemporal GLMM, scales from maximum likelihood to penalized likelihood to full Bayesian inference
 
 ```{r, include=FALSE}
 options(tinytex.verbose = TRUE)
@@ -123,7 +99,6 @@ This paper describes the basic functionality of the R package and the underlying
 
 <!-- legendre1989a: "Spatial pattern and ecological analysis": "We can expect the spatial approach to ecological problems to bring about a quantum jump for ecologists and population geneticists who had learned a type of statistics where one had to hide space or time structures. It is now possible to use these structures and to integrate them into our analyses as fully-fledged controlled variables." -->
 
-
 (ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
 An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
 The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
@@ -144,12 +119,12 @@ knitr::include_graphics(f)
 # Model description
 
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
-Geostatistical data simply refers to data observed at specific spatial coordinates reflecting some underlying spatial process [@rossi1992; @diggle2007]. 
+Geostatistical data simply refers to data observed at specific spatial coordinates reflecting some underlying spatial process [@rossi1992; @diggle2007].
 These data can be collected across discrete points in time.
-Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional autoregressive models (CAR) [e.g., @verhoef2018].
+Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g., spatial variance and range---the distance at which points are effectively independent).
- 
+
 The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 
@@ -191,7 +166,7 @@ The Matérn standard deviations are estimated separately for the various fields 
 
 By default, if spatiotemporal fields are included, they are assumed independent and identically distributed (IID); however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models; GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or to be modelled with threshold shapes [e.g., hockey-stick models, `breakpt()`, @barrowman2000] or logistic functions, `logistic()` (Appendix 1).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes [e.g., hockey-stick models, `breakpt()`, @barrowman2000] or logistic functions, `logistic()` (Appendix 1).
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
@@ -206,20 +181,11 @@ The results from an sdmTMB model can be used to generate various quantities of i
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
 Derived parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
 
-<!-- ## Advanced options -->
-
-<!-- While not of interest to all users, sdmTMB also implements several advanced options for model fitting.  -->
-<!-- First, models can include penalized likelihoods via assigning priors to model parameters. -->
-<!-- These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces. -->
-<!-- Following other recent SPDE approaches [@simpson2017; @osgood-zimmerman2021], 'penalized complexity' priors may be particularly useful in assigning priors to the spatial range and variance. -->
-<!-- Second, we allow non-linear effects of covariates to be modeled with penalized regression splines ("P-splines") [@eilers1996], in one or multiple dimensions, using the same `s(x)` syntax familiar to users of `mgcv`. -->
-<!-- Third, for users interested in Bayesian inference, we allow models to be passed to Stan (cite) via the package tmbstan [@monnahan2018]. -->
-
 # Introductory example with fish survey biomass
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
 It usually makes sense to convert the spatial coordinates to an equidistant projection such as the Universal Transverse Mercator (UTM) to ensure that distance remains constant throughout the study region [e.g., using `sf::st_transform()`, @pebesma2018].
-<!-- Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data, but it could be added to the pcod appendix too? -->
+<!-- TODO: Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data, but it could be added to the pcod appendix too? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
@@ -249,10 +215,10 @@ mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
 Here, `cutoff` defines the minimum allowed distance between mesh vertices in the units of `X` and `Y`.
-Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`. 
+Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`.
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
-We can then fit a model with spatial random fields via the function `sdmTMB()`. 
+We can then fit a model with spatial random fields via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package and choose a basis dimension of 5.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 
@@ -299,24 +265,18 @@ The output indicates our model was fit by maximum (marginal) likelihood (`ML`).
 We also see the formula, mesh, fitted data, and family.
 Next we see any estimated main effects including the linear component of the smoother (`sdepth`), the standard deviation on the smoother weights (`sds(depth)`), the Tweedie dispersion and power parameters, the Matérn range distance, the marginal spatial field standard deviation, and the negative log likelihood at convergence.
 
-<!--
-EW: TODO I think this could use a bit more hand holding — things to highlight are (1) predictions can be made for a new dataframe with any locations, 
-(2) more detail about why you’re predicting on a grid. 
-(3) other uses for predict — e.g. might be helpful to understand marginal effects of covariates for complicated models
--->
-
 We can make predictions with the `predict()` method (`?predict.sdmTMB`) and optionally use the `newdata` argument to predict on a new data frame with any locations and values for the predictor columns.
 Here, we will predict on a 2x2 km grid (`qcs_grid`) that covers the entire region of interest so we can visualize the predictions spatially (or calculate a standardized population index with a spatiotemporal model).
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
-<!-- The data frame `qcs_grid` (included in the package data) is a grid that extends over the full survey domain and contains all predictors used in the model set at values for which we want to predict. -->
-The output of `predict()` is a data frame containing overall estimates, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
-We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)B--D.
 
 ```{r, echo=TRUE, eval=FALSE}
 p <- predict(fit, newdata = qcs_grid)
 ```
 
-We could extend this spatial model to be a spatiotemporal model simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured in time.
+The output of `predict()` is a data frame containing overall estimates in link space, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
+We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)B--D.
+
+We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured in time.
 Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1).
 
 ```{r fit-tv, eval=FALSE, echo=TRUE}
@@ -331,7 +291,7 @@ We could generate a population index (e.g., a relative or absolute index of abun
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
-The circle area corresponds to density of Pacific Cod for individual trawls.
+The circle area corresponds to density of Pacific cod for individual trawls.
 (B) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
 (C) Overall prediction: these estimates represent the combination of all fixed and random effects.
@@ -346,19 +306,21 @@ knitr::include_graphics(pcodfig)
 
 # Spatially varying coefficient example with citizen science data
 
-Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter. 
-<!-- not familiar with this "irruptive" terminology, please define -->
-The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
-The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
-Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution. 
+Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are
+irruptive
+migrants appearing across mid latitudes of North America in winter.
+<!-- TODO: not familiar with this "irruptive" terminology, please define -->
+The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
+The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014].
+Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
 We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial (NB2) distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO (Appendix 3).
 
 ```{r owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owls <- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
-  spatial_varying = ~ 0 + nao,     
-  family = nbinom2(link = "log"), data = snow, mesh = mesh, 
+  spatial_varying = ~ 0 + nao,
+  family = nbinom2(link = "log"), data = snow, mesh = mesh,
   time = "year", spatial = "on", spatiotemporal = "iid"
 )
 ```
@@ -366,8 +328,8 @@ fit_owls <- sdmTMB(
 We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao)).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
 
-(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. 
-Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). 
+(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US.
+Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).
 The effect is multiplicative on owl count per NOA unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
@@ -377,22 +339,17 @@ knitr::include_graphics(owl)
 
 # Model validation and selection
 
-Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. 
-We provide several approaches to assist this process: 
+Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a].
+We provide several approaches to assist this process:
 (1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
-<!-- We allow AIC to be calculated for each sdmTMB model [`AIC()`, @akaike1974]; however, because of well-documented biases of AIC with mixed-effects models [@liang2008] we provide functionality to perform k-fold cross-validation. -->
-<!-- The function `sdmTMB_cv()` allows for any number of folds, with assignments being user-specified or chosen randomly. -->
-<!-- The predictive log-density is calculated for each fold and summarized across folds for a total measure of the predictive accuracy of a model. -->
-<!-- Validation of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a]. We provide four approaches to assist with model validation: -->
 (2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`). 
+(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`).
 (4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
 Simulation-based residuals [@dharma], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
-(5) The `simulate.sdmTMB()` method or `sdmTMB_simulate()` function can simulate from fitted models or new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+(5) The `simulate.sdmTMB()` method can simulate from fitted models [e.g., for DHARMa residuals, @DHARMa] and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
-<!-- We note this will be considerably slower to fit than with maximum likelihood and in some cases may require tight priors or fixed parameters to ensure adequate sampling [as in @monnahan2021]. -->
 
 <!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
 
@@ -400,19 +357,6 @@ Simulation-based residuals [@dharma], one-step-ahead residuals [@thygesen2017a],
 p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
 ind <- get_index(p)
 ```
-
-<!--
-Highlights?
-
-- Basic spatial model structure and notation / INLA / SPDE / GMRF defined. Advantages of PC-priors [], though sdmTMB also allows priors on most parameters (e.g. fixed effects, obs error variances)
-- Flexible extension of glmmTMB [Brooks et al. 2017] -- and includes non-spatial models for direct comparisons with glmmTMB [@osgood-zimmerman2021]
-- Spatiotemporal models (RW/AR v IID)
-- Time varying parameters
-- Non-linear effects (smooth splines, threshold/breakpoint functions)
-- Variance estimation and derived quantities (spatial range, area occupied etc)
--->
-
-<!-- \clearpage  -->
 
 ```{r compare-table}
 library(kableExtra)
@@ -427,11 +371,10 @@ d <- as.data.frame(d)
 names(d)[1] <- ""
 row.names(d) <- NULL
 d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
-# names(d)[names(d) == "mgcv"] <- "mgcv\\footnote{a}"
 d$Hmsc <- NULL
 
-knitr::kable(d, format = "latex", caption = "Comparison of functionality between seven R packages that can fit geostatistical GLMMs.", 
-  booktabs = TRUE, 
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between seven R packages that can fit geostatistical GLMMs.",
+  booktabs = TRUE,
   linesep = c(
     rep('', 4), # coefs
     '\\addlinespace',
@@ -443,7 +386,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
     '\\addlinespace'
   ),
   escape = FALSE, row.names = FALSE) %>%
-  kableExtra::kable_styling(font_size = 8) %>% 
+  kableExtra::kable_styling(font_size = 8) %>%
   kableExtra::footnote(
     number = c(
       "Technically possible but non-trivial",
@@ -459,7 +402,6 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
     escape = FALSE
   )
 ```
-<!-- LB: VAST does allow use of basis splines, but this requires the splines package and effects package for visualization, e.g.: https://github.com/James-Thorson-NOAA/VAST/wiki/Specify-covariates-and-visualize-responses -->
 
 # Package comparisons
 
@@ -467,55 +409,47 @@ There are many R packages capable of fitting geostatistical spatial or spatiotem
 sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
-To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016]. 
+To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
 <!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
-<!-- and spatial empirical orthogonal function (EOF) regression [@thorson2020]. To my reading EOF was not implemented in VAST. It seemed to me its own thing?-->
 Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
 spaMM is limited to a spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
-<!-- TODO: still true? -->
 There is considerable variability in the available observation likelihoods across packages (Table 1).
-<!-- TODO: add something about the results of the INLA comparison (Appendix 4) and the VAST comparison (Appendix 5) -->
-We provide comparisons of the syntax and the reproducibility of results from models fit using INLA (Appendix 4) and VAST (Appendix 5).
-<!-- We ran into problems with AR1 spatiotemporal fields in inlabru, otherwise we would have included both INLA and inlabru syntax.
-<!-- TODO: mention inlabru here -->
-
-```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
-f <- here::here("figs", "timing-spatial.pdf")
-knitr::include_graphics(f)
-```
-
-We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
-In this test, for mesh resolutions under 500 nodes, sdmTMB fit the models the fastest.
-inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
-mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
-With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
-Results with up to an order of magnitude more data slightly shift the lines up without affecting the qualitative pattern (not shown).
-Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
-<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
-<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
+We provide comparisons of the syntax and the reproducibility of results from models fit using INLA or inlabru (Appendix 4) and VAST (Appendix 5).
 
 (ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons ranges across 20 random iterations.
 Note the log x and y axes.
 sdmTMB used the default settings and `normalize = TRUE`, which calculates the random effect normalizing constant in R.
+VAST should be similar to sdmTMB and so is not shown.
 inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
 mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
 <!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
 <!-- All platforms were restricted to one core and could be faster with parallel computation. -->
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
 
+```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
+f <- here::here("figs", "timing-spatial.pdf")
+knitr::include_graphics(f)
+```
+
+We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
+In this test, for mesh resolutions under 500 nodes, sdmTMB was faster than inlabru or mgcv.
+inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
+mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
+With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
+Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown).
+Our test was with one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
+Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
+<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
+<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
+
 # Discussion
-
-<!-- Take home, re-iterate paragraph? -->
-
-<!-- EW: TODO Not sure if Heaton included CAR models, but we might want to talk about them briefly because there’s a lot of packages that include that functionality - including NIMBLE, etc.  -->
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface and speed.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
 Users familiar with INLA may find inlabru approachable. <!-- ; however, we ran into problems with AR1 spatiotemporal fields in inlabru, so we only provide a comparison with INLA instead (Appendix 4). -->
-Users already familiar with mgcv can fit adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
+Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
@@ -525,9 +459,9 @@ INLA/inlabru, or spaMM for spatial models, scale the best with very high resolut
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
 
 <!--
-There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1). 
+There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1).
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in the user interfaces.
-Interface-wise, VAST is less modular (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists. 
+Interface-wise, VAST is less modular (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists.
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
 From a fisheries perspective, sdmTMB achieves three of the four design principles outlined in @thorson2019 for index standardization: it allows area weighting, can distinguish catchability and habitat covariates (by deciding what is fixed when predicting), and conditions on missing covariates (random fields).
 Unlike VAST, however, sdmTMB does not currently extend to multivariate applications or support delta/hurdle models.
@@ -545,18 +479,8 @@ Third, mgcv does not have built-in functionality to calculate derived values wit
 Despite these sdmTMB advantages for the models discussed here, mgcv is an immensely powerful modelling package that extends well beyond spatial random field models.
 -->
 
-<!-- Future directions para? -->
-<!-- multivariate, but only if can keep interface simple -->
-<!-- optimized Bayes sampling -->
-<!-- residual diagnostics -->
-<!-- zero inflation -->
 <!-- MVT? time-varying epsilon, non-gaussian fields -->
-
-<!-- limitations -->
-
 <!-- 3d models, continuous time, -->
-<!-- areal models, neighbours or not, must be CAR or SAR, ... but if have centroid, could use sdmTMB... why not CAR/SAR, spatial process... not 1:1 relationship between distance and spatial correlation? neibour based only... -->
-<!-- https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.701.1636&rep=rep1&type=pdf -->
 
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
 Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-gaussian random fields [e.g., @anderson2019].
@@ -573,7 +497,9 @@ We hope the development of user-friendly interfaces such as sdmTMB opens this us
 TODO\
 Would not be possible without TMB and INLA and authors...\
 Heavily inspired by and in some places code has been adapted from VAST and glmmTMB...\
-Friendly/internal reviewers...
+Friendly/internal reviewers...\
+P.M. Regular, J. Watson\
+Splines based on mgcv
 
 # Conflict of Interest statement
 
@@ -615,22 +541,12 @@ To enable readers to locate archived data from papers, we require that authors l
 
 <!--
 
--   emphasize the niche carved out: a fast, flexible, easy-to-use, predictive-process univariate spatial or spatiotemporal GLMM, scales from maximum likelihood to penalized likelihood to full Bayesian inference
-
 -   outline the philosophy and how the functions work together
 
     -   modular
     -   familiar (similar to glm, lme4, glmmTMB, mgcv, etc.)
     -   separate fitting and predicting
     -   avoid expensive calculations unless needed
-
--   case studies
-
-    -   an SDM with time-varying depth?
-    -   an index calculation?
-    -   stitching surveys?
-
--   speed comparisons (INLA [inlabru?], VAST, mgcv, glmmTMB without predictive process?)
 
 -   intended audience: ecology, but much broader too
 
@@ -645,36 +561,3 @@ To enable readers to locate archived data from papers, we require that authors l
 ::: {#refs}
 :::
 
-```{=tex}
-\clearpage
-\beginsupplement
-```
-
-<!--
-
-### Junk to delete
-*EW: These are just placeholders -- not sure what order is best or what to highlight in very limited space*
-
-As a first example, we use a spatial dataset (`parana`) from the `geoR` package (Ribeiro Jr and Diggle 2018) that describes average May-June rainfall recorded at 143 stations in the state of Paraná, Brazil. This dataset is also well-known because it is used as an example of spatiotemporal modeling with INLA (cite INLA) book. Because the dataset doesn't include covariates and only includes a single year, we can model rainfall using an intercept and spatial component, $g(\mu_{s,t}) = b_{0} + \omega_{s}$. We assume the observation model for the rainfall data is normally distributed. The first step in fitting a model with `sdmTMB` is constructing the mesh to approximate the spatial process. This step can be done with the `make_mesh` function, which accepts the data (coordinates) and at minimum, the minimum allowed distance between points (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with INLA can also be passed in (additional examples of this are included in the SI). For example, an initial mesh with a cutoff distance of 0.1km could be made with
-
-```{r eval=FALSE, echo=TRUE}
-rain_spde = make_mesh(data = parana, c("east","north"), cutoff=0.1)
-```
-
-Second, we can fit the model using TMB with the `sdmTMB` function, whose formula syntax should be familiar to most R users,
-
-```{r eval = FALSE, echo=TRUE}
-fit = sdmTMB(data ~ 1, data=parana, spde = rain_spde)
-```
-
-As a second example, we use `sdmTMB` to analyze a 2-year dataset of Eurasian cranes (*Grus grus*) from England, UK (Soriano-Redondo et al. 2019). In the original analysis, Soriano-Redondo et al. 2019 used log Gaussian Cox process models to jointly model crane presence--absence and the spatiotemporal distribution of wetlands. We use this dataset as an example of modeling presence--absence data with sdmTMB, and only model the occurence of cranes given covariates. With any multi-year dataset, a common question of interest is often whether observations can be best described by spatial variation, or spatial and spatiotemporal variation. With two years of data, we fit two models with `sdmTMB`: a model with a spatial component but no spatiotemporal variation, and a model with only spatiotemporal variation (allowing each year to have a different spatial field). We included the same fixed effect covariates in both models: different intercepts by year, and two covariates found to be important by Soriano-Redondo et al. 2019 (wetland area, perimeter to area ratio). As a coarse comparison of data support, we compare the Akaike's Information Criterion (Akaike 1973) from each model. The model with a shared spatial field appeared to be more supported ($\Delta AIC$=25.23). The sdmTMB package allows for additional model comparisons, including k-fold cross validation with the `sdmTMB_cv` function.
-
-Third more detailed example -- something like `pcod` or a fisheries dataset, with the Tweedie distribution, use of predict() function, and creating indices of abundance?
--->
-
-
-<!-- CAR/SAR models? and why not if have...-->
-<!-- EOF paper from Jim-->
-<!-- testing that has been done... -->
-<!-- https://onlinelibrary.wiley.com/doi/abs/10.1111/gcb.15149 -->
-<!-- https://onlinelibrary.wiley.com/doi/abs/10.1111/gcb.15149 -->
