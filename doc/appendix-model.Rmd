@@ -149,7 +149,7 @@ where
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$; 
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
 * $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
-* $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
+* $\omega_{\bm{s}}$ represents a spatial component (a random field), $\omega_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\s,t}$ represents a spatiotemporal component (a random field), $\epsilon_{\s,t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
 A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
@@ -190,7 +190,7 @@ These models can be fit by including `+ breakpt(x)` in the model formula, where
 Models with logistic threshold relationships between a predictor and the response can be fit with the form
 
 $$
-s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln\ \left(19\right) \cdot \left( x-s50 \right)
+s(x)=\tau + \psi\ { \left[ 1+{ e }^{ -\ln \left(19\right) \cdot \left( x-s50 \right)
      / \left(s95 - s50 \right) } \right] }^{-1},
 $$
 
@@ -198,7 +198,7 @@ where $s$ represents the logistic function,
 $\psi$ is a scaling parameter (controlling the height of the y-axis for the response; unconstrained), 
 $\tau$ is an intercept, 
 $s50$ is a parameter controlling the point at which the function reaches 50% of the maximum ($\psi$), 
-and $s95$ is a parameter controlling the point at which the function reaches 95%. 
+and $s95$ is a parameter controlling the point at which the function reaches 95% of the maximum. 
 The parameter $s50$ is unconstrained but $s95$ is constrained to be larger than $s50$.
 
 These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
@@ -245,10 +245,10 @@ $$
 where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
 The random fields are assumed independent across time slices. 
 
-Similarly to the spatial random fields, these spatiotemporal random fields (and all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$):
+Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$):
 
 $$
-\boldsymbol{\epsilon_{t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right)
+\boldsymbol{\epsilon_{t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right).
 $$
 
 ### AR(1) spatiotemporal random fields
@@ -286,6 +286,25 @@ $$
 where the distribution of the spatiotemporal field in the initial time step is the same as for the AR(1) model, but the absence of the $\rho$ parameter allows the spatiotemporal field to be non-stationary in time.
 Note that, in contrast to the AR(1) parametrization, the variance is no longer the steady-state marginal variance.
 
+## Time-varying regression parameters
+
+Parameters can be modelled as time varying (a random walk) according to the form
+
+$$
+\begin{aligned}
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \gamma_{t} \bm{X}_{2,s,t} + \ldots \right),\\
+  \gamma_{t=1} &\sim \operatorname{Uniform} \left(-\infty, \infty \right),\\
+  \gamma_{t>1} &\sim \operatorname{Normal} \left(\gamma_{t-1}, \sigma^2_{\gamma} \right),
+\end{aligned}
+$$
+
+where $\gamma_t$ is an example optional time-varying regression parameter and $x_{\s,t}$ is the corresponding predictor value.
+This is defined via the `time_varying` argument, assuming that the `time` argument is also supplied a column name.
+For example, `time_varying ~ 0 + x`.
+The first value is given an implicit uniform prior. 
+I.e., the same variable should not appear in the fixed effect formula since the initial value is estimated as part of the time-varying formula.
+The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and, this case, the intercept should be omitted from the main effects (`formula ~ + 0 + ...` or `formula ~ -1 + ...`).
+
 ## Spatially varying coefficients (SVC)
 
 Spatially varying coefficient (SVC) models are defined as
@@ -308,26 +327,6 @@ $$
 \boldsymbol{\zeta} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\zeta^2 \boldsymbol{Q}^{-1}_\zeta\right).
 $$
 
-
-## Time-varying regression parameters
-
-Parameters can be modelled as time varying (a random walk) according to the form
-
-$$
-\begin{aligned}
-  \mu_{\s,t} &= f^{-1} \left( \ldots + \gamma_{t} x_{\s,t} + \ldots \right),\\
-  \gamma_{t=1} &\sim \operatorname{Uniform} \left(-\infty, \infty \right),\\
-  \gamma_{t>1} &\sim \operatorname{Normal} \left(\gamma_{t-1}, \sigma^2_{\gamma} \right),
-\end{aligned}
-$$
-
-where $\gamma_t$ is an example optional time-varying regression parameter and $x_{\s,t}$ is the corresponding predictor value.
-This is defined via the `time_varying` argument, assuming that the `time` argument is also supplied a column name.
-For example, `time_varying ~ 0 + x`.
-The first value is given an implicit uniform prior. 
-I.e., the same variable should not appear in the fixed effect formula since the initial value is estimated as part of the time-varying formula.
-The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and, this case, the intercept should be omitted from the main effects (`formula ~ + 0 + ...` or `formula ~ -1 + ...`).
-
 ## IID random or multi-level intercepts
 
 $$
@@ -341,7 +340,7 @@ where $\alpha_g$ is an example optional "random" intercept---an intercept
 with mean zero that varies by level $g$ and is constrained by $\sigma_\alpha$. 
 This is defined by the `formula` argument via the `(1 | g)` syntax as in lme4 or glmmTMB. 
 There can be multiple random intercepts, despite only showing one above.
-E.g., `(1 | g) + (1 | h)`, in which case they are assumed independent and uncorrelated from each other.
+E.g., `(1 | g1) + (1 | g2)`, in which case they are assumed independent and uncorrelated from each other.
 
 ## Offset terms
 
@@ -366,11 +365,10 @@ Here we describe the main observation families that are available in sdmTMB and 
 $$
 \operatorname{Binomial} \left(N, \mu \right)
 $$
-where $N$, is the size or number of trials, and $\mu$ is the probability of success for each trial.
+where $N$ is the size or number of trials, and $\mu$ is the probability of success for each trial.
 If $N = 1$, the distribution becomes the Bernoulli distribution.
 Internally, the distribution is parameterized as the [robust
 version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaecb5a18095a320b42e2d20c4b120f5f5) in TMB, which is numerically stable when probabilities approach 0 or 1.
-<!-- EW: Put lme4 and glmmTMB in '' too?-->
 Following the structure of `stats::glm()`, lme4, and glmmTMB, a binomial family can be specified in one of 4 ways:
 
 1. the response may be a factor (and the model classifies the first level versus all others)
@@ -387,7 +385,6 @@ Example: `family = binomial(link = "logit")`
 $$
 \operatorname{Beta} \left(\mu \phi, (1 - \mu) \phi \right)
 $$
-<!-- EW: betareg in ''?-->
 where $\mu$ is the mean and $\phi$ is a precision parameter.
 This parametrization follows @ferrari2004 and the betareg R package [@cribari-neto2010].
 The variance is $\mu (1 - \mu) / (\phi + 1)$.
@@ -494,7 +491,7 @@ $$
 $$
 
 where $\mu$ is the mean, $p$ is the power parameter constrained between 1 and 2, and $\phi$ is the dispersion parameter.
-The Tweedie distribution can be helpful for modelling data that positive and continuous but also contains zeros.
+The Tweedie distribution can be helpful for modelling data that are positive and continuous but also contains zeros.
 
 Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ to constrain it between 1 and 2 and \texttt{thetaf} is estimated as an unconstrained variable.
 
@@ -504,7 +501,7 @@ Example: `family = tweedie(link = "log")`
 
 # Gaussian random fields
 
-## Matern parameterization
+## Matérn parameterization
 
 The Matérn defines the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$ as 
 
@@ -544,13 +541,13 @@ $$
 
 ## Anisoptropy
 
-TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance [@fuglstad2015a], and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\textbf{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$.
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance [@fuglstad2015a], and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\boldsymbol{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$.
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled. 
 
 ## Barrier mesh
 
-In some cases the spatial domain of interest may be complex and bordered by land or water (e.g., coastlines, islands, lakes). 
+In some cases the spatial domain of interest may be complex and bounded by some barrier such as by land or water (e.g., coastlines, islands, lakes). 
 SPDE models allow for barriers to be included via barrier meshes [@bakka2019]. 
 With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`. 
 The barriers must be constructed as `sf` objects [@pebesma2018] with polygons defining the barriers. 
