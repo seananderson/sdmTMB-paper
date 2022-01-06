@@ -1,8 +1,10 @@
 ---
 title: "Annotated example of index standardization with VAST"
 output:
-  pdf_document:
-    highlight: tango
+  bookdown::pdf_document2:
+    highlight: pygments
+    toc: true
+    number_sections: true
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}

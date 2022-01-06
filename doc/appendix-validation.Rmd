@@ -2,7 +2,9 @@
 title: "Appendix 6: sdmTMB model validation and speed-testing methods"
 output:
   bookdown::pdf_document2:
+    highlight: pygments
     toc: true
+    number_sections: true
 number_sections: false
 fig_caption: true
 highlight: "monochrome"

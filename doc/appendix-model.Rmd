@@ -2,6 +2,7 @@
 title: "Appendix 1: sdmTMB statistical model description"
 output:
   bookdown::pdf_document2:
+    highlight: pygments
     toc: true
     number_sections: true
 fig_caption: true
@@ -146,11 +147,13 @@ where
 * $\bm{\beta}$ represents a vector of fixed-effect coefficients;
 * $O_{\s,t}$ represents an offset: a covariate (usually log transformed) with a coefficient fixed at one;
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$; 
-<!-- should alpha_g be bold as in the equation above? --><!-- EW: yes -- alpha_g should be bolded here -->
 * $\gamma_{t}$ represents time-varying coefficients (a random walk), $\gamma_{t} \sim \mathrm{N}(\gamma_{t-1},\sigma^2_\gamma)$;
 * $\zeta_{\bm{s}}$ represents spatially varying coefficients (a random field), $\zeta_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\zeta)$;
 * $\omega_{\bm{s}}$ represents a random spatial component (a random field), $\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field), $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
+
+<!-- should alpha_g be bold as in the equation above? -->
+<!-- EW: yes -- alpha_g should be bolded here -->
 
 A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
 
@@ -232,7 +235,7 @@ This has been chosen to match the representation in VAST [@thorson2019].
 The marginal standard deviation of $\boldsymbol{\epsilon}_t$ is indicated by `Spatiotemporal SD` in the model output or as `sigma_E` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
 
 ### IID spatiotemporal random fields
-<-- EW: as above, I changed epsilon to be subscripted with s throughout this section-->
+<!-- EW: as above, I changed epsilon to be subscripted with s throughout this section-->
 IID spatiotemporal random fields (`spatiotemporal = 'iid'`) can be represented as
 
 $$
@@ -337,7 +340,7 @@ I.e., the same variable should not appear in the fixed effect formula since the 
 The formula `time_varying = ~ 1` implicitly represents a time-varying intercept and, this case, the intercept should be omitted from the main effects (`formula ~ + 0 + ...` or `formula ~ -1 + ...`).
 
 ## IID random or multi-level intercepts
-<-- EW: make alpha bold here, as above?-->
+<!-- EW: make alpha bold here, as above?-->
 $$
 \begin{aligned}
   \mu_{\s,t} &= f^{-1} \left( \ldots + \alpha_{g} + \ldots \right),\\
@@ -379,7 +382,7 @@ where $N$, is the size or number of trials, and $\mu$ is the probability of succ
 If $N = 1$, the distribution becomes the Bernoulli distribution.
 Internally, the distribution is parameterized as the [robust
 version](https://kaskr.github.io/adcomp/group__R__style__distribution.html#gaecb5a18095a320b42e2d20c4b120f5f5) in TMB, which is numerically stable when probabilities approach 0 or 1.
-<-- EW: Put lme4 and glmmTMB in '' too?-->
+<!-- EW: Put lme4 and glmmTMB in '' too?-->
 Following the structure of `stats::glm()`, lme4, and glmmTMB, a binomial family can be specified in one of 4 ways:
 
 1. the response may be a factor (and the model classifies the first level versus all others)
@@ -396,7 +399,7 @@ Example: `family = binomial(link = "logit")`
 $$
 \operatorname{Beta} \left(\mu \phi, (1 - \mu) \phi \right)
 $$
-<<- EW: betareg in ''?-->
+<!-- EW: betareg in ''?-->
 where $\mu$ is the mean and $\phi$ is a precision parameter.
 This parametrization follows @ferrari2004 and the betareg R package [@cribari-neto2010].
 The variance is $\mu (1 - \mu) / (\phi + 1)$.
@@ -410,7 +413,7 @@ Example: `family = Beta(link = "logit")`
 $$
 \operatorname{Gamma} \left( \phi, \frac{\mu}{\phi}  \right)
 $$
-<-- EW: check this, I think the Gamma variance should be mu * phi2 -->
+<!-- EW: check this, I think the Gamma variance should be mu * phi2 -->
 where $\phi$ represents the Gamma shape and $\mu / \phi$ represents the scale. 
 The mean is $\mu$ and variance is $\mu \cdot \phi^2$.
 
@@ -441,7 +444,7 @@ If $\boldsymbol{x}$ is lognormally distributed, $\mathbb{E}[\log(\boldsymbol{x})
 This translates to $\mathbb{E}[\boldsymbol{x}] = \exp(\mu + \phi^2 / 2)$ and $\mathrm{Var}[\boldsymbol{x}] = \left(\exp(\phi^2) - 1 \right) \cdot \exp(2 \mu + \phi^2)$.
 
 TODO: did this get reversed above? Isn't it set up so the mean(x) is mu?
-<-- EW: the lognormal definition above includes the bias correction phi2/2, but that's not in the standard implementations in R, etc. I think I used those R functions or referenced Wikipedia in writing the equations out. So we should pick one or the other. I think just changing the definition to not include the bias correction would keep it consistent with R, https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Lognormal.html-->
+<!-- EW: the lognormal definition above includes the bias correction phi2/2, but that's not in the standard implementations in R, etc. I think I used those R functions or referenced Wikipedia in writing the equations out. So we should pick one or the other. I think just changing the definition to not include the bias correction would keep it consistent with R, https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Lognormal.html-->
 Code defined [within sdmTMB](https://github.com/pbs-assess/sdmTMB/blob/18a39eabc111e2179fa589f942c8820d87ad10df/src/utils.h#L47-L54) based on the TMB `dnorm()` normal density.
 
 Example: `family = lognormal(link = "log")`

@@ -1,8 +1,8 @@
 ---
 title: "Appendix 4: Dynamic species distribution model comparison between INLA, inlabru, and sdmTMB"
 output:
-  pdf_document:
-    highlight: tango
+  bookdown::pdf_document2:
+    highlight: pygments
     toc: true
     number_sections: true
 ---
@@ -18,6 +18,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+In this example, we will fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
+We will use a binomial distribution and a logit link.
+
+We will start by loading necessary packages:
 
 ```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
 library(ggplot2)
@@ -28,18 +32,16 @@ library(inlabru)
 theme_set(theme_light())
 ```
 
-In this example, we will fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
-We will use a binomial distribution and a logit link.
 We will use a data set built into the package: trawl survey data for Pacific cod in Queen Charlotte Sound as described in earlier appendices.
 INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
 
 ```{r}
 d <- pcod %>% filter(year >= 2007)
 yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
-d <- dplyr::left_join(d, yr_lu)
+d <- dplyr::left_join(d, yr_lu, by = "year")
 ```
 
-In this example, we will use Penalized Complexity (PC) priors on the range and random field standard deviation ("sigma") for models built in INLA and sdmTMB.
+We will use Penalized Complexity (PC) priors on the range and random field standard deviation ("sigma") for models built in INLA, inlabru, and sdmTMB.
 The values amount to the probability the range is below a lower limit (e.g., `P(range < 5) = 0.05`) and that the sigma is above an upper limit (e.g., `P(sigma > 5) = 0.05`).
 
 ```{r set-priors, echo = TRUE, cache=FALSE}
@@ -48,7 +50,7 @@ sigma_max <- 5
 prior_prob <- 0.05
 ```
 
-In INLA a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `priors = sdmTMBpriors(ar1_rho = normal(0, 1))`).
+In INLA, a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `priors = sdmTMBpriors(ar1_rho = normal(0, 1))`).
 
 ```{r}
 h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
@@ -110,8 +112,7 @@ m_inla <- inla(formula,
   family = "binomial",
   control.family = list(link = "logit"),
   control.fixed = list(expand.factor.strategy = "inla", mean = 0, prec = 1 / (100 * 100)),
-  control.inla = list(int.strategy = "eb", strategy = "gaussian"),
-  control.compute = list(config = TRUE)
+  control.inla = list(int.strategy = "eb", strategy = "gaussian")
 )
 tictoc::toc() # stop timing
 
@@ -236,7 +237,7 @@ post_sdmTMB <- post_sdmTMB %>%
 
 We can then compare the distribution of these sdmTMB simulations to the marginal posterior densities from INLA.
 From INLA, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the sdmTMB `gather_sims()` function.
-Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the INLA model posterior.
+Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the INLA model posterior assuming we had set `control.compute = list(config = TRUE)`.
 
 ```{r inla-densities}
 x <- list()
@@ -276,6 +277,8 @@ post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
   )
 ))
 ```
+
+In this plot, the blue histograms are from sdmTMB and the density lines are from INLA:
 
 ```{r compare-plot, out.width="6in"}
 ggplot(post_inla2) +
@@ -320,7 +323,7 @@ Or, we can make the prediction with inlabru. To do that, we must recreate `i_yea
 
 ```{r inlabru-pred, out.width="6in"}
 nd_bru <- nd
-nd_bru <- dplyr::left_join(nd_bru, yr_lu)
+nd_bru <- dplyr::left_join(nd_bru, yr_lu, by = "year")
 sp::coordinates(nd_bru) <- c("X", "Y")
 nd_bru <- as(nd_bru, "SpatialPixelsDataFrame")
 pred_bru <- predict(m_bru, data = nd_bru, formula = ~ plogis(f + fac))

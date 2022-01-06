@@ -1,12 +1,11 @@
 ---
 title: "Appendix 3: Example of a spatially varying effect of climate on citizen science count data with sdmTMB"
 output:
-  pdf_document:
-    highlight: tango
+  bookdown::pdf_document2:
+    highlight: pygments
     toc: true
     number_sections: true
 urlcolor: blue
-highlight: "monochrome"
 bibliography: refs.bib
 ---
 
@@ -23,13 +22,6 @@ knitr::opts_chunk$set(
 ```
 
 # Introduction
-
-```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
-library(ggplot2)
-library(dplyr)
-library(sdmTMB)
-library(sf)
-```
 
 This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
 We will use counts of Snowy Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc]. 
@@ -48,6 +40,13 @@ Because both productivity and the choice of wintering location could be influenc
 Our model will span the southern boundary of their winter distribution in North America, the only portion of their range well surveyed by CBCs. 
 
 # Preparation of spatial data
+
+```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+library(sf)
+```
 
 ```{r load-data, cache=FALSE} 
 snow <- readRDS(here::here("data/SNOW_data.rds"))
@@ -69,7 +68,7 @@ mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 plot(mesh)
 ```
 
-The result is a mesh with `r mesh$mesh$n` knots. 
+The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) knots. 
 
 Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. The dataframe also contains the Southern Oscillation Index (SOI), which is related to El Niño cycles, but we will only consider NAO in this example because any effect of SOI was even weaker. 
 
@@ -183,14 +182,14 @@ if (!rds_saved2) {
 
 Print the model to inspect the fit:
 
-```{r check, echo=FALSE, include = FALSE, cache=FALSE, eval=TRUE}
+```{r check, echo=FALSE, include = FALSE, eval=TRUE}
 if (rds_saved2) {
   m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
-  m # loading this twice just prevents some excess messages from cluttering the output when printing below
+  m # printing this first just prevents some excess messages from cluttering the output when printing below
 }
 ```
 
-```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
+```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE}
 print(m)
 ```
 
@@ -237,8 +236,8 @@ qqline(r_mcmc)
 ```
 
 We can also test for zero-inflation using the `simulate.sdmTMB` function and a couple functions from the DHARMa package.
-If our data was zero-inflated or overdispersed, we might have needed to use a delta (aka. hurdle) model instead. 
-This is not built in to sdmTMB, but can be achieve using the steps in the vignette [Fitting delta models with sdmTMB](https://https://pbs-assess.github.io/sdmTMB/articles/delta-models.html).
+If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead. 
+This is not built directly into sdmTMB, but can be achieved by fitting the two components separately. See the steps in the vignette [Fitting delta models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/delta-models.html).
 
 ```{r zero-test, echo=TRUE, message=FALSE}
 s_nb2 <- simulate(m, nsim = 500)
