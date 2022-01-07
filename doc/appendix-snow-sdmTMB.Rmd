@@ -30,7 +30,7 @@ Circle locations are chosen by local volunteers and therefore reflect both locat
 Each circle (given a unique ID) is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
 While these locations are not random, the consistent sampling through time still make them useful for exploring spatiotemporal processes. 
 
-Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants appearing across mid latitudes of North America in winter.
+Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 On average a positive NAO index results in colder and drier conditions in northern Canada and mild and wetter conditions in the eastern United States [@liu2021]. 
@@ -63,7 +63,7 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh, echo=TRUE, cache=FALSE, out.width="5.5in"}
+```{r mesh, echo=TRUE, cache=FALSE, out.width="70%"}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 plot(mesh)
 ```
@@ -79,18 +79,21 @@ ggplot(snow, aes(year, count, colour = nao)) +
   theme_light()
 ```
 
-# Model fitting
+# Model fitting with `sdmTMB`
 
 First, we will try fitting GLMMs (generalized linear mixed effects models) with a few different distributions appropriate for count data. 
 <!-- We will use `normalize = TRUE` to speed up optimization.  -->
-Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output.
-
+<!-- Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output. -->
 Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. 
 Therefore, effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
 Because there does not appear to be much correlation between years, year will be included as a random factor: `(1 | year_f)`. 
 We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "iid"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
 The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 
 If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`.
+It might also be appropriate to include count ID as another random effect (`(1 | CBCID)`) to account for consistent differences in habitat and human observers between count circles. 
+But since its inclusion doesn't change our main result and it slows model fitting, we will rely on the spatial random effects to link observations in the same location for this example. 
+
+
 Since these models will take a while to fit, in practice, we might set `silent = FALSE` to monitor optimization progress. 
 However, we will maintain the default `silent = TRUE` to avoid cluttering the document with the output.
 
@@ -134,8 +137,10 @@ m2 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
 )
 ```
 
+
 # Model validation
 
+<!-- ## Basic inspection -->
 ```{r save-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=TRUE}
 if (!rds_saved) {
   saveRDS(m0, here::here("data/snow_w_main_effect_0_150km.rds"))
@@ -157,13 +162,14 @@ AIC(m0, m1, m2)
 ```
 
 According to AIC, the `nbinom2()` (negative binomial, NB2) distribution appears to have the most parsimonious fit. 
-We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model. 
+We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model and check that the gradients are all small enough.
+If the gradients aren't quite small enough, we can easily run additional optimization steps using the `run_extra_optimization()` function.
 
 ```{r rds2, echo=FALSE, cache=FALSE}
 rds_saved2 <- file.exists(here::here("data/snow_w_main_effect_150km_reml.rds"))
 ```
 
-```{r fit-negb2-reml, echo=TRUE, eval=!rds_saved2, warning=FALSE}
+```{r fit-negb2-reml, echo=TRUE, eval=!rds_saved2, warning=FALSE, cache=FALSE}
 m <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial_varying = ~ 0 + nao,
   time = "year", 
@@ -174,6 +180,10 @@ m <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   data = snow, mesh = mesh,
   silent = TRUE
 )
+
+if (max(m$gradients) > 0.01) {
+  m <- run_extra_optimization(m, newton_loops = 1L, nlminb_loops = 0L)
+}
 ```
 
 ```{r save-reml-model, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=FALSE}
@@ -184,20 +194,20 @@ if (!rds_saved2) {
 
 Print the model to inspect the fit:
 
-```{r check, echo=FALSE, include = FALSE, eval=TRUE}
+```{r check, echo=FALSE, include=FALSE, eval=TRUE, cache=FALSE}
 if (rds_saved2) {
   m <- readRDS(here::here("data/snow_w_main_effect_150km_reml.rds"))
   m # printing this first just prevents some excess messages from cluttering the output when printing below
 }
 ```
 
-```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE}
+```{r print-fit, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
 print(m)
 ```
 
 View the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`.
 
-```{r tidy}
+```{r tidy, cache=FALSE}
 tidy(m, conf.int = TRUE)
 tidy(m, effects = "ran_pars", conf.int = TRUE)
 ```
@@ -210,9 +220,12 @@ pred$resid <- residuals(m)
 ```
 
 <!-- \clearpage -->
+
+<!-- ## Checking residuals -->
+
 We can inspect randomized quantile residuals, although this method has known issues. 
 
-```{r qqnorm, out.width = "33%"}
+```{r qqnorm, out.width="33%"}
 qqnorm(pred$resid)
 qqline(pred$resid)
 ```
@@ -232,7 +245,7 @@ saveRDS(r_mcmc, "data/mcmc_residuals.rds")
 r_mcmc <- readRDS(here::here("data/mcmc_residuals.rds"))
 ```
 
-```{r stan-qqnorm, out.width = "33%"}
+```{r stan-qqnorm, out.width="33%"}
 qqnorm(r_mcmc)
 qqline(r_mcmc)
 ```
@@ -264,7 +277,7 @@ theme_set(theme_bw() + theme(
 )) 
 ```
 
-```{r plot-resids, fig.width = 8}
+```{r plot-resids, fig.width=8}
 ggplot(pred, aes(X, Y, colour = resid)) +
   geom_point(size = 0.25) +
   facet_wrap(~year) +
@@ -273,23 +286,92 @@ ggplot(pred, aes(X, Y, colour = resid)) +
   theme(axis.text = element_blank(), axis.ticks = element_blank())
 ```
 
-<!-- # ```{r} -->
-<!-- # library(future) -->
-<!-- # plan(multisession) -->
-<!-- # m_cv <- sdmTMB_cv(count ~ 1 + nao + (1 | year_f), -->
-<!-- #   spatial_varying = ~ 0 + nao, -->
-<!-- #   time = "year",  -->
-<!-- #   spatial = "on",  -->
-<!-- #   spatiotemporal = "iid", -->
-<!-- #   family = nbinom2(link = "log"), -->
-<!-- #   # reml = TRUE, -->
-<!-- #   use_initial_fit = TRUE, -->
-<!-- #   data = snow, mesh = mesh, -->
-<!-- #   k_folds = 10 -->
-<!-- # ) -->
-<!-- # m_cv -->
-<!-- # ``` -->
+<!-- ## Cross-validation -->
 
+<!-- Cross-validation can also be used to assess model performance. -->
+<!-- Here, we use the `future` package to speed up the running of multiple models and save a smaller version of the output that doesn't include the full model information. -->
+<!-- We use `k_folds = 5`, which amounts to training on 80% of the data and testing with 20% for each model. -->
+<!-- Block cross-validation, which can be done using custom folds defined using the `fold_ids` argument, is generally recommended for spatiotemporal data. -->
+<!-- However, random folds created by `sdmTMB_cv()` are appropriate in this case, because we are only interested in predicting within the spatial and temporal range of our data and are attempting to estimate the spatial variation in the effect of NAO. -->
+
+<!-- ```{r cv, eval=FALSE, cache=FALSE} -->
+<!-- library(future) -->
+<!-- plan(multisession) -->
+<!-- options(future.rng.onMisuse = "ignore") -->
+
+<!-- m_cv <- sdmTMB_cv(count ~ 1 + nao + (1 | year_f), -->
+<!--   spatial_varying = ~ 0 + nao, -->
+<!--   time = "year", -->
+<!--   spatial = "on", -->
+<!--   spatiotemporal = "iid", -->
+<!--   family = nbinom2(link = "log"), -->
+<!--   reml = TRUE, -->
+<!--   use_initial_fit = TRUE, -->
+<!--   data = snow, mesh = mesh, -->
+<!--   k_folds = 5 -->
+<!-- ) -->
+<!-- plan(sequential) -->
+<!-- saveRDS(m_cv, file = here::here("data/owlcvallreml.rds")) -->
+<!-- # m_cv$models[[1]] # to retrieve just the model built excluding the first fold -->
+<!-- cv <- m_cv -->
+<!-- cv$models <- NA -->
+<!-- saveRDS(cv, file = here::here("data/owlcvdatreml.rds")) -->
+<!-- ``` -->
+
+<!-- First, we should check that all the models converged and have gradients < 0.01. -->
+
+<!-- ```{r explore-cv, message=FALSE, cache=FALSE} -->
+<!-- cv <- readRDS(here::here("data/owlcvdatreml.rds")) -->
+<!-- cv$converged -->
+<!-- max(cv$max_gradients) -->
+<!-- ``` -->
+
+<!-- If we were conducting model selection, we might contrast the log likelihoods (`cv$sum_loglik`), and the expected log predictive density (`cv$elpd`) for the left out data between different model configurations instead of relying on AIC. -->
+<!-- We can also check the prediction accuracy on left-out data by plotting the `cv_predicted` against the observed `count` in log space. -->
+
+<!-- ```{r cv-pred-obs, out.width="70%", cache=FALSE} -->
+<!-- cvdat <- cv$data %>% filter(cv_loglik > -60) # this removes one extreme outlier -->
+<!-- ggplot(cvdat, aes(log(count + 1), log(cv_predicted + 1), colour = -cv_loglik)) + -->
+<!--   geom_abline(slope = 1, colour = "gray") + -->
+<!--   geom_point(size = 2, alpha = 0.25) + -->
+<!--   scale_colour_viridis_c( -->
+<!--     direction = -1, option = "A", begin = 0.2, end = 0.9 -->
+<!--   ) + -->
+<!--   coord_fixed(ylim = c(0, 3.8)) + -->
+<!--   theme_bw() -->
+<!-- ``` -->
+
+<!-- These predictions for left-out locations match the observed counts just as well as those based on the model built using all the data shown below. -->
+<!-- # Does this mean that we are at least not over-fit, despite the spatiotemporal random fields and spatially varying coefficient? -->
+
+<!-- ```{r full-pred-obs, echo=FALSE, out.width="70%"} -->
+<!-- ggplot(pred, aes(log(count + 1), log(exp(est) + 1), colour = resid)) + -->
+<!--   geom_abline(slope = 1, colour = "gray") + -->
+<!--   # geom_point(size = 0.75, alpha=0.5) + facet_wrap(~year) + -->
+<!--   geom_point(size = 2, alpha = 0.25) + -->
+<!--   coord_fixed(ylim = c(0, 3.8)) + -->
+<!--   scale_colour_viridis_c( -->
+<!--     "residuals", -->
+<!--     direction = -1, option = "A", begin = 0.2, end = 0.9 -->
+<!--   ) + -->
+<!--   theme_bw() #+ theme(strip.background = element_rect(fill = NA, colour = NA)) -->
+<!-- ``` -->
+
+<!-- We can also explore the spatiotemporal variation in the predictive accuracy of our model by plotting the `cv_loglik`. -->
+
+<!-- ```{r cv-map, cache = FALSE} -->
+<!-- ggplot(cvdat, aes(X, Y, colour = -cv_loglik)) + -->
+<!--   geom_point(size = 0.25) + -->
+<!--   scale_colour_viridis_c( -->
+<!--     direction = -1, option = "A", begin = 0.2, end = 0.9, -->
+<!--     guide = guide_colourbar(title.position = "top") -->
+<!--   ) + -->
+<!--   coord_fixed() + -->
+<!--   theme(axis.text = element_blank(), axis.ticks = element_blank()) + -->
+<!--   facet_wrap(~year) -->
+<!-- ``` -->
+
+\clearpage
 
 # Plotting spatial predictions
 
@@ -297,7 +379,8 @@ To produce pretty maps of these predictions, we back transformed the spatial coo
 
 ```{r proj-p}
 p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
-p_proj <- p %>% mutate(x = X, y = Y) %>% sf::st_as_sf(coords = c("x", "y"), crs = Albers)
+p_proj <- p %>% mutate(x = X, y = Y) %>%
+  sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
 We retrieved continental coastlines from the package rnaturalearth and outlines of the great lakes from <http://www.naturalearthdata.com/> and transformed them to the correct projection.
