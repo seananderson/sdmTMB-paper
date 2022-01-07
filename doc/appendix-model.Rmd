@@ -83,7 +83,7 @@ symbols <- tibble::tribble(
   "$\\zeta_{\\s, t}^*$", "\\texttt{zeta\\_t\\_A}", "Spatially varying coefficient random field at point $\\s$ and time $t$ (interpolated)",
   "$\\epsilon_{\\s, t}$", "\\texttt{epsilon\\_st}", "Spatiotemporal random field at point $\\s$ and time $t$ (knot)",
   "$\\epsilon_{\\s, t}^*$", "\\texttt{epsilon\\_st\\_A}", "Spatiotemporal random field at point $\\s$ and time $t$ (interpolated)",
-  "$\\delta_{\\s,t}$", "\\texttt{b\\_t}", "AR1 or random walk spatiotemporal deviations (knot)",
+  "$\\delta_{\\s,t}$", "\\texttt{b\\_t}", "AR(1) or random walk spatiotemporal deviations (knot)",
   "$\\alpha_g$", "\\texttt{RE}", "IID random intercept deviation for group $g$",
   
   "$\\boldsymbol{\\Sigma}_\\omega$", "\\texttt{-}", "Spatial random field covariance matrix",
@@ -122,7 +122,7 @@ knitr::kable(symbols, caption = "Symbol notation, code representation (in model 
 
 # sdmTMB model structure
 
-The complete sdmTMB model can be written as:
+The complete sdmTMB model can be written as
 
 $$
 \begin{aligned}
@@ -215,16 +215,16 @@ $$
 $$
 The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatial SD` in the model output or as `sigma_O` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
 
-Internally, the random fields follow a Gaussian Markov random field (GMRF):
+Internally, the random fields follow a Gaussian Markov random field (GMRF)
 
 $$
-\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right)
+\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\omega^2 \boldsymbol{Q}^{-1}_\omega\right),
 $$
 where $\boldsymbol{Q}_\omega$ is a sparse precision matrix and $\sigma_\omega^2$ is the marginal variance.
   
 ## Spatiotemporal random fields
 
-Spatiotemporal random fields are included by default if there are multiple time elements (`time` argument is not `NULL`) and can be set to IID (`'iid'`; default), AR1 (`'ar1'`), random walk (`'rw'`), or off (`'off'`) via the `spatiotemporal` argument.
+Spatiotemporal random fields are included by default if there are multiple time elements (`time` argument is not `NULL`) and can be set to IID (independent and identically distributed, `'iid'`; default), AR(1) (`'ar1'`), random walk (`'rw'`), or off (`'off'`) via the `spatiotemporal` argument.
 These text values are case insensitive.
 
 Spatiotemporal random fields are represented by $\boldsymbol{\epsilon}_t$ within sdmTMB. 
@@ -245,7 +245,7 @@ $$
 where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
 The random fields are assumed independent across time slices. 
 
-Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$):
+Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$)
 
 $$
 \boldsymbol{\epsilon_{t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right).
@@ -321,7 +321,7 @@ Usually, $\bm{X}_{3,t}$ would represent a predictor that is constant spatially f
 Currently, $\bm{X}_{3,t}$ is restricted to a single covariate (column vector), supplied by a one-sided formula to `spatial_varying`.
 For example `spatial_varying = ~ 0 + x`, where `0` omits the intercept.
 
-The random fields are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\zeta$):
+The random fields are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\zeta$)
 
 $$
 \boldsymbol{\zeta} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\zeta^2 \boldsymbol{Q}^{-1}_\zeta\right).
@@ -491,7 +491,7 @@ $$
 $$
 
 where $\mu$ is the mean, $p$ is the power parameter constrained between 1 and 2, and $\phi$ is the dispersion parameter.
-The Tweedie distribution can be helpful for modelling data that are positive and continuous but also contains zeros.
+The Tweedie distribution can be helpful for modelling data that are positive and continuous but also contain zeros.
 
 Internally, $p$ is transformed from $\mathrm{logit}^{-1} (\texttt{thetaf}) + 1$ to constrain it between 1 and 2 and \texttt{thetaf} is estimated as an unconstrained variable.
 
@@ -525,15 +525,15 @@ The spatially varying coefficient field always shares $\kappa$ with the spatial 
 
 ## Projection $\boldsymbol{A}$ matrix
 
-The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates from the knot locations to the values at the locations of the observed or predicted data [@lindgren2015]:
+The values of the spatial variables at the knots are multiplied by a projection matrix $\boldsymbol{A}$ that bilinearly interpolates from the knot locations to the values at the locations of the observed or predicted data [@lindgren2015]
 
 $$
 \boldsymbol{\omega}^* = \boldsymbol{A} \boldsymbol{\omega},
 $$
 where $\boldsymbol{\omega}^*$ represents the values of the spatial random fields at the observed locations or predicted data locations.
 The matrix $\boldsymbol{A}$ has a row for each data point or prediction point and a column for each knot.
-Three non-zero elements on each row define the weight of the neighbouring 3 knot locations for location $s$.
-The same bilinear interpolation happens for any spatiotemporal random fields and $\boldsymbol{\epsilon}_t$:
+Three non-zero elements on each row define the weight of the neighbouring 3 knot locations for location $\s$.
+The same bilinear interpolation happens for any spatiotemporal random fields
 
 $$
 \boldsymbol{\epsilon}_t^* = \boldsymbol{A} \boldsymbol{\epsilon}_t.
