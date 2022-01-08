@@ -18,6 +18,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Background
+
 In this example, we will fit a presence-absence species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
 We will use a binomial distribution and a logit link.
 
@@ -83,6 +85,7 @@ plot(spde$mesh, main = "", asp = 1)
 title(main = "INLA mesh")
 ```
 
+
 # INLA
 
 Data preparation for INLA models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
@@ -115,10 +118,13 @@ m_inla <- inla(formula,
   control.inla = list(int.strategy = "eb", strategy = "gaussian")
 )
 tictoc::toc() # stop timing
-
-summary(m_inla)
-inla_coefs <- m_inla$summary.fixed[, c("mean", "sd")]
 ```
+
+
+```{r}
+summary(m_inla)
+```
+
 
 # inlabru
 
@@ -158,16 +164,16 @@ m_bru <- bru(
 tictoc::toc()
 ```
 
+
 ```{r}
 summary(m_bru)
-
-m_inla$summary.hyperpar[, c("mean", "sd")]
-m_bru$summary.hyperpar[, c("mean", "sd")]
-
-bru_coefs <- m_bru$summary.random$fac[, c("ID", "mean", "sd")]
-m_inla$summary.fixed[,c("mean", "sd")]
-bru_coefs
 ```
+
+
+```{r}
+m_bru$summary.random$fac[, c("ID", "mean", "sd", "0.025quant", "0.975quant")]
+```
+
 
 # sdmTMB
 
@@ -196,17 +202,40 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
 tictoc::toc()
 ```
 
-```{r sdmtmb-coefs}
+
+```{r sdmtmb-m}
 print(m)
-tidy(m, "ran_pars", conf.int = TRUE)
-sdmTMB_coefs <- tidy(m, effects = "fixed", conf.int = TRUE)
 ```
+
+We can most easily extract the fixed-effect estimates and confidence intervals using smdTMB's `tidy()` function.
+
+```{r sdmtmb-coefs}
+sdmTMB_coefs <- tidy(m, effects = "fixed", conf.int = TRUE)
+sdmTMB_coefs
+```
+
+\clearpage
 
 # Comparison
 
-Comparing the fixed effects between `sdmTMB()` and `inla()` shows the estimates are very similar:
+The estimates for the spatial parameters are very similar between the INLA-based models and `sdmTMB()`:
 
-```{r coef-plot, out.width="5.5in"}
+```{r}
+# INLA
+m_inla$summary.hyperpar[, c("mean", "sd", "0.025quant", "0.975quant")]
+
+# inlabru
+m_bru$summary.hyperpar[, c("mean", "sd", "0.025quant", "0.975quant")]
+
+# sdmTMB
+tidy(m, "ran_pars", conf.int = TRUE)
+```
+
+Note that the standard errors for variance terms are not in natural and not log space and so are a very rough approximation and therefore not reported by the `tidy()` function.
+
+Comparing the fixed effects shows the estimates from all three models are also very similar:
+
+```{r coef-plot, fig.asp=0.4, out.width="85%"}
 inla_coefs <- m_inla$summary.fixed[, c("0.025quant", "mean", "0.975quant")] %>% 
   rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>% 
   mutate(term = unique(sdmTMB_coefs$term), model = "INLA")
@@ -292,14 +321,15 @@ ggplot(post_inla2) +
 
 # Annual distribution maps
 
-We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space.
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space. 
+The resulting values are in link space and require the appropriate inverse-link transformation, in this case `plogis()`, to produce occurrence probabilities.
 
 ```{r sdm-predictions}
 nd <- filter(qcs_grid, year >= 2007)
 pred <- predict(m, newdata = nd)
 ```
 
-```{r maps, cache=FALSE, out.width="6in"}
+```{r maps, cache=FALSE, out.width="5.5in"}
 ggplot(pred) +
   geom_raster(aes(X, Y, fill = plogis(est))) +
   facet_wrap(~year) +
@@ -307,29 +337,31 @@ ggplot(pred) +
   coord_fixed()
 ```
 
-Similar predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
+We can make similar predictions with inlabru using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation:
 
-```{r inla-pred, out.width="6in"}
-idx <- inla.stack.index(sdat, "stdata")$data
-d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
-ggplot(d) +
-  geom_point(aes(X, Y, colour = inla_pred), size = 2) +
-  facet_wrap(~year) +
-  scale_colour_viridis_c() +
-  coord_fixed()
-```
-
-Or, we can make the prediction with inlabru. To do that, we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and use the inverse-link transformation `plogis()`:
-
-```{r inlabru-pred, out.width="6in"}
+```{r inlabru-pred, out.width="5.5in"}
 nd_bru <- nd
 nd_bru <- dplyr::left_join(nd_bru, yr_lu, by = "year")
 sp::coordinates(nd_bru) <- c("X", "Y")
 nd_bru <- as(nd_bru, "SpatialPixelsDataFrame")
 pred_bru <- predict(m_bru, data = nd_bru, formula = ~ plogis(f + fac))
+
 ggplot(as.data.frame(pred_bru)) +
   geom_raster(aes(X, Y, fill = mean)) +
   facet_wrap(~year) +
   scale_fill_viridis_c() +
+  coord_fixed()
+```
+
+Similar predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
+
+```{r inla-pred, out.width="5.5in"}
+idx <- inla.stack.index(sdat, "stdata")$data
+d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
+
+ggplot(d) +
+  geom_point(aes(X, Y, colour = inla_pred), size = 2) +
+  facet_wrap(~year) +
+  scale_colour_viridis_c() +
   coord_fixed()
 ```
