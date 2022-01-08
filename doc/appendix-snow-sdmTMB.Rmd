@@ -80,7 +80,7 @@ ggplot(snow, aes(year, count, colour = nao)) +
   theme_light()
 ```
 
-# Model fitting with `sdmTMB`
+# Model structure
 
 First, we will try fitting GLMMs (generalized linear mixed effects models) with a few different distributions appropriate for count data. 
 <!-- We will use `normalize = TRUE` to speed up optimization.  -->
@@ -91,7 +91,7 @@ Because there does not appear to be much correlation between years, year will be
 We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "iid"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
 The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 
 If years in sequence were strongly correlated with each other, we could use a random walk to link their mean estimates by setting `time_varying = ~ 1`.
-It might also be appropriate to include count ID as another random effect (`(1 | CBCID)`) to account for consistent differences in habitat and human observers between count circles. 
+It might also be appropriate to include count ID as another random effect `(1 | CBCID)` to account for consistent differences between count circles in habitat and human observers. 
 But since its inclusion doesn't change our main result and it slows model fitting, we will rely on the spatial random effects to link observations in the same location for this example. 
 
 
@@ -141,7 +141,7 @@ m2 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
 
 # Model validation
 
-<!-- ## Basic inspection -->
+## Basic inspection
 ```{r save-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=TRUE}
 if (!rds_saved) {
   saveRDS(m0, here::here("data/snow_w_main_effect_0_150km.rds"))
@@ -222,7 +222,7 @@ pred$resid <- residuals(m)
 
 <!-- \clearpage -->
 
-<!-- ## Checking residuals -->
+## Checking residuals
 
 We can inspect randomized quantile residuals, although this method has known issues. 
 
