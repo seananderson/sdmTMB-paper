@@ -43,6 +43,7 @@ Our model will span the southern boundary of their winter distribution in North 
 
 ```{r packages, message=FALSE, warning=FALSE, cache=FALSE}
 library(ggplot2)
+library(patchwork)
 library(dplyr)
 library(sdmTMB)
 library(sf)
@@ -371,7 +372,7 @@ ggplot(pred, aes(X, Y, colour = resid)) +
 <!--   facet_wrap(~year) -->
 <!-- ``` -->
 
-\clearpage
+<!-- \clearpage -->
 
 # Plotting spatial predictions
 
@@ -401,20 +402,40 @@ lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers) # only
 ## Spatially varying effect
 
 We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO.
-First, we extract the overall coefficients using the `b <- tidy(m)` and add them together with the spatially varying coefficients `zeta_s`.
+Most simply, we can extract the overall coefficients using the `b <- tidy(m)` and add them together with the spatially varying coefficients `zeta_s`.
+However, this method does not give us spatially explicit estimates of uncertainty.
+To do this, we can use the output from the joint precision matrix simulation draws by using the `predict()` function again but this time indicating a number of simulation draws (e.g., `sims = 500`) and what component we want estimated (`sims_var = "zeta_s"`). 
+We also extract the same number of drams for (this time `n_sims = 500`) in the `spread_sims()` function for the main effect of NAO. 
+The simulation draws for both should then be combined before adding the median and lower and upper quantiles from these draws to our prediction data frame.
+
 
 ```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE}
 b <- tidy(m)
+
+n_sims <- 500L
+zeta_sim <- predict(m, sims = n_sims, sims_var = "zeta_s")
+sims <- spread_sims(m, n_sims = n_sims)
+beta <- sims$nao
+combined <- beta + t(zeta_sim)
+
+p$zeta_sim <- apply(t(zeta_sim), 2, median)
+p$nao_effect_sim <- apply(combined, 2, median)
+p$nao_effect_lwr <- apply(combined, 2, quantile, probs = 0.10)
+p$nao_effect_upr <- apply(combined, 2, quantile, probs = 0.90)
+
 p_mean <- p %>%
-  group_by(CBCID) %>%
-  summarise(
+  group_by(CBCID) %>% summarise(
+    year = max(year),
     X = mean(X), Y = mean(Y),
     mean_est_count = exp(mean(est)),
-    nao_effect = exp(b[b$term == "nao", 2] + mean(zeta_s))
+    nao_effect = b[b$term == "nao", 2] + mean(zeta_s),
+    nao_sim = mean(nao_effect_sim),
+    nao_lwr = mean(nao_effect_lwr),
+    nao_upr = mean(nao_effect_upr)
   )
 ```
 
-```{r plot-map, echo=TRUE, eval=TRUE}
+```{r plot-map, echo=TRUE, eval=TRUE, out.width="100%"}
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -426,15 +447,61 @@ ggplot(data = p_proj) +
     xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000), # adjusts space on sides
     ylim = c(min(p_proj$Y), max(p_proj$Y))
   ) +
-  scale_colour_viridis_c(guide = guide_colourbar(
-    direction = "horizontal", title.position = "top"
-  )) +
+  scale_colour_viridis_c(
+    limit = c(min(p_mean$nao_lwr), max(p_mean$nao_upr)), 
+    guide = guide_colourbar(direction = "horizontal", title.position = "top")
+  ) +
   guides(size = "none") +
-  labs(colour = "NAO effect\non Snowy Owl count") +
-  theme(legend.position = c(0.1, 0.1), axis.title = element_blank())
+  labs(colour = "Estimated effect in log space") +
+  ggtitle("Map of combined main and spatially varying effect of NAO on Snowy Owl count") +
+  theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-\clearpage
+```{r plot-map-ci, echo=F, eval=TRUE, out.width="100%"}
+p1 <- ggplot(data = p_proj) +
+  geom_point(
+    data = p_mean,
+    aes(X, Y, colour = nao_lwr, size = mean_est_count), alpha = 0.5
+  ) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  coord_sf(
+    xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000), # adjusts space on sides
+    ylim = c(min(p_proj$Y), max(p_proj$Y))
+  ) +
+  scale_colour_viridis_c(
+    limit = c(min(p_mean$nao_lwr), max(p_mean$nao_upr)), 
+    guide = guide_colourbar(direction = "horizontal", title.position = "top")
+  ) +
+  guides(size = "none", colour = "none") +
+  # labs(colour = "Lower 90% CI") +
+  ggtitle("Lower 80% CI") +
+  theme(legend.position = c(0.1, 0.1), axis.title = element_blank())
+
+p2 <- ggplot(data = p_proj) +
+  geom_point(
+    data = p_mean,
+    aes(X, Y, colour = nao_upr, size = mean_est_count), alpha = 0.5
+  ) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  coord_sf(
+    xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000), # adjusts space on sides
+    ylim = c(min(p_proj$Y), max(p_proj$Y))
+  ) +
+  scale_colour_viridis_c(
+    limit = c(min(p_mean$nao_lwr), max(p_mean$nao_upr)), 
+    guide = guide_colourbar(direction = "horizontal", title.position = "top")
+  ) +
+  guides(size = "none", colour = "none") +
+  # labs(colour = "Upper 90% CI") +
+  ggtitle("Upper 80% CI") +
+  theme(legend.position = c(0.1, 0.1), axis.title = element_blank())
+
+p1 + p2 + patchwork::plot_layout()
+```
+
+<!-- \clearpage -->
 
 ## Predicted counts
 
