@@ -364,10 +364,10 @@ We find them to be nearly identical:
 sdmTMB_pars <- tidy(m, "ran_pars")
 glmmTMB_varcorr <- glmmTMB::VarCorr(m_glmmTMB)
 
-sdmTMB_pars$estimate[sdmTMB_pars$term == "tau_G"][1]
+sdmTMB_pars$estimate[sdmTMB_pars$term == "sigma_G"][1]
 sqrt(as.numeric(glmmTMB_varcorr$cond$g))
 
-sdmTMB_pars$estimate[sdmTMB_pars$term == "tau_G"][2]
+sdmTMB_pars$estimate[sdmTMB_pars$term == "sigma_G"][2]
 sqrt(as.numeric(glmmTMB_varcorr$cond$h))
 
 sdmTMB_re <- as.list(m$sd_report, "Estimate")
