@@ -129,8 +129,8 @@ fit$parameter_estimates$SD
 We will fit an equivalent sdmTMB model and compare. We will use the mesh already created in VAST so the models are identical.
 
 ```{r sdmTMB-example, echo = TRUE, cache=TRUE}
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
-  mesh = fit$spatial_list$MeshList$isotropic_mesh)
+mesh <- sdmTMB::make_mesh(pcod, xy_cols = c("X", "Y"), 
+                          mesh = fit$spatial_list$MeshList$isotropic_mesh)
 
 fit_sdmTMB <- sdmTMB(density ~ 0 + as.factor(year), 
   data = pcod, mesh = mesh, family = tweedie(link = "log"),
