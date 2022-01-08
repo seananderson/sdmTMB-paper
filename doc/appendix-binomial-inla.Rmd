@@ -337,7 +337,7 @@ ggplot(pred) +
   coord_fixed()
 ```
 
-We can make similar predictions with inlabru using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation:
+We can get similar predictions with inlabru using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation:
 
 ```{r inlabru-pred, out.width="5.5in"}
 nd_bru <- nd
@@ -353,7 +353,7 @@ ggplot(as.data.frame(pred_bru)) +
   coord_fixed()
 ```
 
-Similar predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
+Equivalent predictions are more complicated to extract from INLA, but are easy to plot for the original sample locations.
 
 ```{r inla-pred, out.width="5.5in"}
 idx <- inla.stack.index(sdat, "stdata")$data
