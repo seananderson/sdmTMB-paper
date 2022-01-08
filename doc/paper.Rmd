@@ -316,10 +316,7 @@ knitr::include_graphics(pcodfig)
 
 # Spatially varying coefficient example with citizen science data
 
-Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are
-irruptive
-migrants appearing across mid latitudes of North America in winter.
-<!-- TODO: not familiar with this "irruptive" terminology, please define -->
+Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014].
 Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
@@ -463,7 +460,7 @@ Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pard
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface and speed.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
-Users familiar with INLA may find inlabru approachable. <!-- ; however, we ran into problems with AR1 spatiotemporal fields in inlabru, so we only provide a comparison with INLA instead (Appendix 4). -->
+Users familiar with INLA may find inlabru approachable.
 Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
