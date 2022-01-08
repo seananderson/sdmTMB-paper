@@ -1,5 +1,5 @@
 ---
-title: "sdmTMB: Fast, flexible, and user-friendly spatial and spatiotemporal generalized linear mixed-effects models"
+title: "sdmTMB: Fast, flexible, and user-friendly spatial and spatiotemporal random field generalized linear mixed-effects models in R"
 author: "|
   Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca],
   Eric J. Ward$^2$,
@@ -9,7 +9,8 @@ author: "|
   $^2$Northwest Fisheries Science Center, National Marine Fisheries Service,\n|
       National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n|
   $^3$Alaska Fisheries Science Center, National Marine Fisheries Service,\n|
-      National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n"
+      National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n|
+    Running headline: sdmTMB: spatial and spatiotemporal GLMMs\n"
 output:
     # bookdown::word_document2:
     bookdown::pdf_document2:
@@ -44,7 +45,15 @@ abstract: |
     | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
     | 3. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) sdmTMB provides simple out-of-sample cross validation; (4) non-stationary processes (time-varying and  spatially varying coefficients) are easily constructed with a formula interface; and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, abundance index standardization).
     | 4. We hope that sdmTMB's user-friendly interface will open this useful class of models to a wider audience within species distribution modelling and beyond.
-    | Keywords: Gaussian Markov random fields, generalized linear mixed effects models, INLA, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder
+    | Keywords:
+      Gaussian Markov random fields,
+      generalized linear mixed effects models (GLMM),
+      INLA,
+      SPDE,
+      species distribution modelling,
+      R package,
+      spatio-temporal or spatial-temporal,
+      Template Model Builder
 ---
 
 <!-- Point 1: set the context for and purpose of the work; -->
@@ -64,6 +73,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+<!-- sdmTMB: spatial and spatiotemporal random field generalized linear mixed-effects models in R in a fast, flexible, and user-friendly interface -->
 
 # Introduction
 
@@ -499,20 +509,23 @@ We hope the development of user-friendly interfaces such as sdmTMB opens this us
 
 # Acknowledgements
 
-TODO\
-Would not be possible without TMB and INLA and authors...\
-Heavily inspired by and in some places code has been adapted from VAST and glmmTMB...\
-Friendly/internal reviewers...\
-P.M. Regular, J. Watson\
-Splines based on mgcv
+sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue2009; @lindgren2011; @lindgren2015] R packages.
+sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
+Penalized spline support was possible thanks to mgcv [@wood2017a].
+We thank the authors of all these packages.
+We thank P.M. Regular, J. Watson, ..., TODO.
 
 # Conflict of Interest statement
 
-TODO: None?
+The authors declare no conflict of interest.
 
 # Author Contributions
 
-TODO
+SA led development of the software and EW contributed key software code. All
+authors contributed software code, guided software development, and
+participated in testing. PE led the Snowy Owl case study. All authors
+contributed to appendix code. SA led the writing of the manuscript. All authors
+contributed critically to the drafts and gave final approval for publication.
 
 # Supporting Information
 
@@ -520,8 +533,9 @@ Appendix 1: sdmTMB statistical model description\
 Appendix 2: Example of index standardization of fishery-independent survey data with sdmTMB\
 Appendix 3: Example of a spatially varying effect of climate on citizen science count data with sdmTMB\
 Appendix 4: Species distribution model comparison between INLA and sdmTMB\
-Appendix 5: Comparison of index standardization of fishery-independent survey data with VAST and sdmTMB\
-Appendix 6: sdmTMB model validation and speed-testing methods
+Appendix 5: Comparison of index standardization of survey data with VAST and sdmTMB\
+Appendix 6: sdmTMB speed testing methods and model validation description
+
 <!--
 All submissions with more than one author must include an Authors’ contributions statement. All persons listed as authors on a paper are expected to meet ALL of the following criteria for authorship:
 
@@ -534,11 +548,9 @@ AB and CD conceived the ideas and designed methodology; CD and EF collected the 
 
 # Data Availability
 
-TODO\
-Will be on CRAN\
-Paper source code will be on Zenodo\
-<https://github.com/pbs-assess/sdmTMB>\
-<https://github.com/seananderson/sdmTMB-paper>
+A development version of sdmTMB is available at <https://github.com/pbs-assess/sdmTMB>.
+sdmTMB will be available on CRAN.
+Paper source code will be available on Zenodo and at <https://github.com/seananderson/sdmTMB-paper> on publication.
 
 <!--
 To enable readers to locate archived data from papers, we require that authors list the database and the respective accession numbers or DOIs for all data from the manuscript that has been made publicly available. For example, “Data available from the Dryad Digital Repository http://dx.doi.org/10.5061/dryad.41qh7 (Kiere & Drummond 2016).” When a DOI is available for the data, the full data citation should also be given in the reference list (see below). For further information see our data archiving policy.

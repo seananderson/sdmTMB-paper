@@ -327,27 +327,27 @@ to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 
 # out <- purrr::pmap_dfr(to_run, sim_fit_time)
 
-plan(multisession, workers = 5L)
+# plan(multisession, workers = 5L)
 
-out <- furrr::future_pmap_dfr(
-  # out <- purrr::pmap_dfr(
+# out <- furrr::future_pmap_dfr(
+out <- purrr::pmap_dfr(
   to_run,
-  sim_fit_time,
-  .progress = TRUE,
-  .env_globals = parent.frame(),
-  .options = furrr::furrr_options(
-    seed = TRUE,
-    globals = c(
-      "simulate_dat", "sim_fit_time",
-      "Predict.matrix.spde.smooth", "smooth.construct.spde.smooth.spec"
-    ),
-    packages = c("mgcv", "inlabru", "INLA", "ggplot2", "dplyr", "spaMM", "sdmTMB")
-  )
+  sim_fit_time
+  # .progress = TRUE,
+  # .env_globals = parent.frame(),
+  # .options = furrr::furrr_options(
+  #   seed = TRUE,
+  #   globals = c(
+  #     "simulate_dat", "sim_fit_time",
+  #     "Predict.matrix.spde.smooth", "smooth.construct.spde.smooth.spec"
+  #   ),
+  #   packages = c("mgcv", "inlabru", "INLA", "ggplot2", "dplyr", "spaMM", "sdmTMB")
+  # )
 )
 
 saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-PE.rds")
 out <- readRDS("analysis/timing-cache-parallel-spaMM-PE.rds")
-plan(sequential)
+# plan(sequential)
 
 # # -------tweedie
 # to_run <- expand.grid(

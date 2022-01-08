@@ -1,5 +1,5 @@
 ---
-title: "Appendix 6: sdmTMB model validation and speed-testing methods"
+title: "Appendix 6: sdmTMB speed testing methods and model validation description"
 output:
   bookdown::pdf_document2:
     highlight: pygments
@@ -20,7 +20,7 @@ header-includes:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  echo = FALSE,
+  echo = TRUE,
   error = FALSE,
   message = FALSE,
   warning = FALSE,
@@ -30,33 +30,220 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Supplemental methods for speed testing related packages
+
+Here we describe the methods underlying the speed testing in Figure 4.
+
+We simulated 1000 spatial observations with both x and y coordinates from uniform(0, 1) distributions.
+Each iteration generated unique coordinates, predictor data, Gaussian random field values, and observation error.
+The Gaussian random field was parameterized with a range of 0.5 and marginal standard deviation of 0.2.
+The model included an intercept with a value of 0.2 and a normal(0, 1) predictor with an associated coefficient of -0.4.
+The observation error was Gaussian with a standard deviation of 0.3.
+
+We generated a mesh that was consistent across simulated data sets for a given mesh resolution.
+We did this by setting the `max.edge` argument, which controls the largest allowed triangle edge length.
+We tested values of `max.edge` of 0.06, 0.075, 0.1, 0.15, and 0.2.
+In Figure 4, we report on the x-axis the number of mesh nodes ("knots") that result from each of these meshes.
+
+We conducted 20 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values.
+
+## Illustration of the simulation components
+
+### Illustration of generating the INLA mesh
+
+```{r pkgs, warning=FALSE, message=FALSE}
+library(INLA)
+library(inlabru)
+library(ggplot2)
+library(sdmTMB)
+library(mgcv)
+library(spaMM)
+```
+
+We will illustrate with a `max.edge` of 0.1:
+
+```{r mesh}
+max_edge <- 0.06
+loc_bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+segm_bnd <- INLA::inla.mesh.segment(loc_bnd)
+mesh <- INLA::inla.mesh.2d(
+  boundary = segm_bnd,
+  max.edge = c(max_edge, 0.2),
+  offset = c(0.1, 0.05)
+)
+```
+
+This mesh has `r mesh$n` (`mesh$n`) vertices. We can visualize it:
+
+```{r mesh-vis1, out.width="4in"}
+ggplot() +
+  gg(mesh) +
+  theme_light() +
+  coord_equal(expand = FALSE)
+```
+
+Here are the other meshes used from least to most vertices:
+
+```{r mesh-vis, out.width="6.5in", fig.width=10, fig.asp=1.2}
+max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
+g <- list()
+for (i in seq_along(max_edge_vec)) {
+  .mesh <- INLA::inla.mesh.2d(
+    boundary = segm_bnd,
+    max.edge = c(max_edge_vec[i], 0.2),
+    offset = c(0.1, 0.05)
+  )
+  g[[i]] <- ggplot() +
+    gg(.mesh) +
+    theme_light() +
+    coord_equal(expand = FALSE) +
+    ggtitle(paste("Mesh vertices =", .mesh$n))
+}
+cowplot::plot_grid(plotlist = g, ncol = 2)
+```
+
+### Illustration of simulating data
+
+```{r sim}
+set.seed(1)
+
+n_obs <- 1000L
+predictor_dat <- data.frame(
+  X = runif(n_obs), Y = runif(n_obs),
+  a1 = rnorm(n_obs)
+)
+mesh_sdmTMB <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), mesh = mesh)
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1 + a1,
+  data = predictor_dat,
+  mesh = mesh_sdmTMB,
+  family = gaussian(),
+  range = 0.5,
+  phi = 0.3,
+  sigma_O = 0.2,
+  B = c(0.2, -0.4) # B0 = intercept, B1 = a1 slope
+)
+```
+
+Look at the simulated data:
+
+```{r sim-dat-plot, out.width="4.5in"}
+ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
+  geom_point() +
+  scale_color_gradient2() +
+  theme_light()
+```
+
+### Example sdmTMB model fits
+
+```{r sdmTMBfit}
+fit_sdmTMB <- sdmTMB(
+  observed ~ a1,
+  data = sim_dat, mesh = mesh_sdmTMB, family = gaussian(),
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
+)
+
+# normalize = TRUE:
+fit_sdmTMB2 <- sdmTMB(
+  observed ~ a1,
+  data = sim_dat, mesh = mesh_sdmTMB, family = gaussian(),
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2)),
+  control = sdmTMBcontrol(normalize = TRUE)
+)
+```
+
+### Example spaMM model fit
+
+```{r spaMMfit}
+spde <- INLA::inla.spde2.pcmatern(
+  mesh = mesh,
+  prior.range = c(0.05, 0.05),
+  prior.sigma = c(2, 0.05)
+)
+
+fit_spaMM <- fitme(
+  observed ~ a1 + IMRF(1 | X + Y, model = spde),
+  family = gaussian(), data = sim_dat
+)
+```
+
+### Example inlabru model fit
+
+```{r inlabrufit}
+# convert to sp SpatialPointsDataFrame first:
+dat_sp <- sp::SpatialPointsDataFrame(
+  cbind(sim_dat$X, sim_dat$Y),
+  proj4string = sp::CRS(
+    "+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
++ +y_0=0 +datum=NAD83 +units=km +no_defs"
+  ), data = sim_dat
+)
+components <- observed ~ -1 + Intercept(1) + a1 +
+  spatrf(main = coordinates, model = spde)
+like <- like(observed ~ Intercept + a1 + spatrf,
+  family = "gaussian", data = dat_sp
+)
+fit_bru <- bru(
+  like,
+  components = components,
+  options = bru_options(
+    control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+    bru_max_iter = 1, num.threads = "1:1"
+  )
+)
+```
+
+### Example mgcv model fit
+
+```{r mgcvfit}
+# define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth():
+# from supplement of:
+# Miller, D.L., Glennie, R. & Seaton, A.E. (2019). Understanding the Stochastic
+# Partial Differential Equation approach to smoothing. Journal of Agricultural,
+# Biological and Environmental Statistics.
+source(here::here("analysis/mgcv_spde_smooth.R"))
+library(mgcv)
+
+fit_bam <- bam(
+  observed ~ a1 + s(X, Y,
+    bs = "spde", k = mesh$n,
+    xt = list(mesh = mesh)
+  ),
+  data = sim_dat,
+  family = gaussian(),
+  method = "fREML",
+  control = gam.control(scalePenalty = FALSE), discrete = TRUE
+)
+```
+
 # Overall description of sdmTMB validation
 
-The sdmTMB package has a number of validation processes to ensure the code is working as expected. 
-This includes unit testing using testthat [@testthat] embedded within the package. 
-This unit testing validates a large number of model configurations against simulated data and comparable models from other packages. 
+The sdmTMB package has a number of validation processes to ensure the code is working as expected.
+This includes unit testing using testthat [@testthat] embedded within the package.
+This unit testing validates a large number of model configurations against simulated data and comparable models from other packages.
 We highlight some model validation in particular in this appendix.
 
 In addition to the validation discussed here, Appendix 5 contains a comparison with VAST and Appendix 4 contains a comparison with INLA/inlabru.
 
-This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB. 
-Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package.
+This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB.
+<!-- Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package. -->
 
 ## Penalized smoothers
 
-Here, we compare a number of smoother configurations against mgcv [@wood2017a]. 
+Here, we compare a number of smoother configurations against mgcv [@wood2017a].
 Throughout the section, we will turn off spatial random fields so the models should be comparable.
 
 ### `s(x)`
 
-First, a simple thin plate regression spline with a single variable. 
+First, a simple thin plate regression spline with a single variable.
 We will use simulated data from the mgcv package.
 
-```{r, echo=TRUE}
+```{r lib-load2, echo=TRUE}
 library(sdmTMB)
 ```
 
-```{r, echo=TRUE}
+```{r mgcv-eg1, echo=TRUE}
 set.seed(19203)
 # examples from ?mgcv::gam.models
 dat <- mgcv::gamSim(3, n = 800)
@@ -75,12 +262,12 @@ abline(a = 0, b = 1)
 cor(p$est, p_mgcv)
 ```
 
-We can see the predictions match nearly exactly. 
-Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves. 
-Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component. 
+We can see the predictions match nearly exactly.
+Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves.
+Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component.
 Nonetheless, here the smoothers look very similar except for these scale on the y axis.
 
-```{r, echo=TRUE, fig.asp=1}
+```{r plot-smooth, echo=TRUE, fig.asp=1}
 par(mfrow = c(2, 1))
 plot_smooth(m)
 plot(m_mgcv)
@@ -88,10 +275,10 @@ plot(m_mgcv)
 
 ### `s(x1, by = x2)`
 
-Next, we compare a model with a continuous `by` argument. 
+Next, we compare a model with a continuous `by` argument.
 This lets the `x2` smoother change depending on the value of `x1`.
 
-```{r, echo=TRUE}
+```{r continuous-by-compare, echo=TRUE}
 set.seed(19203)
 # examples from ?mgcv::gam.models
 # continuous by example:
@@ -117,7 +304,7 @@ Again, the results are nearly identical.
 
 Next, we compare a bivariate smoother, with near identical predictions.
 
-```{r, echo=TRUE}
+```{r bivariate-compare, echo=TRUE}
 m_mgcv <- mgcv::gam(y ~ s(x2, x1), data = dat)
 p_mgcv <- predict(m_mgcv)
 m <- sdmTMB(y ~ s(x2, x1),
@@ -132,19 +319,19 @@ cor(p$est, p_mgcv)
 
 ## IID random intercepts
 
-Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB [@brooks2017]. 
+Here we compare a model that includes two IID random intercepts against the same model fit via glmmTMB [@brooks2017].
 Again, we will turn off random fields so the models are comparable.
 
-First, simulate some data. 
-The variables `g` and `h` will represent groups g and h. 
-g will have 50 groups. 
-h will have 20 groups. 
+First, simulate some data.
+The variables `g` and `h` will represent groups g and h.
+g will have 50 groups.
+h will have 20 groups.
 
-```{r, echo=TRUE}
+```{r iid-sim, echo=TRUE}
 predictor_dat <- data.frame(X = runif(1000), Y = runif(1000))
 mesh <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), cutoff = 0.1)
 sim_dat <- sdmTMB_simulate(
-  formula = ~ 1,
+  formula = ~1,
   data = predictor_dat,
   mesh = mesh,
   family = gaussian(),
@@ -161,17 +348,19 @@ iid_re_vals_h <- rnorm(20, 0, 0.3)
 sim_dat$observed <- sim_dat$observed + iid_re_vals_g[sim_dat$g] + iid_re_vals_h[sim_dat$h]
 ```
 
-```{r, echo=TRUE}
-m <- sdmTMB(observed ~ 1 + (1 | g) + (1 | h), mesh = mesh, data = sim_dat, 
-  spatial = "off")
+```{r iid-fit, echo=TRUE}
+m <- sdmTMB(observed ~ 1 + (1 | g) + (1 | h),
+  mesh = mesh, data = sim_dat,
+  spatial = "off"
+)
 
 m_glmmTMB <- glmmTMB::glmmTMB(observed ~ 1 + (1 | g) + (1 | h), data = sim_dat)
 ```
 
-We can extract the random effect estimates and compare them. 
+We can extract the random effect estimates and compare them.
 We find them to be nearly identical:
 
-```{r, echo=TRUE}
+```{r iid-compare, echo=TRUE}
 sdmTMB_pars <- tidy(m, "ran_pars")
 glmmTMB_varcorr <- glmmTMB::VarCorr(m_glmmTMB)
 
@@ -184,35 +373,34 @@ sqrt(as.numeric(glmmTMB_varcorr$cond$h))
 sdmTMB_re <- as.list(m$sd_report, "Estimate")
 glmmTMB_re <- glmmTMB::ranef(m_glmmTMB)$cond
 plot(c(glmmTMB_re$g$`(Intercept)`, glmmTMB_re$h$`(Intercept)`), sdmTMB_re$RE,
-  col = c(rep(1, 50), rep(2, 20)))
+  col = c(rep(1, 50), rep(2, 20))
+)
 abline(0, 1)
 ```
 
-The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis. 
+The last plot illustrates the IID random effect deviations themselves with glmmTMB on the x-axis and sdmTMB on the y-axis.
 The 'g' deviations are black and the 'h' ones are red.
 
-## Simulation-testing with various observation families
+<!-- ## Simulation-testing with various observation families -->
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
 knitr::include_graphics(here::here("figs", "sim-test-families-pars.pdf"))
 ```
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
 knitr::include_graphics(here::here("figs", "sim-test-families-b1.pdf"))
 ```
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
 knitr::include_graphics(here::here("figs", "sim-test-families-phi.pdf"))
 ```
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
 knitr::include_graphics(here::here("figs", "sim-test-families-range.pdf"))
 ```
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
 knitr::include_graphics(here::here("figs", "sim-test-families-sigmaO.pdf"))
 ```
 
-# Supplemental methods for speed-testing related packages
-
-TODO: Fig. 2 methods description
+# References
