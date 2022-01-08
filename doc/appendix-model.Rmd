@@ -79,8 +79,8 @@ symbols <- tibble::tribble(
 
   "$\\omega_{\\s}$", "\\texttt{omega\\_s}", "Spatial random field at point $\\s$ (knot)",
   "$\\omega_{\\s}^*$", "\\texttt{omega\\_s\\_A}", "Spatial random field at point $\\s$ (interpolated)",
-  "$\\zeta_{\\s, t}$", "\\texttt{zeta\\_t}", "Spatially varying coefficient random field at point $\\s$ and time $t$ (knot)",
-  "$\\zeta_{\\s, t}^*$", "\\texttt{zeta\\_t\\_A}", "Spatially varying coefficient random field at point $\\s$ and time $t$ (interpolated)",
+  "$\\zeta_{\\s}$", "\\texttt{zeta\\_s}", "Spatially varying coefficient random field at point $\\s$ (knot)",
+  "$\\zeta_{\\s}^*$", "\\texttt{zeta\\_s\\_A}", "Spatially varying coefficient random field at point $\\s$ (interpolated)",
   "$\\epsilon_{\\s, t}$", "\\texttt{epsilon\\_st}", "Spatiotemporal random field at point $\\s$ and time $t$ (knot)",
   "$\\epsilon_{\\s, t}^*$", "\\texttt{epsilon\\_st\\_A}", "Spatiotemporal random field at point $\\s$ and time $t$ (interpolated)",
   "$\\delta_{\\s,t}$", "\\texttt{b\\_t}", "AR(1) or random walk spatiotemporal deviations (knot)",
