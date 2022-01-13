@@ -97,13 +97,13 @@ Details are beyond the scope of this paper, and are not necessary to use the sof
 Systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
 For example, TMB requires the user to program in a C++ template and it can be slow to experiment with multiple models when writing bespoke model code.
 Packages such as lme4 [@bates2015] and glmmTMB [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
-Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used lme4 or glmmTMB or lack some flexibility.
+Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack some flexibility.
 We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
 
 Here, we introduce the R package sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
 Our aim is not to replace the full functionality of the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of lme4, glmmTMB, or mgcv [@wood2017a], for a specific class of spatial and spatiotemporal models.
 One common application is for species distribution models (SDMs), hence the package name.
-This paper describes the basic functionality of the R package and the underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software.
+This paper describes the basic functionality of this R package and its underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software.
 
 <!-- millard1985: Space–Time Correlation and Its Effects on Methods for Detecting Aquatic Ecological Change "In practice, spatial correlation is more likely to be a problem than is temporal correlation, given typical monitoring frequencies." -->
 
@@ -120,7 +120,7 @@ All other symbols refer to the  described model components (e.g., $\bm{\beta}$ a
 See Appendix 1 for a full description of the model.
 Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
 
-```{r diagram, fig.cap="(ref:diagram-fig)"}
+```{r diagram, fig.cap="(ref:diagram-fig)", out.width="1.03\\textwidth"}
 dir.create("figs", showWarnings = FALSE)
 f <- here::here("figs", "diagram.pdf")
 knitr::include_graphics(f)
@@ -131,9 +131,9 @@ knitr::include_graphics(f)
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
 Geostatistical data simply refers to data observed at specific spatial coordinates reflecting some underlying spatial process [@rossi1992; @diggle2007].
 These data can be collected across discrete points in time.
-Areal data (data on polygons or grids) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
+Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
-A benefit of the geostatistical approach over CAR or similar models is the parameters describing spatial covariance can be estimated (e.g., spatial variance and range---the distance at which points are effectively independent).
+A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be estimated (e.g., spatial variance and range---the distance at which points are effectively independent).
 
 The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
@@ -164,10 +164,11 @@ This process component is combined with an observation error family (e.g., Gauss
 <!-- * $\epsilon_{\bm{s},t}$ represents a spatiotemporal component (a random field). For the IID case, $\epsilon_{\bm{s},t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$ (Appendix TODO). -->
 
 The GLMMs underpinning sdmTMB models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], most smooths in mgcv [@wood2017a]).
+In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], and most smooths in mgcv [@wood2017a]).
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately.
+Derived parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range. <!-- This sentence felt tacked on at the end. Maybe it fits better here? -->
 
 <!-- - high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?) -->
 
@@ -178,18 +179,17 @@ By default, if spatiotemporal fields are included, they are assumed independent 
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes [e.g., hockey-stick models, `breakpt()`, @barrowman2000] or logistic functions, `logistic()` (Appendix 1).
 
-The sdmTMB model is fit by maximum marginal likelihood.
+While the sdmTMB model is fit by maximum marginal likelihood, Bayesian options are also supported.  
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
-After rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
-
-sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
+However, after rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
+This option can be fully Bayesian, if penalized likelihoods are included by assigning priors to model parameters (`?sdmTMBpriors`).
+These priors can also be useful in cases where maximum likelihood estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
-Derived parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range.
+<!-- Would this be an appropriate place to say something about the sim options, possibly specifically for getting uncertainty on spatial predictions? I don't know how easy that is from the other packages... -->
 
 # Introductory example with fish survey biomass
 
