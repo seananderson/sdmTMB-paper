@@ -5,6 +5,8 @@ output:
     highlight: pygments
     toc: true
     number_sections: true
+bibliography: refs.bib
+csl: mee.csl
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -32,7 +34,7 @@ If our spatial coordinates were not already in an equidistant projection, we wou
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with `INLA` (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
-For example, a mesh with a cutoff distance of 10 km can be made with
+For example, a mesh with a cutoff distance of 10 km can be made:
 
 ```{r mesh, echo = TRUE, cache=FALSE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
@@ -70,20 +72,11 @@ We can predict on the original data locations:
 pred <- predict(fit)
 ```
 
-We can inspect randomized quantile residuals:
+We can inspect simulated residuals from the DHARMa package:
 
-```{r qqnorm, out.width="5in"}
-pred$resid <- residuals(fit)
-qqnorm(pred$resid)
-qqline(pred$resid)
-```
-
-```{r plot-resids}
-ggplot(pred, aes(X, Y, colour = resid)) +
-  geom_point() +
-  facet_wrap(~year) +
-  coord_fixed() +
-  scale_colour_gradient2()
+```{r sim-resids, out.width="3.5in", fig.align='center', warning=FALSE, results='hide'}
+simulate(fit, nsim = 500) %>%
+  dharma_residuals(fit)
 ```
 
 Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the sdmTMB package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`.
@@ -170,15 +163,16 @@ ggplot(ind, aes(year, est / 1000)) +
   ylab("Biomass (t)")
 ```
 
-The above example used the default `bias_correct = FALSE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more detils can be found in the TMB documentation [https://github.com/kaskr/adcomp/wiki](https://github.com/kaskr/adcomp/wiki) or [Thorson & Kristensen (2016)](https://www.sciencedirect.com/science/article/abs/pii/S0165783615301399?via%3Dihub). Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements the generic by his correction algorithm that should correct for this, but can take considerable time and memory.
+The above example used the default `bias_correct = FALSE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more detils can be found in the  [TMB documentation](https://github.com/kaskr/adcomp/wiki) or [@thorson2016bias]. Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but can take considerable time and memory.
 
-As an alternative, we can use the output from the joint precision matrix simulation draws to calculate our index. This should approximate the output of `get_index(x, bias_correct = TRUE)`. However, we note that there may be situations where this approach may fail or be biased.
+As an alternative, we can use the output from the joint precision matrix simulation draws to calculate our index. This should approximate the output of `get_index(x, bias_correct = TRUE)`. However, we note that there may be situations where this approach may fail or be biased and experimentation is ongoing.
 
 ```{r index-sims, out.width="5in"}
 ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
-saveRDS(ind, "sdmTMB-index-sim.rds")
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
   ylab("Biomass (t)")
 ```
+
+# References

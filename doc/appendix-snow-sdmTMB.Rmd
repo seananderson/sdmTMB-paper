@@ -7,6 +7,7 @@ output:
     number_sections: true
 urlcolor: blue
 bibliography: refs.bib
+csl: mee.csl
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
