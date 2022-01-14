@@ -271,6 +271,7 @@ Next, we modify a theme to plot spatiotemporal data and check the distribution o
 
 ```{r theme, cache=FALSE}
 theme_set(theme_bw() + theme(
+  plot.title = element_text(size = 12),
   legend.position = "top", legend.justification = c(0, 0), # move legend to top left
   legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
   strip.background = element_rect(fill = NA, colour = NA), # de-emphasize facet labels
@@ -397,7 +398,7 @@ if (!file.exists(here::here("data/ne_10m_lakes"))) {
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
 lakes <- sf::st_read(here::here("data/ne_10m_lakes"), quiet = TRUE)
-lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers) # only large lakes
+lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)# only large lakes
 ```
 
 ## Spatially varying effect
@@ -407,11 +408,11 @@ Most simply, we can extract the overall coefficients using the `b <- tidy(m)` an
 However, this method does not give us spatially explicit estimates of uncertainty.
 To do this, we can get the output from the joint precision matrix simulation draws by using the `predict()` function again, but this time indicating a number of simulation draws (e.g., `sims = 500`) and what component we want estimated (`sims_var = "zeta_s"`). 
 We also extract the same number of draws for estimates of the main effect of NAO using the `spread_sims()` function (this time `n_sims = 500`). 
-The simulation draws for both can then be combined before calculating the median and lower and upper quantiles from these draws and adding these values to our prediction data frame.
+The simulation draws for both can then be combined before calculating the median and lower and upper quantiles from these draws (in this case we will use 80%) and adding these values to our prediction data frame.
 
 
 ```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE}
-b <- tidy(m)
+b <- tidy(m, conf.int = TRUE)
 
 n_sims <- 500L
 zeta_sim <- predict(m, sims = n_sims, sims_var = "zeta_s")
@@ -436,11 +437,19 @@ p_mean <- p %>%
   )
 ```
 
-```{r plot-map, echo=TRUE, eval=TRUE, out.width="100%"}
+```{r}
+nao_effect_lwr95 <- apply(combined, 2, quantile, probs = 0.025)
+```
+
+The main effect of NAO indicates that there is a weak average positive effect of annual mean NAO on overall counts `r round(b[b$term == "nao", 2], 2)` (`b[b$term == "nao", 2]`), while for individual count locations the median estimated effects of NAO range from `r round(min(p_mean$nao_sim), 2)` to `r round(max(p_mean$nao_sim),2)` (`range(p_mean$nao_sim)`).
+Based on the 80% CI calculated above, the resulting minimum estimated effects of NAO for each count location range from `r round(min(p_mean$nao_lwr), 2)` to `r round(max(p_mean$nao_lwr),2)` (`range(p_mean$nao_lwr)`) and the maximums range from `r round(min(p_mean$nao_upr), 2)` to `r round(max(p_mean$nao_upr),2)` (`range(p_mean$nao_upr)`). 
+All these effects are in link space (`link = "log"`) and could be `exp()` to give the expected multiplicative contribution to the predicted owl counts, however the additive nature of the effect in link space is actually somewhat more intuitive to interpret visually, so this is what we will plot on our maps:
+
+
+```{r plot-map, echo=TRUE, eval=TRUE, out.width="95%", cache=FALSE}
 ggplot(data = p_proj) +
   geom_point(
-    data = p_mean,
-    aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
+    data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
   ) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
@@ -454,11 +463,11 @@ ggplot(data = p_proj) +
   ) +
   guides(size = "none") +
   labs(colour = "Estimated effect in log space") +
-  ggtitle("Map of combined main and spatially varying effect of NAO on Snowy Owl count") +
+  ggtitle("Map of combined main and spatially varying effects of NAO on Snowy Owl count") +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=F, eval=TRUE, out.width="100%"}
+```{r plot-map-ci, echo=F, eval=TRUE, out.width="100%", cache=FALSE}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -502,6 +511,10 @@ p2 <- ggplot(data = p_proj) +
 p1 + p2 + patchwork::plot_layout()
 ```
 
+If we recalculated these at 95% CI the range of minimum estimates would be from `r round(min(nao_effect_lwr95), 2)` to `r round(max(nao_effect_lwr95),2)` meaning that for the most conventional level of statistical confidence, we cannot conclude that the effect of NAO at an annual scale differs from 0. 
+However, the southeast to northwest gradient in the intensity illustrated in the maps above is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
+This result suggests that exploring the effects of NAO at finer temporal scales (possibly seasonally) and/or with lagged effects could prove fruitful. 
+
 <!-- \clearpage -->
 
 ## Predicted counts
@@ -509,11 +522,10 @@ p1 + p2 + patchwork::plot_layout()
 These are the predictions of winter owl counts that incorporate all fixed effects and random effects. 
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
-```{r plot-all-effects, echo=TRUE, eval=TRUE}
+
+```{r plot-all-effects, echo=TRUE, eval=TRUE, cache=FALSE}
 ggplot(data = p_proj) +
-  geom_point(
-    data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5
-  ) +
+  geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
     xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000),
     ylim = c(min(p_proj$Y), max(p_proj$Y))
