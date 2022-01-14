@@ -163,7 +163,7 @@ ggplot(ind, aes(year, est / 1000)) +
   ylab("Biomass (t)")
 ```
 
-The above example used the default `bias_correct = FALSE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more detils can be found in the  [TMB documentation](https://github.com/kaskr/adcomp/wiki) or [@thorson2016bias]. Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but can take considerable time and memory.
+The above example used the default `bias_correct = FALSE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more details can be found in the [TMB documentation](https://github.com/kaskr/adcomp/wiki) or [@thorson2016bias]. Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but can take considerable time and memory.
 
 As an alternative, we can use the output from the joint precision matrix simulation draws to calculate our index. This should approximate the output of `get_index(x, bias_correct = TRUE)`. However, we note that there may be situations where this approach may fail or be biased and experimentation is ongoing.
 
