@@ -133,9 +133,10 @@ Geostatistical data simply refers to data observed at specific spatial coordinat
 These data can be collected across discrete points in time.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
-A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be estimated (e.g., spatial variance and range---the distance at which points are effectively independent).
+A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be estimated.
+<!-- (e.g., spatial variance and range---the distance at which points are effectively independent). -->
 
-The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
+The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 
 <!-- Using the notation of a bold capital letter to represent a data matrix or vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time, -->
@@ -169,9 +170,9 @@ The random fields in sdmTMB are structured as MVN constrained by a Matérn covar
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately.
 
-By default, if spatiotemporal fields are included, they are assumed independent and identically distributed (IID); however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
+By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes [e.g., hockey-stick models, `breakpt()`, @barrowman2000] or logistic functions, `logistic()` (Appendix 1).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
@@ -223,7 +224,7 @@ Here, `cutoff` defines the minimum allowed distance between mesh vertices in the
 Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`.
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
-We can then fit a model with spatial random fields via the function `sdmTMB()`.
+We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package and choose a basis dimension of 5.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 
@@ -291,7 +292,7 @@ fit_spatiotemporal <- sdmTMB(
 )
 ```
 
-We could generate a population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \@ref(fig:pcod-fig)E, Appendix 2).
+We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \@ref(fig:pcod-fig)E, Appendix 2).
 
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
@@ -444,7 +445,7 @@ We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting a
 In this test, for mesh resolutions under 500 nodes, sdmTMB was faster than inlabru or mgcv.
 inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
-With the random effect normalizing constant calculated in R (`normalize = TRUE`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
+With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
 Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown).
 Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
@@ -456,8 +457,8 @@ Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pard
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface and speed.
 We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB most approachable.
-Users familiar with INLA may find inlabru approachable.
-Users already familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
+Users familiar with INLA will find inlabru approachable.
+Users familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
