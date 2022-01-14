@@ -186,11 +186,12 @@ The results from an sdmTMB model can be used to generate various quantities of i
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
 <!-- TODO: Would this be an appropriate place to say something about the sim options, possibly specifically for getting uncertainty on spatial predictions? I don't know how easy that is from the other packages... -->
 
-# Introductory example with fish survey biomass
+<!-- # Introductory example with fish survey biomass -->
+# Introductory example using fish survey data
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
 It usually makes sense to convert the spatial coordinates to an equidistant projection such as the Universal Transverse Mercator (UTM) to ensure that distance remains constant throughout the study region [e.g., using `sf::st_transform()`, @pebesma2018].
-<!-- TODO: Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data, but it could be added to the pcod appendix too? -->
+<!-- TODO: Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data and added a sentence to the pcod appendix, but maybe still important to include here as well? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
@@ -296,7 +297,7 @@ We could generate a population index (e.g., a relative or absolute index of abun
 (ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
-The circle area corresponds to density of Pacific cod for individual trawls.
+The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
 (B) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
 (C) Overall prediction: these estimates represent the combination of all fixed and random effects.
@@ -309,13 +310,14 @@ pcodfig <- here::here("figs", "pcod-fig2.pdf")
 knitr::include_graphics(pcodfig)
 ```
 
-# Spatially varying coefficient example with citizen science data
+<!-- # Spatially varying coefficient example with citizen science data -->
+# 2. Estimate a spatially varying effect from citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
-The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
+The reasons for this interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014].
 Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
-We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial (NB2) distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO (Appendix 3).
+We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial (NB2) distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
 
 ```{r owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
@@ -327,7 +329,7 @@ fit_owls <- sdmTMB(
 )
 ```
 
-We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao)).
+We found a weak average positive effect of annual mean NAO on overall counts, but a marked southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao), Appendix 3).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US.

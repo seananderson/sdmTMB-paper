@@ -404,9 +404,9 @@ lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers) # only
 We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO.
 Most simply, we can extract the overall coefficients using the `b <- tidy(m)` and add them together with the spatially varying coefficients `zeta_s`.
 However, this method does not give us spatially explicit estimates of uncertainty.
-To do this, we can use the output from the joint precision matrix simulation draws by using the `predict()` function again but this time indicating a number of simulation draws (e.g., `sims = 500`) and what component we want estimated (`sims_var = "zeta_s"`). 
-We also extract the same number of drams for (this time `n_sims = 500`) in the `spread_sims()` function for the main effect of NAO. 
-The simulation draws for both should then be combined before adding the median and lower and upper quantiles from these draws to our prediction data frame.
+To do this, we can get the output from the joint precision matrix simulation draws by using the `predict()` function again, but this time indicating a number of simulation draws (e.g., `sims = 500`) and what component we want estimated (`sims_var = "zeta_s"`). 
+We also extract the same number of draws for estimates of the main effect of NAO using the `spread_sims()` function (this time `n_sims = 500`). 
+The simulation draws for both can then be combined before calculating the median and lower and upper quantiles from these draws and adding these values to our prediction data frame.
 
 
 ```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE}
