@@ -41,7 +41,7 @@ editor_options:
   markdown:
     wrap: sentence
 abstract: |
-    | \noindent 1. Geostatistical data---spatially referenced observations related to some continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions through applications such as species distribution models (SDMs). However, appropriate models to analyze these data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
+    | \noindent 1. Geostatistical data---spatially referenced observations related to some continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions. However, appropriate models to analyze these data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
     | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
     | 3. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) sdmTMB provides simple out-of-sample cross validation; (4) non-stationary processes (time-varying and  spatially varying coefficients) are easily constructed with a formula interface; and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, abundance index standardization).
     | 4. We hope that sdmTMB's user-friendly interface will open this useful class of models to a wider audience within species distribution modelling and beyond.
@@ -168,28 +168,23 @@ In contrast, semi- and non-parametric approaches do not estimate spatial covaria
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately.
-Derived parameters from the Matérn covariance function can be used to describe the marginal spatial variance and Matérn range. <!-- This sentence felt tacked on at the end. Maybe it fits better here? -->
-
-<!-- - high-level paragraph about design philosophy (modular [separate predict, residuals, etc.], familiar/clear naming, expensive computations only if needed, work with regular data frames, ...?) -->
-
-<!-- Although sdmTMB has been developed with spatial or spatiotemporal modelling as a primary focus, the statistical models it fits fall under the class of GLMMs. -->
-<!-- GLMMs are available in several widely used packages, including glmmTMB [@brooks2017], mgcv [@wood2017a], and lme4 [@bates2015], and to allow comparison with these packages, sdmTMB allows for spatial and spatiotemporal effects to be omitted. -->
 
 By default, if spatiotemporal fields are included, they are assumed independent and identically distributed (IID); however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes [e.g., hockey-stick models, `breakpt()`, @barrowman2000] or logistic functions, `logistic()` (Appendix 1).
 
-While the sdmTMB model is fit by maximum marginal likelihood, Bayesian options are also supported.  
+The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
-However, after rapid model exploration with maximum likelihood, one can pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution.
-This option can be fully Bayesian, if penalized likelihoods are included by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors can also be useful in cases where maximum likelihood estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
+After rapid model exploration with maximum likelihood, one can optionally pass an sdmTMB model to the R package tmbstan [@monnahan2018] to estimate the joint posterior distribution for Bayesian inference.
+
+sdmTMB models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
-<!-- Would this be an appropriate place to say something about the sim options, possibly specifically for getting uncertainty on spatial predictions? I don't know how easy that is from the other packages... -->
+<!-- TODO: Would this be an appropriate place to say something about the sim options, possibly specifically for getting uncertainty on spatial predictions? I don't know how easy that is from the other packages... -->
 
 # Introductory example with fish survey biomass
 
@@ -354,7 +349,7 @@ We provide several approaches to assist this process:
 (4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
-Simulation-based residuals [@dharma], one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
+Simulation-based residuals [@dharma] (`dharma_residuals()`), one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
 (5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 

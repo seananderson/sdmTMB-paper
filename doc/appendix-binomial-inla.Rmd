@@ -321,8 +321,8 @@ ggplot(post_inla2) +
 
 # Annual distribution maps
 
-We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space. 
-The resulting values are in link space and require the appropriate inverse-link transformation, in this case `plogis()`, to produce occurrence probabilities.
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTMB package to map occurrence probabilities in each year in space.
+For sdmTMB, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`, equivalent to inverse logit here), to produce occurrence probabilities:
 
 ```{r sdm-predictions}
 nd <- filter(qcs_grid, year >= 2007)
@@ -330,8 +330,9 @@ pred <- predict(m, newdata = nd)
 ```
 
 ```{r maps, cache=FALSE, out.width="5.5in"}
+inverse_link <- m$family$linkinv
 ggplot(pred) +
-  geom_raster(aes(X, Y, fill = plogis(est))) +
+  geom_raster(aes(X, Y, fill = inverse_link(est))) +
   facet_wrap(~year) +
   scale_fill_viridis_c() +
   coord_fixed()
