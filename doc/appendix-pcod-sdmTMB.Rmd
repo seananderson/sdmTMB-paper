@@ -40,7 +40,7 @@ For example, a mesh with a cutoff distance of 10 km can be made:
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
-```{r plot-mesh, fig.asp=0.9, out.width="4in"}
+```{r plot-mesh, cache=FALSE, fig.align='center', fig.asp=1, out.width="3in"}
 plot(mesh)
 ```
 
@@ -74,7 +74,7 @@ pred <- predict(fit)
 
 We can inspect simulated residuals from the DHARMa package:
 
-```{r sim-resids, out.width="3.5in", fig.align='center', warning=FALSE, results='hide'}
+```{r sim-resids, out.width="4in", warning=FALSE, results='hide'}
 simulate(fit, nsim = 500) %>%
   dharma_residuals(fit)
 ```
@@ -148,7 +148,7 @@ ggplot(qcs_grid, aes(X, Y, fill = cv)) +
 
 We can calculate our standardized population index by predicting on our survey domain grid and setting `return_tmb_object = TRUE`. This returns the TMB objective function, which is required to pass the output to `get_index()`.
 
-```{r index, out.width="5in"}
+```{r index, fig.asp=0.45, out.width="5in"}
 qcs_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
   fit,
@@ -157,6 +157,7 @@ pred2 <- predict(
 )
 ind <- get_index(pred2)
 saveRDS(ind, "sdmTMB-index.rds")
+
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
@@ -167,8 +168,9 @@ The above example used the default `bias_correct = FALSE` in `get_index()`. The 
 
 As an alternative, we can use the output from the joint precision matrix simulation draws to calculate our index. This should approximate the output of `get_index(x, bias_correct = TRUE)`. However, we note that there may be situations where this approach may fail or be biased and experimentation is ongoing.
 
-```{r index-sims, out.width="5in"}
+```{r index-sims, fig.asp=0.45, out.width="5in"}
 ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
+
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +

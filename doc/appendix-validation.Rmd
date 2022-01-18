@@ -20,6 +20,8 @@ header-includes:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  fig.width = 5,
+  fig.asp = 0.7, 
   echo = TRUE,
   error = FALSE,
   message = FALSE,
@@ -51,7 +53,7 @@ We conducted 20 simulation iterations per model and mesh resolution and show res
 
 ### Illustration of generating the INLA mesh
 
-```{r pkgs, warning=FALSE, message=FALSE}
+```{r pkgs, warning=FALSE, message=FALSE, cache=FALSE}
 library(INLA)
 library(inlabru)
 library(ggplot2)
@@ -128,10 +130,11 @@ sim_dat <- sdmTMB_simulate(
 
 Look at the simulated data:
 
-```{r sim-dat-plot, out.width="4.5in"}
+```{r sim-dat-plot, out.width="5in", cache=FALSE}
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +
+  coord_fixed() +
   theme_light()
 ```
 
@@ -267,8 +270,7 @@ Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to c
 Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component.
 Nonetheless, here the smoothers look very similar except for these scale on the y axis.
 
-```{r plot-smooth, echo=TRUE, fig.asp=1}
-par(mfrow = c(2, 1))
+```{r plot-smooth, echo=TRUE, fig.asp=0.6, out.width="5in"}
 plot_smooth(m)
 plot(m_mgcv)
 ```
@@ -360,7 +362,7 @@ m_glmmTMB <- glmmTMB::glmmTMB(observed ~ 1 + (1 | g) + (1 | h), data = sim_dat)
 We can extract the random effect estimates and compare them.
 We find them to be nearly identical:
 
-```{r iid-compare, echo=TRUE}
+```{r iid-compare, echo=TRUE, fig.asp=0.7, out.width="6in"}
 sdmTMB_pars <- tidy(m, "ran_pars")
 glmmTMB_varcorr <- glmmTMB::VarCorr(m_glmmTMB)
 
