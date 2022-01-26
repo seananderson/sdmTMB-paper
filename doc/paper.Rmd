@@ -88,7 +88,7 @@ Similarly to how random intercepts can account for correlation among groups, spa
 A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed to be drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle2007; @chiles1999].
 
 Such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data [e.g., @rue2005gmrf; @latimer2009].
-Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to Gaussian Markov random fields (GMRFs) [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
+Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can greatly improve computational efficiency [@heaton2017].
 The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
@@ -120,6 +120,8 @@ All other symbols refer to the  described model components (e.g., $\bm{\beta}$ a
 See Appendix 1 for a full description of the model.
 Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
 
+<!-- TODO: rotate and fill page: -->
+
 ```{r diagram, fig.cap="(ref:diagram-fig)", out.width="1.03\\textwidth"}
 dir.create("figs", showWarnings = FALSE)
 f <- here::here("figs", "diagram.pdf")
@@ -134,6 +136,7 @@ These data can be collected across discrete points in time.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be estimated.
+<!-- TODO: Line 83, 84. The parameters of CAR, SAR, ICAR, etc model can be estimated, although they can’t be readily interpreted. Is this what you were referring to? -->
 <!-- (e.g., spatial variance and range---the distance at which points are effectively independent). -->
 
 The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
@@ -185,7 +188,6 @@ Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmer
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
 For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
-<!-- TODO: Would this be an appropriate place to say something about the sim options, possibly specifically for getting uncertainty on spatial predictions? I don't know how easy that is from the other packages... -->
 
 # Introductory example using fish survey data
 
@@ -380,7 +382,7 @@ d$Hmsc <- NULL
 d$INLA <- NULL
 names(d)[names(d) == "inlabru"] <- "INLA/inlabru"
 
-knitr::kable(d, format = "latex", caption = "Comparison of functionality between seven R packages that can fit geostatistical GLMMs.",
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between several R packages that can fit geostatistical GLMMs.",
   booktabs = TRUE,
   linesep = c(
     rep('', 4), # coefs
@@ -415,7 +417,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 # Package comparisons
 
 There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
-sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GMRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
 To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
@@ -431,7 +433,7 @@ Note the log x and y axes.
 sdmTMB used the default settings and `normalize = TRUE`, which calculates the random effect normalizing constant in R.
 VAST should be similar to sdmTMB and so is not shown.
 inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
-mgcv used `bam()`, `method = fREML`, and discretized covariates [@miller2019].
+mgcv used `bam()`, `method = "fREML"`, and discretized covariates [@miller2019].
 <!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
 <!-- All platforms were restricted to one core and could be faster with parallel computation. -->
 <!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
@@ -447,6 +449,7 @@ inlabru was the least affected by mesh resolution and beyond 500 nodes was faste
 mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
 With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
 Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown).
+<!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
 Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
