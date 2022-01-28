@@ -522,7 +522,7 @@ sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue200
 sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
 Penalized spline support was possible thanks to mgcv [@wood2017a].
 We thank the authors of all these packages.
-We thank M. Lindmark, P.M. Regular, J.T. Thorson, J. Watson, ..., TODO.
+We thank M. Lindmark, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved this manuscript.
 
 # Conflict of Interest statement
 
@@ -530,11 +530,13 @@ The authors declare no conflict of interest.
 
 # Author Contributions
 
-SA led development of the software and EW contributed key software code. All
-authors contributed software code, guided software development, and
-participated in testing. PE led the Snowy Owl case study. All authors
-contributed to appendix code. SA led the writing of the manuscript. All authors
-contributed critically to the drafts and gave final approval for publication.
+SA led development of the software and EW contributed key software code.
+All authors contributed software code, guided software development, and
+participated in testing. 
+PE led the Snowy Owl case study. 
+All authors contributed to appendix code.  
+SA led the writing of the manuscript. 
+All authors contributed critically to the drafts and gave final approval for publication.
 
 # Supporting Information
 
