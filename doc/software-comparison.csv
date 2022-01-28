@@ -1,34 +1,35 @@
 ,sdmTMB,VAST,mgcv,INLA,inlabru,spBayes,Hmsc,spaMM
 # predictor stuff,,,,,,,,
-Time-varying coefficients,1,0*,1,1,1,1,0,0
+Time-varying coefficients,1,0$^1$,1,1,1,1,0,0
 Spatially varying coefficients (SVC),1,1,1,1,1,1,0,0
-GAMs*,1,0,1,1,1,0,0,0
-Threshold covariates,1,0,0,0,1*,0,0,0
+GAMs$^2$,1,0,1,1,1,0,0,0
+Threshold covariates,1,0,0,0,1$^3$,0,0,0
 Offsets,1,1,1,1,1,1,0,1
 # Coefficients influenced by phylogeny,0,0,0,?,?,0,1,0
 # Correlation stuff,,,,,,,,
-Spatiotemporal fields,1,1,1,1,1,1*,0,0
+Spatiotemporal fields,1,1,1,1,1,1$^4$,0,0
 Spatial + spatiotemporal fields,1,1,1,1,1,0,0,0
 Anisotropy,1,1,1,0,0,0,0,0
 Correlation barriers,1,1,1,1,1,0,0,0
 Separate range parameters for fields,1,0,1,1,1,0,1,0
 Share range parameters across fields,1,1,0,0,1,0,0,0
-SPDE-based,1,1,1*,1,1,0*,0,1
+SPDE-based,1,1,1$^5$,1,1,0$^6$,0,1
 # distribution stuff,,,,,,,,
 NB1 distribution,1,0,1,1,1,0,0,1
-NB2 distribution,1,1*,1,1,1,0,0,1
+NB2 distribution,1,1$^7$,1,1,1,0,0,1
 Zero-truncated distributions,1,0,0,1,1,0,0,1
 Zero-inflated distributions,0,1,0,1,1,0,0,1
-Tweedie distribution,1,1,1*,1,1,0,0,0
+Tweedie distribution,1,1,1$^8$,1,1,0,0,0
 Student-t distribution,1,0,1,1,1,0,0,0
 Censored Poisson distribution,1,0,0,1,1,0,0,0
 # other likelihood stuff,,,,,,,,
-log Gaussian Cox processes,0,0,0,1,1,0,0,0
+log Gaussian Cox processes,0$^9$,0$^9$,0$^9$,1,1,0$^9$,0,0$^9$
 Multivariate responses,0,1,0,1,1,1,1,1
-Built-in delta/hurdle models,0*,1,0*,1,1,0,0,1
-Poisson-link delta model,0,1,0,0*,0*,0,0,0
+Built-in delta/hurdle models,0$^{10}$,1,0$^{10}$,1,1,0,0,1
+Poisson-link delta model,0,1,0,1,1,0,0,0
 Likelihood weights,1,0,1,1,1,1,0,1
 Maximum/marginal likelihood,1,1,1,0,0,0,0,0
+# REML,1,1,1,0,0,0,0,0
 # Bayes-like stuff,,,,,,,,
 Bayesian/optionally Bayesian,1,1,1,1,1,1,1,0
 Priors/penalties,1,0,0,1,1,1,1,0

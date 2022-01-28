@@ -87,7 +87,7 @@ First, we will try fitting GLMMs (generalized linear mixed effects models) with 
 <!-- We will use `normalize = TRUE` to speed up optimization.  -->
 <!-- Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output. -->
 Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. 
-Therefore, effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
+Therefore, the effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
 Because there does not appear to be much correlation between years, year will be included as a random factor: `(1 | year_f)`. 
 We will also include a fixed spatial random field (`spatial = "on"`) to account for consistent differences in habitat, proximity to the breeding grounds, and effects of flyways and barriers like coasts, and independent and identically distributed spatiotemporal random field (`spatiotemporal = "iid"`) to allow for annual deviations in these spatial effects due to factors like local weather and prey abundance. 
 The random intercept for year allows the mean estimate for each of these spatiotemporal fields to vary. 

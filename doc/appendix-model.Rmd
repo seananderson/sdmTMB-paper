@@ -165,8 +165,7 @@ $$
 Within `sdmTMB()`, $\bm{X}_{1,\bm{s},t} \bm{\beta}$ is defined by the `formula` argument and represents the main-effect model matrix and a corresponding vector of coefficients. This main effect formula can contain optional penalized smoothers or non-linear functions as defined below.
 
 ### Smoothers
-<!-- EW: see this paragraph and below, should package names be enclosed in single quotes, like `sdmTMB()` above? Examples: mgcv, brms, sdmTMB throughout -->
-<!-- EW: unrelated, I never tried to implement factor smooths. I assume they work, but it'd good to check eventually -->
+
 Smoothers in sdmTMB are implemented with the same formula syntax familiar to mgcv users fitting GAMs (generalized additive models).
 Smooths are implemented in the formula using `+ s(x)`, which implements a smooth from `mgcv::s()`.
 Within these smooths, the same syntax commonly used in `mgcv::s()` can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; smooths can vary according to a continuous variable, `+ s(x, by = x2)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)`; and various types of splines may be constructed such as cyclic splines to model seasonality, e.g. `+ s(month, bs = "cc", k = 12)`.
@@ -516,7 +515,7 @@ $\Gamma$ represents the Gamma function,
 $d_{jk}$ represents the distance between locations $s_j$ and $s_k$,
 $K_\nu$ represents the modified Bessel function of the second kind,
 and $\kappa$ controls the spatial correlation range (decorrelation rate).
-The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GMRF to greatly increase computational efficiency [@lindgren2011].
+The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GRF to greatly increase computational efficiency [@lindgren2011].
 Internally, the parameter $\kappa$ and $\tau$ are converted to range and marginal standard deviation $\sigma$ as $\textrm{range} = \sqrt{8} / \kappa$ and $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
 
 In the case of a spatiotemporal model with both spatial and spatiotemporal fields, if `share_range` is `TRUE` in `sdmTMB()` (the default), then a single $\kappa$ and range are estimated with separate $\sigma_\omega$ and $\sigma_\epsilon$. This often makes sense since the data are often only weakly informative about $\kappa$.
@@ -545,15 +544,15 @@ TMB allows for anisotropy, where spatial covariance may be asymmetric with respe
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled.
 
-## Barrier mesh
+## Incorporating physical barriers into the SPDE
 
 In some cases the spatial domain of interest may be complex and bounded by some barrier such as by land or water (e.g., coastlines, islands, lakes).
-SPDE models allow for barriers to be included via barrier meshes [@bakka2019].
+SPDE models allow for physical barriers to be incorporated into the modelling [@bakka2019].
 With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`.
 The barriers must be constructed as `sf` objects [@pebesma2018] with polygons defining the barriers.
 See `?sdmTMB::add_barrier_mesh` for examples.
 
-The barrier mesh implementation requires the user to select a fraction value (`range_fraction` argument) that defines the fraction of the usual spatial range when crossing the barrier [@bakka2019].
+The barrier implementation requires the user to select a fraction value (`range_fraction` argument) that defines the fraction of the usual spatial range when crossing the barrier [@bakka2019].
 For example, if the range was estimated at 10 km, `range_fraction = 0.2` would assume that the range was 2 km across the barrier.
 This would let the spatial correlation decay 5 times faster with distance.
 From experimentation, values around 0.1 or 0.2 seem to work well but values much lower than 0.1 can result in convergence issues.

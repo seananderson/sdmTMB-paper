@@ -14,7 +14,9 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.asp = 0.618,
   cache = TRUE,
-  autodep = TRUE
+  autodep = TRUE,
+  warning = FALSE,
+  message = FALSE
 )
 ```
 
@@ -231,7 +233,8 @@ m_bru$summary.hyperpar[, c("mean", "sd", "0.025quant", "0.975quant")]
 tidy(m, "ran_pars", conf.int = TRUE)
 ```
 
-Note that the standard errors for variance terms are not in natural and not log space and so are a very rough approximation and therefore not reported by the `tidy()` function.
+Note that, within sdmTMB, the standard errors for variance terms are not reported in the `tidy()` function as they could be misleading if considered in natural (rather than log) space.
+The confidence intervals are, however, reported.
 
 Comparing the fixed effects shows the estimates from all three models are also very similar:
 

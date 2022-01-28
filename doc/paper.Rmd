@@ -35,6 +35,7 @@ header-includes:
   \renewcommand{\thetable}{S\arabic{table}}
   \setcounter{figure}{0}
   \renewcommand{\thefigure}{S\arabic{figure}}}
+  \usepackage{lscape}
   \widowpenalty10000
   \clubpenalty10000
 editor_options:
@@ -122,11 +123,15 @@ Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes 
 
 <!-- TODO: rotate and fill page: -->
 
-```{r diagram, fig.cap="(ref:diagram-fig)", out.width="1.03\\textwidth"}
+\begin{landscape}
+
+```{r diagram, fig.cap="(ref:diagram-fig)", out.width="9in"}
 dir.create("figs", showWarnings = FALSE)
 f <- here::here("figs", "diagram.pdf")
 knitr::include_graphics(f)
 ```
+
+\end{landscape}
 
 # Model description
 
@@ -135,11 +140,10 @@ Geostatistical data simply refers to data observed at specific spatial coordinat
 These data can be collected across discrete points in time.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models [e.g., @verhoef2018].
 sdmTMB can also fit models with areal data if each polygon has an associated centroid.
-A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be estimated.
-<!-- TODO: Line 83, 84. The parameters of CAR, SAR, ICAR, etc model can be estimated, although they can’t be readily interpreted. Is this what you were referring to? -->
+A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004].
 <!-- (e.g., spatial variance and range---the distance at which points are effectively independent). -->
 
-The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts, time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
+The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 
 <!-- Using the notation of a bold capital letter to represent a data matrix or vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time, -->
@@ -171,11 +175,11 @@ The GLMMs underpinning sdmTMB models are spatially explicit---they estimate inte
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], and most smooths in mgcv [@wood2017a]).
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
-The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately.
+The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared (`share_range = TRUE`) or estimated separately (`share_range = FALSE`).
 
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a], or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
@@ -187,7 +191,7 @@ These priors may be useful in cases where estimation is difficult because of ide
 Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity (`get_cog()`) and total population index (`get_index()`) given a user-supplied grid.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity  [`get_cog()`; e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
 
 # Introductory example using fish survey data
 
@@ -227,12 +231,14 @@ Alternatively, we could have created any mesh via the INLA package and supplied 
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
 We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`.
-We use a penalized smoother for depth as a main effect via `s()` from the mgcv package and choose a basis dimension of 5.
+We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
+The smoothers in sdmTMB can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `+ s(x, k = 4)`.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
+<!-- We could instead model catch weight as the response with an offset for log(area). -->
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5),
+  density ~ s(depth),
   data = pcod,
   family = tweedie(link = "log"),
   mesh = mesh,
@@ -249,24 +255,24 @@ print(fit)
 ```
 
 ```{}
-#> Spatiotemporal model fit by ML ['sdmTMB']
-#> Formula: density ~ s(depth, k = 5)
+#> Spatial model fit by ML ['sdmTMB']
+#> Formula: density ~ s(depth)
 #> Mesh: mesh
 #> Data: pcod
 #> Family: tweedie(link = 'log')
 #>             coef.est coef.se
-#> (Intercept)     2.34    0.23
-#> sdepth        -26.96   21.52
-#>
+#> (Intercept)     2.37    0.21
+#> sdepth          6.17   25.17
+#> 
 #> Smooth terms:
 #>            Std. Dev.
-#> sds(depth)     34.03
-#>
-#> Dispersion parameter: 12.70
+#> sds(depth)     13.93
+#> 
+#> Dispersion parameter: 12.69
 #> Tweedie p: 1.58
-#> Matern range: 17.47
+#> Matern range: 16.39
 #> Spatial SD: 1.86
-#> ML criterion at convergence: 6403.637
+#> ML criterion at convergence: 6402.136
 ```
 
 The output indicates our model was fit by maximum (marginal) likelihood (`ML`).
@@ -289,8 +295,8 @@ Here we will turn off the spatial field and structure the spatiotemporal random 
 
 ```{r fit-tv, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
-  density ~ s(depth, k = 5), family = tweedie(link = "log"), data = pcod, mesh = mesh,
-  time = "year", spatial = "off", spatiotemporal = "ar1"
+  density ~ s(depth), family = tweedie(link = "log"), data = pcod, mesh = mesh,
+  time = "year", spatial = "on", spatiotemporal = "ar1"
 )
 ```
 
@@ -302,13 +308,13 @@ Finer meshes will be slower to fit but generally increase the accuracy of the SP
 The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
 (B) Spatial random field:
 these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
-(C) Overall prediction: these estimates represent the combination of all fixed and random effects.
+(C) Overall prediction: these estimates represent the combination of all fixed and random effects. Crosses illustrate center of gravity (`get_cog()`) from a spatiotemporal version; lighter crosses are more recent.
 (D) Conditional effect of depth modelled as a penalized smoother. These predictions are made omitting the spatial random field.
-(E) Standardized area-weighted population index derived from a spatiotemporal version of this model. The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
+(E) Standardized area-weighted population index derived from a spatiotemporal version (`get_index()`). The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
 <!-- LB: I wasn't sure which panel the statement about omitting the spatial random field applied to, but moved things around. -->
 
 ```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
-pcodfig <- here::here("figs", "pcod-fig2.pdf")
+pcodfig <- here::here("figs", "pcod-fig.pdf")
 knitr::include_graphics(pcodfig)
 ```
 
@@ -368,11 +374,13 @@ ind <- get_index(p)
 library(kableExtra)
 suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
 d <- as.matrix(d)
-d[d == "1"] <- "\\checkmark"
-d[d == "1*"] <- "\\checkmark\\footnote{a}"
-d[d == "GAMs*"] <- "GAMs\\footnote{a}"
-d[d == "0"] <- "--"
-d[d == "0*"] <- "--\\footnote{a}"
+# d[d == "1"] <- "\\checkmark"
+d <- gsub("^1", "\\\\checkmark", d)
+# d[d == "1*"] <- "\\checkmark\\footnote{a}"
+# d[d == "GAMs*"] <- "GAMs\\footnote{a}"
+# d[d == "0"] <- "--"
+d <- gsub("^0", "--", d)
+# d[d == "0*"] <- "--\\footnote{a}"
 d <- as.data.frame(d)
 names(d)[1] <- ""
 row.names(d) <- NULL
@@ -397,22 +405,23 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
   escape = FALSE, row.names = FALSE) %>%
   kableExtra::kable_styling(font_size = 8) %>%
   kableExtra::footnote(
-    number = c(
-      "Technically possible but non-trivial",
-      "Penalized smoother GAMs",
-      "inlabru but not INLA",
-      "Spatiotemporal fields as random walk only",
-      "SPDE approach as in Miller et al. (2019)",
-      "Does have predictive process knots",
-      "Zero-inflated NB2 only",
-      "Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}",
-      "Hurdle models possible by fitting components separately",
-      "Hurdle models possible by fitting components separately",
-      "Technically possible but non-trivial"
+    general = paste(
+      "$^1$Technically possible but non-trivial.",
+      "$^2$Penalized smoother GAMs that determine `wiggliness'.",
+      "$^3$inlabru but not INLA.",
+      "$^4$Spatiotemporal fields as random walk only.",
+      "$^5$SPDE approach as in Miller et al. (2019).",
+      "$^6$Does have predictive process knots.",
+      "$^7$Zero-inflated NB2 only.",
+      "$^8$Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}.",
+      "$^9$Possible as log-linked Poisson GLMM with aggregated data.",
+      "$^{10}$Hurdle models possible by fitting components separately."
     ),
-    escape = FALSE
+    escape = FALSE, threeparttable = TRUE
   )
 ```
+
+<!-- TODO: Line 242. Can sdmTMB be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within INLA/inlabru allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
 
 # Package comparisons
 
@@ -494,11 +503,14 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 <!-- MVT? time-varying epsilon, non-gaussian fields -->
 <!-- 3d models, continuous time, -->
 
-Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, spatial covariance barriers, time-varying spatiotemporal variance, and simulation from the parameter joint precision matrix.
+Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model of @bakka2019, time-varying spatiotemporal covariance parameters, and simulation from the parameter joint precision matrix.
 Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-gaussian random fields [e.g., @anderson2019].
+The included TMB `.cpp` file also provides a high-quality, bug-free, and tested model template that can be modified to add additional features.
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
-We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data.
+We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. 
+<!-- Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data. -->
+<!-- Line 275: I would suggest adding a MAJOR benefit of sdmTMB for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019].
 These data present statistical challenges to modelling them effectively and efficiently as appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
@@ -510,7 +522,7 @@ sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue200
 sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
 Penalized spline support was possible thanks to mgcv [@wood2017a].
 We thank the authors of all these packages.
-We thank P.M. Regular, J. Watson, ..., TODO.
+We thank M. Lindmark, P.M. Regular, J.T. Thorson, J. Watson, ..., TODO.
 
 # Conflict of Interest statement
 
@@ -546,8 +558,8 @@ AB and CD conceived the ideas and designed methodology; CD and EF collected the 
 # Data Availability
 
 A development version of sdmTMB is available at <https://github.com/pbs-assess/sdmTMB>.
-sdmTMB will be available on CRAN.
-Paper source code will be available on Zenodo and at <https://github.com/seananderson/sdmTMB-paper> on publication.
+sdmTMB will be available on CRAN before publication.
+Paper source code is available at <https://github.com/seananderson/sdmTMB-paper> and will be archived on Zenodo before publication.
 
 <!--
 To enable readers to locate archived data from papers, we require that authors list the database and the respective accession numbers or DOIs for all data from the manuscript that has been made publicly available. For example, “Data available from the Dryad Digital Repository http://dx.doi.org/10.5061/dryad.41qh7 (Kiere & Drummond 2016).” When a DOI is available for the data, the full data citation should also be given in the reference list (see below). For further information see our data archiving policy.

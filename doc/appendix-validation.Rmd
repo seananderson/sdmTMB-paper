@@ -250,7 +250,7 @@ library(sdmTMB)
 set.seed(19203)
 # examples from ?mgcv::gam.models
 dat <- mgcv::gamSim(3, n = 800)
-m_mgcv <- mgcv::gam(y ~ s(x2), data = dat)
+m_mgcv <- mgcv::gam(y ~ s(x2), data = dat, method = "REML")
 p_mgcv <- predict(m_mgcv)
 dat$X <- runif(nrow(dat)) # fake
 dat$Y <- runif(nrow(dat)) # fake
@@ -266,13 +266,27 @@ cor(p$est, p_mgcv)
 ```
 
 We can see the predictions match nearly exactly.
-Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compared the smoothers themselves.
-Note that the sdmTMB version is showing the marginal effect of a prediction including the intercept whereas the mgcv version is showing only the smooth component.
-Nonetheless, here the smoothers look very similar except for these scale on the y axis.
+Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compare the smoothers themselves.
+Note that the sdmTMB version shows the marginal effect of a prediction including the intercept whereas the `mgcv::plot.gam()` shows the smooth component only.
+We therefore use `mgcv::predict.gam()` to make a matching plot.
+Below, we add a tiny jitter amount (`0.02`) to the mgcv output just so the two smoothers can both be visualized.
+The blue lines are from mgcv and the black lines are from sdmTMB.
 
 ```{r plot-smooth, echo=TRUE, fig.asp=0.6, out.width="5in"}
 plot_smooth(m)
-plot(m_mgcv)
+
+x2 <- seq(0, 1, length.out = 100)
+p_mgcv <- predict(m_mgcv, newdata = data.frame(x2 = x2), se.fit = TRUE)
+qv <- stats::qnorm(1 - (1 - 0.95) / 2)
+df <- data.frame(
+  x2 = x2,
+  est = p_mgcv$fit, 
+  lwr = p_mgcv$fit - qv * p_mgcv$se.fit, 
+  upr = p_mgcv$fit + qv * p_mgcv$se.fit
+)
+lines(df$x2, df$est + 0.02, col = "blue")
+lines(df$x2, df$lwr + 0.02, lty = 2, col = "blue")
+lines(df$x2, df$upr + 0.02, lty = 2, col = "blue")
 ```
 
 ### `s(x1, by = x2)`
@@ -307,7 +321,7 @@ Again, the results are nearly identical.
 Next, we compare a bivariate smoother, with near identical predictions.
 
 ```{r bivariate-compare, echo=TRUE}
-m_mgcv <- mgcv::gam(y ~ s(x2, x1), data = dat)
+m_mgcv <- mgcv::gam(y ~ s(x2, x1), data = dat, method = "REML")
 p_mgcv <- predict(m_mgcv)
 m <- sdmTMB(y ~ s(x2, x1),
   data = dat,
