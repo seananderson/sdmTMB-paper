@@ -110,29 +110,6 @@ This paper describes the basic functionality of this R package and its underlyin
 
 <!-- legendre1989a: "Spatial pattern and ecological analysis": "We can expect the spatial approach to ecological problems to bring about a quantum jump for ecologists and population geneticists who had learned a type of statistics where one had to hide space or time structures. It is now possible to use these structures and to integrate them into our analyses as fully-fledged controlled variables." -->
 
-(ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
-An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
-The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
-Notation:
-We refer to design matrices as $\bm{X}$.
-The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
-The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
-All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
-See Appendix 1 for a full description of the model.
-Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
-
-<!-- TODO: rotate and fill page: -->
-
-\begin{landscape}
-
-```{r diagram, fig.cap="(ref:diagram-fig)", out.width="9in"}
-dir.create("figs", showWarnings = FALSE)
-f <- here::here("figs", "diagram.pdf")
-knitr::include_graphics(f)
-```
-
-\end{landscape}
-
 # Model description
 
 sdmTMB fits GLMMs to spatial or spatiotemporal geostatistical data.
@@ -145,6 +122,7 @@ A benefit of the geostatistical approach over CAR or similar models is that the 
 
 The process component of an sdmTMB model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig. \@ref(fig:diagram), Appendix 1).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
+
 
 <!-- Using the notation of a bold capital letter to represent a data matrix or vector, a bold lowercase greek letter to represent a parameter vector, the index $\bm{s}$ to represent a point in space, and the index $t$ to represent a point in time, -->
 <!-- the general form of a GLMM is -->
@@ -176,6 +154,28 @@ In contrast, semi- and non-parametric approaches do not estimate spatial covaria
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared (`share_range = TRUE`) or estimated separately (`share_range = FALSE`).
+
+
+(ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
+An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
+The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
+Notation:
+We refer to design matrices as $\bm{X}$.
+The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
+The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
+All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
+See Appendix 1 for a full description of the model.
+Note that `s()` denotes a smoother as in mgcv [@wood2017a], `breakpt()` denotes a breakpoint 'hockey-stick' shape [e.g., @barrowman2000], `(1|g) ` denotes a random intercept by group `g`, and `~ 0` is used in an R formula to omit an intercept.
+
+\begin{landscape}
+
+```{r diagram, fig.cap="(ref:diagram-fig)", out.width="9in"}
+dir.create("figs", showWarnings = FALSE)
+f <- here::here("figs", "diagram.pdf")
+knitr::include_graphics(f)
+```
+
+\end{landscape}
 
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
@@ -247,11 +247,11 @@ fit <- sdmTMB(
 ```
 
 <!-- Setting `silent = FALSE` would indicate optimization progress, which is helpful for larger models. -->
-We can get a summary of the fit with the `print()` method or extract parameter estimates as a data frame with the `tidy()` method.
+We can get a summary of the fit with the `print()` or `summary()` methods or extract parameter estimates as a data frame with the `tidy()` method.
 <!-- (omitted for space). -->
 
 ```{r,eval=FALSE, echo=TRUE}
-print(fit)
+summary(fit)
 ```
 
 ```{}
@@ -263,11 +263,11 @@ print(fit)
 #>             coef.est coef.se
 #> (Intercept)     2.37    0.21
 #> sdepth          6.17   25.17
-#> 
+#>
 #> Smooth terms:
 #>            Std. Dev.
 #> sds(depth)     13.93
-#> 
+#>
 #> Dispersion parameter: 12.69
 #> Tweedie p: 1.58
 #> Matern range: 16.39
@@ -290,8 +290,8 @@ p <- predict(fit, newdata = qcs_grid)
 The output of `predict()` is a data frame containing overall estimates in link space, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
 We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)B--D.
 
-We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured in time.
-Here we will turn off the spatial field and structure the spatiotemporal random fields as AR(1).
+We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
+Here we will keep the spatial field and structure the spatiotemporal random fields as AR(1).
 
 ```{r fit-tv, eval=FALSE, echo=TRUE}
 fit_spatiotemporal <- sdmTMB(
@@ -370,6 +370,21 @@ p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object
 ind <- get_index(p)
 ```
 
+
+# Package comparisons
+
+There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
+sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
+sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
+To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
+<!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
+Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
+spaMM is limited to a spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
+There is considerable variability in the available observation likelihoods across packages (Table 1).
+We provide comparisons of the syntax and the reproducibility of results from models fit using INLA or inlabru (Appendix 4) and VAST (Appendix 5).
+
+
 ```{r compare-table}
 library(kableExtra)
 suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
@@ -423,24 +438,24 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 
 <!-- TODO: Line 242. Can sdmTMB be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within INLA/inlabru allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
 
-# Package comparisons
+We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
+In this test, for mesh resolutions under 500 nodes, sdmTMB was faster than inlabru or mgcv.
+inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
+mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
+With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
+<!-- Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown). -->
+<!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
+Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
+Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
+<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
+<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
 
-There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
-sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
-sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
-sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
-To our knowledge, VAST is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
-<!-- However, VAST is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
-Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., hockey-stick) covariate relationships.
-spaMM is limited to a spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
-There is considerable variability in the available observation likelihoods across packages (Table 1).
-We provide comparisons of the syntax and the reproducibility of results from models fit using INLA or inlabru (Appendix 4) and VAST (Appendix 5).
 
 (ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons ranges across 20 random iterations.
 Note the log x and y axes.
 sdmTMB used the default settings and `normalize = TRUE`, which calculates the random effect normalizing constant in R.
-VAST should be similar to sdmTMB and so is not shown.
+VAST is similar to sdmTMB and so is not shown.
 inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
 mgcv used `bam()`, `method = "fREML"`, and discretized covariates [@miller2019].
 <!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
@@ -451,18 +466,6 @@ mgcv used `bam()`, `method = "fREML"`, and discretized covariates [@miller2019].
 f <- here::here("figs", "timing-spatial.pdf")
 knitr::include_graphics(f)
 ```
-
-We ran a simple speed comparison between sdmTMB, inlabru, and mgcv for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
-In this test, for mesh resolutions under 500 nodes, sdmTMB was faster than inlabru or mgcv.
-inlabru was the least affected by mesh resolution and beyond 500 nodes was faster than sdmTMB with default sdmTMB settings.
-mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
-With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
-Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown).
-<!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
-Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
-<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
-<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
 
 # Discussion
 
@@ -508,7 +511,7 @@ Future development may include zero-inflated models, improvements to Bayesian sa
 The included TMB `.cpp` file also provides a high-quality, bug-free, and tested model template that can be modified to add additional features.
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
-We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. 
+We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend.
 <!-- Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data. -->
 <!-- Line 275: I would suggest adding a MAJOR benefit of sdmTMB for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
 
@@ -522,7 +525,7 @@ sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue200
 sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
 Penalized spline support was possible thanks to mgcv [@wood2017a].
 We thank the authors of all these packages.
-We thank M. Lindmark, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved this manuscript.
+We thank M. Lindmark, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
 # Conflict of Interest statement
 
@@ -532,11 +535,10 @@ The authors declare no conflict of interest.
 
 SA led development of the software and EW contributed key software code.
 All authors contributed software code, guided software development, and
-participated in testing. 
-PE led the Snowy Owl case study. 
-All authors contributed to appendix code.  
-SA led the writing of the manuscript. 
-All authors contributed critically to the drafts and gave final approval for publication.
+participated in testing.
+PE led the Snowy Owl case study.
+All authors contributed to appendix code.
+SA led the writing of the manuscript; all authors contributed critically to the drafts and gave final approval for publication.
 
 # Supporting Information
 
