@@ -43,11 +43,11 @@ editor_options:
     wrap: sentence
 abstract: |
     | \noindent 1. Geostatistical data---spatially referenced observations related to some continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions. However, appropriate models to analyze these data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
-    | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
+    | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB) but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
     | 3. We highlight advantages of using sdmTMB for this class of models: (1) sdmTMB provides a flexible interface familiar to users of `glm()`, lme4, glmmTMB, or mgcv; (2) estimation is often faster than alternatives; (3) sdmTMB provides simple out-of-sample cross validation; (4) non-stationary processes (time-varying and  spatially varying coefficients) are easily constructed with a formula interface; and (5) sdmTMB includes features not available as a combination in related packages (e.g., penalized smoothers and break-point effects, anisotropy, abundance index standardization).
     | 4. We hope that sdmTMB's user-friendly interface will open this useful class of models to a wider audience within species distribution modelling and beyond.
     | Keywords:
-      Gaussian Markov random fields,
+      Gaussian Markov random fields (GMRF),
       generalized linear mixed effects models (GLMM),
       INLA,
       SPDE,
@@ -91,7 +91,7 @@ A common approach to modelling these spatial effects is with Gaussian random fie
 Such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data [e.g., @rue2005gmrf; @latimer2009].
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
-This can greatly improve computational efficiency [@heaton2017].
+This can greatly improve computational efficiency [e.g., @heaton2019].
 The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
 Details are beyond the scope of this paper, and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit GRFs to large spatial datasets [@lindgren2011].
 
@@ -153,7 +153,7 @@ The GLMMs underpinning sdmTMB models are spatially explicit---they estimate inte
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], and most smooths in mgcv [@wood2017a]).
 The random fields in sdmTMB are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
-The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared (`share_range = TRUE`) or estimated separately (`share_range = FALSE`).
+The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately (`share_range` argument).
 
 
 (ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
@@ -180,6 +180,7 @@ knitr::include_graphics(f)
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
+The smoothers in sdmTMB can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)`.
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
@@ -232,7 +233,6 @@ We can inspect our mesh object with the associated plotting method (`plot(mesh)`
 
 We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
-The smoothers in sdmTMB can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `+ s(x, k = 4)`.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 <!-- We could instead model catch weight as the response with an offset for log(area). -->
 
@@ -373,7 +373,7 @@ ind <- get_index(p)
 
 # Package comparisons
 
-There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2017].
+There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
 sdmTMB, VAST, INLA/inlabru, and spaMM [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include spBayes in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
 sdmTMB, VAST, and mgcv can estimate anisotropic covariance whereas INLA/inlabru and spBayes are currently limited to isotropic covariance.
 sdmTMB and mgcv focus on univariate response data, whereas VAST, INLA/inlabru, spaMM, and spBayes extend to multivariate responses with varying limitations.
@@ -483,7 +483,7 @@ INLA/inlabru, or spaMM for spatial models, scale the best with very high resolut
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
 
 <!--
-There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2017]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1).
+There are many R packages available for fitting spatially explicit models to large datasets and we cannot review them all here [see @heaton2019]; however, the three most closely related are VAST, inlabru, and mgcv (Table 1).
 VAST is also built on TMB and, for univariate data, should be able to fit equivalent models with some minor differences in the user interfaces.
 Interface-wise, VAST is less modular (e.g., by default constructing meshes before fitting, making predictions at the same time as fitting), is written from a fisheries perspective, and lacks some interface elements that we think make sdmTMB more broadly usable by applied ecologists.
 For example, `sdmTMB()` has a `family` argument as in `glm()`, a `predict()` method, and human-readable options for spatial/spatiotemporal fields (e.g., `spatial = 'on'`, `spatiotemporal = 'AR1'`).
