@@ -15,11 +15,15 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.asp = 1,
+  fig.asp = 0.7,
   cache = TRUE,
   autodep = TRUE,
-  cache.comments = FALSE
+  cache.comments = FALSE,
+  dev = "png",
+  dpi = 150,
+  optipng = "-strip all"
 )
+knitr::knit_hooks$set(optipng = knitr::hook_optipng)
 ```
 
 # Background
@@ -65,9 +69,16 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh, echo=TRUE, cache=FALSE, out.width="70%"}
+```{r mesh, echo=TRUE, cache=FALSE, out.width="4in"}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
-plot(mesh)
+
+# built-in plot() method:
+# plot(mesh)
+
+# or with ggplot:
+ggplot() + inlabru::gg(mesh$mesh) +
+  geom_point(aes(X, Y), data = snow) +
+  theme_light()
 ```
 
 The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) knots. 
@@ -225,7 +236,7 @@ pred$resid <- residuals(m)
 
 ## Checking residuals
 
-We can inspect randomized quantile residuals, although this method has known issues. 
+We can inspect randomized quantile residuals, although this method has known issues [@thygesen2017a]. 
 
 ```{r qqnorm, out.width="33%"}
 qqnorm(pred$resid)
@@ -280,7 +291,7 @@ theme_set(theme_bw() + theme(
 )) 
 ```
 
-```{r plot-resids, fig.width=8}
+```{r plot-resids, fig.width=8, dpi=200}
 ggplot(pred, aes(X, Y, colour = resid)) +
   geom_point(size = 0.25) +
   facet_wrap(~year) +
@@ -446,7 +457,7 @@ Based on the 80% CI calculated above, the resulting minimum estimated effects of
 All these effects are in link space (`link = "log"`) and could be `exp()` to give the expected multiplicative contribution to the predicted owl counts, however the additive nature of the effect in link space is actually somewhat more intuitive to interpret visually, so this is what we will plot on our maps:
 
 
-```{r plot-map, echo=TRUE, eval=TRUE, out.width="95%", cache=FALSE}
+```{r plot-map, echo=TRUE, eval=TRUE, out.width="80%", cache=FALSE}
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
@@ -467,7 +478,7 @@ ggplot(data = p_proj) +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=F, eval=TRUE, out.width="100%", cache=FALSE}
+```{r plot-map-ci, echo=F, eval=TRUE, out.width="85%", cache=FALSE}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -523,7 +534,7 @@ These are the predictions of winter owl counts that incorporate all fixed effect
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects, echo=TRUE, eval=TRUE, cache=FALSE}
+```{r plot-all-effects, echo=TRUE, eval=TRUE, cache=FALSE, dpi=220}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
@@ -554,7 +565,7 @@ We can look at the spatial random effects (`omega_s`) that represent consistent 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
 These could be landcover, proximity to the breeding grounds, and effects of flyways and barriers such as coasts.
 
-```{r plot-spatial-effects, echo=TRUE, eval=TRUE}
+```{r plot-spatial-effects, echo=TRUE, eval=TRUE, out.width="5in", dpi=200}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = omega_s), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
@@ -563,7 +574,7 @@ ggplot(data = p_proj) +
     xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000),
     ylim = c(min(p_proj$Y), max(p_proj$Y))
   ) +
-  scale_colour_viridis_c(guide = guide_colourbar(
+  scale_colour_gradient2(guide = guide_colourbar(
     direction = "horizontal", title.position = "top"
   )) +
   theme(legend.position = c(0.1, 0.1), axis.title = element_blank())
@@ -577,7 +588,7 @@ Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that re
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be things like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects, echo=TRUE, eval=TRUE}
+```{r plot-spatiotemporal-effects, echo=TRUE, eval=TRUE, dpi=210}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = epsilon_st),
@@ -587,7 +598,7 @@ ggplot(data = filter(p_proj, year > 1978)) +
     xlim = c(min(p_proj$X) - 50000, max(p_proj$X) - 50000),
     ylim = c(min(p_proj$Y), max(p_proj$Y))
   ) +
-  scale_colour_viridis_c(guide = guide_colourbar(title.position = "top")) +
+  scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
   theme(axis.text = element_blank(), axis.ticks = element_blank()) +
   facet_wrap(~year_f)
 ```
@@ -600,7 +611,7 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 In this case, these only include the overall effect of mean annual NAO and the random intercepts for year.
 
-```{r plot-fixed-effects, echo=TRUE, eval=TRUE}
+```{r plot-fixed-effects, echo=TRUE, eval=TRUE, dpi=210}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)),
