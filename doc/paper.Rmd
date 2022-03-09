@@ -342,7 +342,7 @@ This result is consistent with owls closest to the Atlantic coast and those migr
 
 (ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US.
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).
-The effect is multiplicative on owl count per NOA unit.
+The effect is multiplicative on owl count per NAO unit.
 
 ```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl-nao-effect.png")
