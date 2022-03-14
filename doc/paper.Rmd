@@ -7,9 +7,9 @@ author: "|
   Lewis A. K. Barnett$^3$\n|
   $^1$Pacific Biological Station, Fisheries and Oceans Canada, Nanaimo, BC, Canada\n|
   $^2$Northwest Fisheries Science Center, National Marine Fisheries Service,\n|
-      National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n|
+      National Oceanic and Atmospheric Administration, Seattle, WA, USA\n|
   $^3$Alaska Fisheries Science Center, National Marine Fisheries Service,\n|
-      National Oceanographic and Atmospheric Administration, Seattle, WA, USA\n|
+      National Oceanic and Atmospheric Administration, Seattle, WA, USA\n|
     Running headline: sdmTMB: spatial and spatiotemporal GLMMs\n"
 output:
     # bookdown::word_document2:
@@ -79,7 +79,7 @@ knitr::opts_chunk$set(
 # Introduction
 
 Ecological data are often collected in space or in space repeatedly over time.
-While such data are a rich source of information about ecological processes [@legendre1989a; @rossi1992; @tilman1997spatial], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart, due to measured and unmeasured variables [@cressie1993; @diggle2007; @cressie2011].
+While such data are a rich source of information about ecological processes [@legendre1989a; @rossi1992; @tilman1997spatial], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart due to measured and unmeasured variables [@cressie1993; @diggle2007; @cressie2011].
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
 Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions  [e.g., @shelton2014], and can be of ecological interest itself by, for example, identifying locations with similar population responses [e.g., @thorson2019d; @barnett2021].
 <!-- LB: seems like we needed some explicit example of why it would be of ecological interest itself to those who are unfamiliar, so I added allusion to local trends...but maybe also mentioning quantification of patchiness or something similar?. More generally, it might be good to expand on the utility of such models for applied ecology, if we can find room within the tight word limit? -->
@@ -93,7 +93,7 @@ Many solutions have been proposed, such as predictive processes [@banerjee2008; 
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can greatly improve computational efficiency [e.g., @heaton2019].
 The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
-Details are beyond the scope of this paper, and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit GRFs to large spatial datasets [@lindgren2011].
+Details are beyond the scope of this paper and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit approximations to GRFs to large spatial datasets [@lindgren2011].
 
 Systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
 For example, TMB requires the user to program in a C++ template and it can be slow to experiment with multiple models when writing bespoke model code.
@@ -321,8 +321,8 @@ knitr::include_graphics(pcodfig)
 # Example of a spatially varying coefficient with citizen science data
 <!-- # Estimate a spatially varying effect from citizen science data -->
 
-Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
-The reasons for this interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
+Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
+The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014].
 Because both productivity and the choice of wintering location could be influenced by climate, we tested for a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
 We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial (NB2) distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
@@ -478,7 +478,7 @@ VAST is the sole option for fitting some multivariate models;
 alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
 Speed-wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2022].
-INLA/inlabru, or spaMM for spatial models, scale the best with very high resolution meshes.
+INLA/inlabru, or spaMM for spatial models, scale the best with very high-resolution meshes.
 
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
 
@@ -507,8 +507,8 @@ Despite these sdmTMB advantages for the models discussed here, mgcv is an immens
 <!-- 3d models, continuous time, -->
 
 Additional functionality in sdmTMB not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model of @bakka2019, time-varying spatiotemporal covariance parameters, and simulation from the parameter joint precision matrix.
-Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-gaussian random fields [e.g., @anderson2019].
-The included TMB `.cpp` file also provides a high-quality, bug-free, and tested model template that can be modified to add additional features.
+Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-Gaussian random fields [e.g., @anderson2019].
+The included TMB `.cpp` file also provides a high-quality and tested model template that can be modified to add additional features.
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
 We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
 We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend.
@@ -525,7 +525,7 @@ sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue200
 sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
 Penalized spline support was possible thanks to mgcv [@wood2017a].
 We thank the authors of all these packages.
-We thank M. Lindmark, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
+We thank M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
 # Conflict of Interest statement
 
