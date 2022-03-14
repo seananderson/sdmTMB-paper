@@ -162,11 +162,24 @@ bias <- est %>%
   summarise(ratio = mean(ratio, na.rm = TRUE))
 bias
 
+est %>%
+  mutate(re = (est - true)/true) %>%
+  summarise(mare = mean(re, na.rm = TRUE))
+
 # MVN simulation
 bias <- est %>%
   mutate(ratio = est_sim/true) %>%
   summarise(ratio = mean(ratio, na.rm = TRUE))
 bias
+
+est %>%
+  mutate(ratio = est_sim/true) %>%
+  summarise(mean_ratio = mean(ratio, na.rm = TRUE),
+    median_ratio = median(ratio))
+
+est %>%
+  mutate(re = (est_sim - true)/true) %>%
+  summarise(mare = median(re, na.rm = TRUE))
 
 # no bias correction
 bias <- est %>%
