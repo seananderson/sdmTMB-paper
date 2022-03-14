@@ -36,3 +36,5 @@ for (i in seq_along(files)) {
 }
 
 system("cd doc; ./clean-bib.sh")
+
+system("open ~/Dropbox/sdmTMB-paper/")
