@@ -519,11 +519,11 @@ $\nu$ controls the smoothness,
 $\Gamma$ represents the Gamma function,
 $d_{jk}$ represents the distance between locations $s_j$ and $s_k$,
 $K_\nu$ represents the modified Bessel function of the second kind,
-and $\kappa$ controls the spatial correlation range (decorrelation rate).
+and $\kappa$ represents the decorrelation rate.
 The parameter $\nu$ is set to 1 to take advantage of the Stochastic Partial Differential Equation (SPDE) approximation to the GRF to greatly increase computational efficiency [@lindgren2011].
-Internally, the parameter $\kappa$ and $\tau$ are converted to range and marginal standard deviation $\sigma$ as $\textrm{range} = \sqrt{8} / \kappa$ and $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
+Internally, the parameters $\kappa$ and $\tau$ are converted to range and marginal standard deviation $\sigma$ as $\textrm{range} = \sqrt{8} / \kappa$ and $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
 
-In the case of a spatiotemporal model with both spatial and spatiotemporal fields, if `share_range` is `TRUE` in `sdmTMB()` (the default), then a single $\kappa$ and range are estimated with separate $\sigma_\omega$ and $\sigma_\epsilon$. This often makes sense since the data are often only weakly informative about $\kappa$.
+In the case of a spatiotemporal model with both spatial and spatiotemporal fields, if `share_range = TRUE` in `sdmTMB()` (the default), then a single $\kappa$ and range are estimated with separate $\sigma_\omega$ and $\sigma_\epsilon$. This often makes sense since data are often only weakly informative about $\kappa$.
 If `share_range = FALSE`, then separate $\kappa_\omega$ and $\kappa_\epsilon$ are estimated.
 The spatially varying coefficient field always shares $\kappa$ with the spatial random field.
 
