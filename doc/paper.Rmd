@@ -180,7 +180,7 @@ knitr::include_graphics(f)
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \@ref(fig:diagram); Appendix 1).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in mgcv [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
-The smoothers in sdmTMB can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)`.
+The smoothers in sdmTMB can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)` [@wood2017a].
 
 The sdmTMB model is fit by maximum marginal likelihood.
 Internally, a TMB [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in R [@gay1990; @r2021].
@@ -201,7 +201,7 @@ It usually makes sense to convert the spatial coordinates to an equidistant proj
 <!-- TODO: Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data and added a sentence to the pcod appendix, but maybe still important to include here as well? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
-Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
+Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial coordinates `X` and `Y`, which are UTM coordinates in kilometres.
 
 ```{r, include=FALSE}
 # simplify for paper
@@ -475,7 +475,7 @@ We think users familiar with `stats::glm()`, lme4, or glmmTMB will find sdmTMB m
 Users familiar with INLA will find inlabru approachable.
 Users familiar with mgcv can adapt mgcv to fit similar models with custom code [@miller2019] and INLA/inlabru and mgcv are also general purpose modelling packages.
 VAST is the sole option for fitting some multivariate models;
-alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemoral GLMMs may find sdmTMB more straightforward to use.
+alternatively, because VAST focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemporal GLMMs may find sdmTMB more straightforward to use.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour sdmTMB or VAST (although such quantities can be post hoc derived with other packages).
 Speed-wise, sdmTMB (and VAST) may be fastest in some cases (e.g., random effect normalization) or in situations up to mid-resolution meshes (~500 knots), which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2022].
 INLA/inlabru, or spaMM for spatial models, scale the best with very high-resolution meshes.
@@ -510,8 +510,9 @@ Additional functionality in sdmTMB not already mentioned includes interpolating 
 Future development may include zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], and non-Gaussian random fields [e.g., @anderson2019].
 The included TMB `.cpp` file also provides a high-quality and tested model template that can be modified to add additional features.
 <!-- Not sure what kind of refs you want here?  INLA's non-gaussian random fields are mentioned here @bakka2018review-->
-We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately.
-We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend.
+<!-- sdmTMB does not currently include  -->
+<!-- We may introduce explicit delta models, but many such models can already be fit with sdmTMB by modelling the two components separately. -->
+<!-- We may introduce capability for multivariate response data, but VAST already focuses on such models with a TMB backend. -->
 <!-- Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data. -->
 <!-- Line 275: I would suggest adding a MAJOR benefit of sdmTMB for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
 
@@ -525,7 +526,7 @@ sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue200
 sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
 Penalized spline support was possible thanks to mgcv [@wood2017a].
 We thank the authors of all these packages.
-We thank M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
+We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
 # Conflict of Interest statement
 
