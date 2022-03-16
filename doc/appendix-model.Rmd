@@ -33,7 +33,7 @@ knitr::opts_chunk$set(
 
 # Notation conventions
 
-This appendix uses the following notation conventions, generally following the guidance in @edwards2019:
+This appendix uses the following notation conventions, which generally follows the guidance in @edwards2019:
 
 * Greek symbols for parameters,
 
@@ -128,11 +128,11 @@ $$
 \begin{aligned}
 \mathbb{E}[y_{\s,t}] &= \mu_{\s,t},\\
 \mu_{\bm{s},t} &=
-f^{-1} \left( \bm{X}_{1,\bm{s},t} \bm{\beta} +
+f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 O_{\s,t} +
 \alpha_g +
-\bm{X}_{2,\bm{s},t} \gamma_t +
-\bm{X}_{3,t} \zeta_{\bm{s}} +
+\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \gamma_t +
+\bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
 \omega_{\s} +
 \epsilon_{\s,t} \right),
 \end{aligned}
@@ -152,7 +152,7 @@ where
 * $\omega_{\bm{s}}$ represents a spatial component (a random field), $\omega_{\s} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)$; and
 * $\epsilon_{\s,t}$ represents a spatiotemporal component (a random field), $\epsilon_{\s,t} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_{\epsilon})$.
 
-A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model apart to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
+A single sdmTMB model will rarely, if ever, contain all of the above components. Next, we will split the model to describe the various parts in more detail using '$\ldots$' to represent the other optional components.
 
 ## Main effects
 
@@ -166,9 +166,9 @@ Within `sdmTMB()`, $\bm{X}_{1,\bm{s},t} \bm{\beta}$ is defined by the `formula` 
 
 ### Smoothers
 
-Smoothers in sdmTMB are implemented with the same formula syntax familiar to mgcv users fitting GAMs (generalized additive models).
+Smoothers in sdmTMB are implemented with the same formula syntax familiar to mgcv [@wood2017a] users fitting GAMs (generalized additive models).
 Smooths are implemented in the formula using `+ s(x)`, which implements a smooth from `mgcv::s()`.
-Within these smooths, the same syntax commonly used in `mgcv::s()` can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; smooths can vary according to a continuous variable, `+ s(x, by = x2)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)`; and various types of splines may be constructed such as cyclic splines to model seasonality, e.g. `+ s(month, bs = "cc", k = 12)`.
+Within these smooths, the same syntax commonly used in `mgcv::s()` can be applied, e.g. 2-dimensional smooths may be constructed with `+ s(x, y)`; smooths can be specific to various factor levels, `+ s(x, by = group)`; smooths can vary according to a continuous variable, `+ s(x, by = x2)`; the basis function dimensions may be specified, e.g. `+ s(x, k = 4)` (see `?mgcv::choose.k`); and various types of splines may be constructed such as cyclic splines to model seasonality, e.g. `+ s(month, bs = "cc", k = 12)`.
 
 While mgcv can fit unpenalized (e.g., B-splines) or penalized splines (P-splines), sdmTMB only implements penalized splines.
 The penalized splines are constructed in sdmTMB using the function `mgcv::smooth2random()`, which transforms splines into random effects (and associated design matrices) that are estimable in a mixed-effects modelling framework.
@@ -183,6 +183,7 @@ In both cases, $b_{0}$ represents the slope of the function up to a threshold, a
 
 These models can be fit by including `+ breakpt(x)` in the model formula, where
 `x` is a covariate.
+The formula can contain a single break-point covariate.
 
 ### Logistic threshold models
 
@@ -201,10 +202,11 @@ and $s95$ is a parameter controlling the point at which the function reaches 95%
 The parameter $s50$ is unconstrained but $s95$ is constrained to be larger than $s50$.
 
 These models can be fit by including `+ logistic(x)` in the model formula, where `x` is a covariate.
+The formula can contain a single logistic covariate.
 
 ## Spatial random fields
 
-Spatial random fields, $\omega_{\s}$, are included if `spatial = 'on'` and omitted if `spatial = 'off'`.
+Spatial random fields, $\omega_{\s}$, are included if `spatial = 'on'` (or `TRUE`) and omitted if `spatial = 'off'` (or `FALSE`).
 
 $$
 \begin{aligned}
@@ -212,7 +214,7 @@ $$
 \boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
 \end{aligned}
 $$
-The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatial SD` in the model output or as `sigma_O` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
+The marginal standard deviation of $\boldsymbol{\omega}$ is indicated by `Spatial SD` in the printed model output or as `sigma_O` in the output of `sdmTMB::tidy(fit, "ran_pars")`. The 'O' is for 'omega' ($\omega$).
 
 Internally, the random fields follow a Gaussian Markov random field (GMRF)
 
@@ -228,7 +230,8 @@ These text values are case insensitive.
 
 Spatiotemporal random fields are represented by $\boldsymbol{\epsilon}_t$ within sdmTMB.
 This has been chosen to match the representation in VAST [@thorson2019].
-The marginal standard deviation of $\boldsymbol{\epsilon}_t$ is indicated by `Spatiotemporal SD` in the model output or as `sigma_E` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
+The marginal standard deviation of $\boldsymbol{\epsilon}_t$ is indicated by `Spatiotemporal SD` in the printed model output or as `sigma_E` in the output of `sdmTMB::tidy(fit, "ran_pars")`.
+The 'E' is for 'epsilon' ($\epsilon$).
 
 ### IID spatiotemporal random fields
 
@@ -242,7 +245,7 @@ $$
 $$
 
 where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
-The random fields are assumed independent across time slices.
+The random fields are assumed independent across time steps.
 
 Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$)
 
@@ -252,7 +255,7 @@ $$
 
 ### AR(1) spatiotemporal random fields
 
-First-order auto regressive, AR(1), spatiotemporal random fields (`spatiotemporal = 'ar1'`) add a parameter defining the correlation between random field deviations from one time slice to the next.
+First-order auto regressive, AR(1), spatiotemporal random fields (`spatiotemporal = 'ar1'`) add a parameter defining the correlation between random field deviations from one time step to the next.
 They are defined as
 
 $$
@@ -271,7 +274,7 @@ The parameter `ar1_phi` is transformed to $\rho$ with $\rho = 2 \left( \mathrm{l
 
 ### Random walk spatiotemporal random fields (RW)
 
-Random walk spatiotemporal random fields (`spatiotemporal = 'rw'`) represent a model where the difference in spatiotemporal deviations from one time slice to the next are IID. There defined as
+Random walk spatiotemporal random fields (`spatiotemporal = 'rw'`) represent a model where the difference in spatiotemporal deviations from one time step to the next are IID. They are defined as
 
 $$
 \begin{aligned}
@@ -306,7 +309,7 @@ The formula `time_varying = ~ 1` implicitly represents a time-varying intercept 
 
 ## Spatially varying coefficients (SVC)
 
-Spatially varying coefficient (SVC) models are defined as
+Spatially varying coefficient models are defined as
 
 $$
 \begin{aligned}
@@ -327,6 +330,8 @@ $$
 $$
 
 ## IID random or multi-level intercepts
+
+Multilevel/hierchical intercepts are defined as
 
 $$
 \begin{aligned}
@@ -540,7 +545,7 @@ $$
 
 ## Anisoptropy
 
-TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on and off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance [@fuglstad2015a], and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\boldsymbol{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$.
+TMB allows for anisotropy, where spatial covariance may be asymmetric with respect to latitude and longitude ([full details](https://kaskr.github.io/adcomp/namespaceR__inla.html)). Anisotropy can be turned on or off with the logical `anisotropy` argument to `sdmTMB()`. There are a number of ways to implement anisotropic covariance [@fuglstad2015a], and we adopt a 2-parameter rotation matrix $\textbf{H}$. The elements of $\textbf{H}$ are defined by the parameter vector $\boldsymbol{x}$ so that $H_{1,1} = x_{1}$, $H_{1,2} = H_{2,1} = x_{2}$ and $H_{2,2} = (1 + x_{2}^2) / x_{1}$.
 
 Once a model is fitted with `sdmTMB()`, the anisotropy relationships may be plotted using the `plot_anisotropy()` function, which takes the fitted object as an argument. If a barrier mesh is used, anisotropy is disabled.
 
@@ -550,7 +555,7 @@ In some cases the spatial domain of interest may be complex and bounded by some 
 SPDE models allow for physical barriers to be incorporated into the modelling [@bakka2019].
 With  `sdmTMB()` models, the mesh construction occurs in two steps: the user (1) constructs a mesh with a call to `sdmTMB::make_mesh()`, and (2) passes the mesh to `sdmTMB::add_barrier_mesh()`.
 The barriers must be constructed as `sf` objects [@pebesma2018] with polygons defining the barriers.
-See `?sdmTMB::add_barrier_mesh` for examples.
+See `?sdmTMB::add_barrier_mesh` for an example.
 
 The barrier implementation requires the user to select a fraction value (`range_fraction` argument) that defines the fraction of the usual spatial range when crossing the barrier [@bakka2019].
 For example, if the range was estimated at 10 km, `range_fraction = 0.2` would assume that the range was 2 km across the barrier.
