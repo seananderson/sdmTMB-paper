@@ -87,7 +87,6 @@ plot(spde$mesh, main = "", asp = 1)
 title(main = "INLA mesh")
 ```
 
-
 # INLA
 
 Data preparation for INLA models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
@@ -122,17 +121,15 @@ m_inla <- inla(formula,
 tictoc::toc() # stop timing
 ```
 
-
 ```{r}
 summary(m_inla)
 ```
 
-
 # inlabru
 
-There are a couple ways to include the fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work.
+There are a couple ways to include the factor fixed effects with `inlabru`. Unfortunately, using factor variables in the standard equation syntax does not work.
 One option is to create a design matrix and add year effects individually to the formula.
-The other way to set up the fixed coefficients with inlabru is to use the `factor_full` (or `factor_contrast`) model (seen below within `fac()`).
+The other way to set up the factor fixed coefficients with inlabru is to use the `factor_full` (or `factor_contrast`) model (seen below within `fac()`).
 This option causes the location of the factor fixed-effect parameter estimates to end up in `summary.random$fac`.
 
 ```{r}
@@ -140,7 +137,6 @@ dat <- as.data.frame(d)
 sp::coordinates(dat) <- c("X", "Y")
 dat <- as(dat, "SpatialPointsDataFrame")
 ```
-
 
 ```{r}
 tictoc::tic("bru")
@@ -166,16 +162,13 @@ m_bru <- bru(
 tictoc::toc()
 ```
 
-
 ```{r}
 summary(m_bru)
 ```
 
-
 ```{r}
 m_bru$summary.random$fac[, c("ID", "mean", "sd", "0.025quant", "0.975quant")]
 ```
-
 
 # sdmTMB
 
@@ -203,7 +196,6 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
 )
 tictoc::toc()
 ```
-
 
 ```{r sdmtmb-m}
 print(m)
@@ -257,7 +249,7 @@ With sdmTMB, we can extract simulated draws from the joint precision matrix usin
 
 ```{r sdmTMB-sims}
 set.seed(1)
-post_sdmTMB <- gather_sims(m, n_sims = 2000)
+post_sdmTMB <- gather_sims(m, nsim = 2000)
 post_sdmTMB <- post_sdmTMB %>% 
   mutate(variable = 
       factor(`.variable`,
@@ -273,22 +265,22 @@ Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` t
 
 ```{r inla-densities}
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>%
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2007) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2007")
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>%
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2009) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2009")
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>%
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2011) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2011")
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>%
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2013) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2013")
-x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>%
+x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2015) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2015")
-x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>%
+x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2017) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2017")
 x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>%
