@@ -26,7 +26,7 @@ library(inlabru)
 theme_set(theme_minimal())
 ```
 
-This model will attempt to replicate the model fit in Appendix 1 as an example of how index standardization can also be achieved with inlabru. 
+This model will attempt to replicate the model fit in Appendix 2 as an example of how index standardization can also be achieved with inlabru. 
 Once again we will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound.
 The density units are kg/km^2^. 
 This can be converted to tonnes per km2 by dividing by 1000, which can sometimes scale better.
@@ -34,7 +34,6 @@ This can be converted to tonnes per km2 by dividing by 1000, which can sometimes
 ```{r}
 pcod$density_tpkm <- pcod$density/1000
 ```
-
 
 We will start by building an identical mesh using INLA.
 Here, X and Y are coordinates in UTM zone 9.
