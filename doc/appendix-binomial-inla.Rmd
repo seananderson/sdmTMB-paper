@@ -36,6 +36,12 @@ library(inlabru)
 theme_set(theme_light())
 ```
 
+We will limit INLA to using a single thread to match how TMB is set up here. Both could optionally be run with parallel processing:
+
+```{r inla-threads, echo=TRUE}
+INLA::inla.setOption(num.threads = "1:1")
+```
+
 We will use a data set built into the package: trawl survey data for Pacific cod in Queen Charlotte Sound as described in earlier appendices.
 INLA requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
 
@@ -265,22 +271,22 @@ Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` t
 
 ```{r inla-densities}
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2007) %>%
+x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2007")
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2009) %>%
+x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2009")
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2011) %>%
+x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2011")
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2013) %>%
+x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2013")
-x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2015) %>%
+x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2015")
-x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factoryear_factor2017) %>%
+x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>%
   as_tibble() %>%
   mutate(variable = "as.factor.year.2017")
 x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>%
