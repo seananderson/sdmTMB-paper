@@ -26,7 +26,8 @@ names_to <- c(
   "appendix6-speed-validation.pdf"
 )
 
-loc <- "~/Dropbox/sdmTMB-paper/"
+loc <- "~/Documents/sdmTMB-paper/"
+dir.create(loc, showWarnings = FALSE)
 
 for (i in seq_along(files)) {
   from <- paste0(here::here("doc", files[i]), ".pdf")
@@ -37,4 +38,10 @@ for (i in seq_along(files)) {
 
 system("cd doc; ./clean-bib.sh")
 
-system("open ~/Dropbox/sdmTMB-paper/")
+system("open ~/Documents/sdmTMB-paper/")
+
+f <- paste(names_to, collapse = " ")
+
+# system(paste0("cd ~/Documents/sdmTMB-paper/;'/System/Library/Automator/Combine PDF Pages.action/Contents/Resources/join.py' -o sdmTMB-paper-combined.pdf ", f))
+
+system(paste0("cd ~/Documents/sdmTMB-paper/;/opt/homebrew/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=sdmTMB-paper-combined.pdf ", f))
