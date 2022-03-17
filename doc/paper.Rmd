@@ -197,7 +197,7 @@ For example, sdmTMB provides functionality for generating population-level summa
 # Introductory example using fish survey data
 
 An sdmTMB model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-It usually makes sense to convert the spatial coordinates to an equidistant projection such as the Universal Transverse Mercator (UTM) to ensure that distance remains constant throughout the study region [e.g., using `sf::st_transform()`, @pebesma2018].
+It usually makes sense to convert the spatial coordinates to an equidistant projection such as the Universal Transverse Mercator (UTM) to ensure that distance remains constant throughout the study region [e.g., using `sf::st_transform()`, @pebesma2018, or `sdmTMB::add_utm_columns()`].
 <!-- TODO: Since this is not particular to your package, maybe the e.g. for how to do this should be moved to the appendix? I do explain the transformation for the owl data and added a sentence to the pcod appendix, but maybe still important to include here as well? -->
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
