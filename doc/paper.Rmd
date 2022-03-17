@@ -38,9 +38,6 @@ header-includes:
   \usepackage{lscape}
   \widowpenalty10000
   \clubpenalty10000
-editor_options:
-  markdown:
-    wrap: sentence
 abstract: |
     | \noindent 1. Geostatistical data---spatially referenced observations related to some continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions. However, appropriate models to analyze these data, such as generalized linear mixed effects models (GLMMs) with Gaussian random fields, are often computationally intensive and challenging to implement, interpret, and evaluate.
     | 2. Here, we introduce the R package sdmTMB, which implements predictive-process SPDE- (stochastic partial differential equation) based spatial and spatiotemporal models. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB) but can be extended to penalized likelihood or Bayesian inference. We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
