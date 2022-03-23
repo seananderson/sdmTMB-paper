@@ -131,7 +131,7 @@ $$
 f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 O_{\s,t} +
 \alpha_g +
-\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \gamma_t +
+\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \bm{\gamma_t} +
 \bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
 \omega_{\s} +
 \epsilon_{\s,t} \right),
@@ -294,13 +294,13 @@ Parameters can be modelled as time varying (a random walk) according to the form
 
 $$
 \begin{aligned}
-  \mu_{\s,t} &= f^{-1} \left( \ldots +  \bm{X}^{\mathrm{tvc}}_{\s,t} \gamma_{t} + \ldots \right),\\
+  \mu_{\s,t} &= f^{-1} \left( \ldots +  \bm{X}^{\mathrm{tvc}}_{\s,t} \bm{\gamma_{t}} + \ldots \right),\\
   \gamma_{t=1} &\sim \operatorname{Uniform} \left(-\infty, \infty \right),\\
   \gamma_{t>1} &\sim \operatorname{Normal} \left(\gamma_{t-1}, \sigma^2_{\gamma} \right),
 \end{aligned}
 $$
 
-where $\gamma_t$ is an example optional time-varying regression parameter and $\bm{X}^{\mathrm{tvc}}_{\s,t}$ is the corresponding predictor value.
+where $\bm{\gamma_t}$ is an optional vector of time-varying regression parameters and $\bm{X}^{\mathrm{tvc}}_{\s,t}$ is the corresponding model matrix with covariate values.
 This is defined via the `time_varying` argument, assuming that the `time` argument is also supplied a column name.
 For example, `time_varying ~ 0 + x`.
 The first value is given an implicit uniform prior.
@@ -319,7 +319,7 @@ $$
 $$
 
 where $\boldsymbol{\zeta}$ is a random field representing a spatially varying coefficient.
-Usually, $\bm{X}^{\mathrm{svc}}_{\s, t}$ would represent a predictor that is constant spatially for a given time $t$.
+Usually, $\bm{X}^{\mathrm{svc}}_{\s, t}$ would represent a prediction matrix that is constant spatially for a given time $t$.
 Currently, $\bm{X}^{\mathrm{svc}}_{t}$ is restricted to a single covariate (column vector), supplied by a one-sided formula to `spatial_varying`.
 For example `spatial_varying = ~ 0 + x`, where `0` omits the intercept.
 
