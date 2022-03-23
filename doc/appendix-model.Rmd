@@ -143,7 +143,7 @@ where
 * $y_{\s,t}$ represents the response data at point $\s$ and time $t$;
 * $\mu$ represents the mean;
 * $f$ represents a link function (e.g., log or logit) and $f^{-1}$ represents its inverse;
-* $\bm{X}_{1}$, $\bm{X}_{2}$, and $\bm{X}_{3}$ represent design matrices;
+* $\bm{X}^{\mathrm{main}}$, $\bm{X}^{\mathrm{tvc}}$, and $\bm{X}^{\mathrm{svc}}$ represent design matrices (the superscript identifiers 'main' = main effects, 'tvc' = time varying coefficients, and 'svc' = spatially varying coefficients);
 * $\bm{\beta}$ represents a vector of fixed-effect coefficients;
 * $O_{\s,t}$ represents an offset: a covariate (usually log transformed) with a coefficient fixed at one;
 * $\alpha_{g}$ represents random intercepts by group $g$, $\alpha_{g}\sim \mathrm{N}(0,\sigma^2_\alpha)$;
@@ -158,11 +158,11 @@ A single sdmTMB model will rarely, if ever, contain all of the above components.
 
 $$
 \begin{aligned}
-\mu_{\bm{s},t} &= f^{-1} \left( \bm{X}_{1,\bm{s},t} \bm{\beta} \ldots \right)
+\mu_{\bm{s},t} &= f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} \ldots \right)
 \end{aligned}
 $$
 
-Within `sdmTMB()`, $\bm{X}_{1,\bm{s},t} \bm{\beta}$ is defined by the `formula` argument and represents the main-effect model matrix and a corresponding vector of coefficients. This main effect formula can contain optional penalized smoothers or non-linear functions as defined below.
+Within `sdmTMB()`, $\bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta}$ is defined by the `formula` argument and represents the main-effect model matrix and a corresponding vector of coefficients. This main effect formula can contain optional penalized smoothers or non-linear functions as defined below.
 
 ### Smoothers
 
@@ -294,13 +294,13 @@ Parameters can be modelled as time varying (a random walk) according to the form
 
 $$
 \begin{aligned}
-  \mu_{\s,t} &= f^{-1} \left( \ldots + \gamma_{t} \bm{X}_{2,s,t} + \ldots \right),\\
+  \mu_{\s,t} &= f^{-1} \left( \ldots +  \bm{X}^{\mathrm{tvc}}_{\s,t} \gamma_{t} + \ldots \right),\\
   \gamma_{t=1} &\sim \operatorname{Uniform} \left(-\infty, \infty \right),\\
   \gamma_{t>1} &\sim \operatorname{Normal} \left(\gamma_{t-1}, \sigma^2_{\gamma} \right),
 \end{aligned}
 $$
 
-where $\gamma_t$ is an example optional time-varying regression parameter and $x_{\s,t}$ is the corresponding predictor value.
+where $\gamma_t$ is an example optional time-varying regression parameter and $\bm{X}^{\mathrm{tvc}}_{\s,t}$ is the corresponding predictor value.
 This is defined via the `time_varying` argument, assuming that the `time` argument is also supplied a column name.
 For example, `time_varying ~ 0 + x`.
 The first value is given an implicit uniform prior.
@@ -313,14 +313,14 @@ Spatially varying coefficient models are defined as
 
 $$
 \begin{aligned}
-  \mu_{\s,t} &= f^{-1} \left( \ldots + \bm{X}_{3,t} \zeta_{\bm{s}} + \ldots \right),\\
+  \mu_{\s,t} &= f^{-1} \left( \ldots + \bm{X}^{\mathrm{svc}}_{\s, t} \zeta_{\bm{s}} + \ldots \right),\\
   \boldsymbol{\zeta} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\zeta \right),
 \end{aligned}
 $$
 
 where $\boldsymbol{\zeta}$ is a random field representing a spatially varying coefficient.
-Usually, $\bm{X}_{3,t}$ would represent a predictor that is constant spatially for a given time $t$.
-Currently, $\bm{X}_{3,t}$ is restricted to a single covariate (column vector), supplied by a one-sided formula to `spatial_varying`.
+Usually, $\bm{X}^{\mathrm{svc}}_{\s, t}$ would represent a predictor that is constant spatially for a given time $t$.
+Currently, $\bm{X}^{\mathrm{svc}}_{t}$ is restricted to a single covariate (column vector), supplied by a one-sided formula to `spatial_varying`.
 For example `spatial_varying = ~ 0 + x`, where `0` omits the intercept.
 
 The random fields are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\zeta$)
