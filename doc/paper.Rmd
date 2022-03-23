@@ -189,7 +189,7 @@ These priors may be useful in cases where estimation is difficult because of ide
 Following other recent SPDE implementations in TMB [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an sdmTMB model can be used to generate various quantities of interest.
-For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity  [`get_cog()`; e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
+For example, sdmTMB provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
 
 # Introductory example using fish survey data
 
