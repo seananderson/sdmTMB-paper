@@ -457,7 +457,7 @@ Based on the 80% CI calculated above, the resulting minimum estimated effects of
 All these effects are in link space (`link = "log"`) and could be `exp()` to give the expected multiplicative contribution to the predicted owl counts, however the additive nature of the effect in link space is actually somewhat more intuitive to interpret visually, so this is what we will plot on our maps:
 
 
-```{r plot-map, echo=TRUE, eval=TRUE, out.width="80%", cache=FALSE}
+```{r plot-map, echo=TRUE, eval=TRUE, out.width="90%", cache=FALSE}
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
@@ -478,7 +478,7 @@ ggplot(data = p_proj) +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=F, eval=TRUE, out.width="85%", cache=FALSE}
+```{r plot-map-ci, echo=F, eval=TRUE, out.width="90%", cache=FALSE}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
