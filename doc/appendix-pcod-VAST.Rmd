@@ -79,7 +79,7 @@ settings <- make_settings(
   FieldConfig = FieldConfig,
   RhoConfig = RhoConfig,
   ObsModel = c(2, 0), # conventional logit-linked delta-Gamma; c(10, 2) for Tweedie
-  bias.correct = TRUE,
+  bias.correct = FALSE,
   use_anisotropy = FALSE,
   max_cells = Inf, # use all grid cells from the extrapolation grid
   knot_method = "grid" # or "samples"
@@ -121,31 +121,26 @@ We can look at parameter estimates and their standard errors. First we see estim
 fit$parameter_estimates$SD
 ```
 
-sdmTMB does not have built-in delta models; however, we can fit the two components separately and combine the predictions. Here, we will fit the binomial presence-absence model and then a model for the positive catches only with a Gamma observation distribution and a log link. We will use the VAST-created mesh so the results are comparable.
+TODO sdmTMB:
 
 ```{r sdmTMB-example, echo = TRUE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
   mesh = fit$spatial_list$MeshList$isotropic_mesh)
-tictoc::tic()
-m1 <- sdmTMB(present ~ 0 + as.factor(year), 
-  data = pcod, mesh = mesh, family = binomial(link = "logit"),
-  time = "year", spatiotemporal = "iid", spatial = "on")
-tictoc::toc()
-m1
 
-dat2 <- subset(pcod, density > 0)
-mesh2 <- make_mesh(dat2, xy_cols = c("X", "Y"),
-  mesh = fit$spatial_list$MeshList$isotropic_mesh)
 tictoc::tic()
-m2 <- sdmTMB(density ~ 0 + as.factor(year), 
-  data = dat2, mesh = mesh2, family = Gamma(link = "log"),
-  time = "year", spatiotemporal = "iid", spatial = "on")
+fit_sdmTMB <- sdmTMB(
+  density ~ 0 + as.factor(year), 
+  data = pcod, mesh = mesh, 
+  family = delta_gamma(),
+  time = "year", silent = FALSE,
+  control = sdmTMBcontrol(newton_loops = 1)
+)
 tictoc::toc()
-m2
+fit_sdmTMB
 ```
 
 ```{r compare-vast-sdmTMB1, echo = FALSE}
-plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft") {
+plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft", sdmTMB_pars = 1) {
   s <- vast_model$parameter_estimates$SD
   vast_est1 <- as.list(s, "Estimate", report = FALSE)
   vast_est2 <- as.list(s, "Estimate", report = TRUE)
@@ -161,9 +156,9 @@ plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft") {
   plot(years, b_year_vast, ylim = range(c(lwr_vast, upr_vast)))
   segments(years, lwr_vast, years, upr_vast)
   years <- years + 0.05
-  points(years, sdmTMB_est$b_j)
-  segments(years, sdmTMB_est$b_j - 2 * sdmTMB_sd$b_j, 
-    years, sdmTMB_est$b_j + 2 * sdmTMB_sd$b_j,
+  points(years, sdmTMB_est$b_j[,sdmTMB_pars])
+  segments(years, sdmTMB_est$b_j[,sdmTMB_pars] - 2 * sdmTMB_sd$b_j[,sdmTMB_pars], 
+    years, sdmTMB_est$b_j[,sdmTMB_pars] + 2 * sdmTMB_sd$b_j[,sdmTMB_pars],
     col = "red")
   legend("topright", legend = c("VAST", "sdmTMB"), 
     col = c("black", "red"), bty = "n", lty = c(1, 1))
@@ -173,8 +168,9 @@ plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft") {
 We wrote some custom code to extract comparable parameters (not shown above). Here are the annual mean estimates in link space with 95% confidence intervals for the two components to the delta model:
 
 ```{r compare-vast-sdmTMB2, echo = TRUE}
-plot_betas(fit, m1, "beta1_ft")
-plot_betas(fit, m2, "beta2_ft")
+par(mfrow = c(2, 1), cex = 0.8, mar = c(1.5, 1, 1, 1), oma = c(2, 3, 1, 1))
+plot_betas(fit, fit_sdmTMB, "beta1_ft", sdmTMB_pars = 1)
+plot_betas(fit, fit_sdmTMB, "beta2_ft", sdmTMB_pars = 2)
 ```
 
 While making custom plots of individual elements would require considerable additional code to extract and reformat the necessary components of each output, VAST has a wrapper function that generates the typical plots one may want. Here we stick with the default set of plots (`plot_set = 3`); however, one can specify different standard plots to make by changing the setting of this argument (see `?FishStatsUtils::plot_maps` and `?FishStatsUtils::plot_results`).
@@ -212,16 +208,12 @@ if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
 
 We can compare the index we would get using sdmTMB. Since sdmTMB does not have built-in delta models, we need some way of combining the predictions across the two models. Here, we will do that by simulating from the joint parameter precision matrix and calculating the index with those draws. This should be approximately comparable with the bias-corrected index calculated above with VAST.
 
-```{r sdmTMB-sim-index, cache=TRUE, echo=TRUE}
+```{r sdmTMB-index, cache=TRUE, echo=TRUE}
 tictoc::tic()
-set.seed(28239)
-p_bin <- predict(m1, newdata = qcs_grid, sims = 500)
-p_pos <- predict(m2, newdata = qcs_grid, sims = 500)
-
-p_bin_prob <- plogis(p_bin)
-p_pos_exp <- exp(p_pos)
-p_combined <- log(p_bin_prob * p_pos_exp)
-ind_combined_sims <- get_index_sims(p_combined, area = rep(4, nrow(p_combined)))
+p <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE,
+  area = rep(4, nrow(qcs_grid))
+)
+ind <- get_index(p, bias_correct = FALSE)
 tictoc::toc()
 ```
 
@@ -231,29 +223,29 @@ Now, we can compare the indices.
 ```{r index-compare, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-vast_i1 <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
+vast_i <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
   mutate(index = "VAST", year = as.numeric(Time), est = Estimate, 
     se = Std..Error.for.ln.Estimate.) %>% 
   select(index, year, est, se) %>% 
   mutate(lwr = exp(log(est) + qnorm(0.025) * se)) %>% 
   mutate(upr = exp(log(est) + qnorm(0.975) * se))
-sdm_i <- ind_combined_sims %>% mutate(index = "sdmTMB")
+sdm_i <- ind %>% mutate(index = "sdmTMB")
 both_i <- bind_rows(sdm_i, vast_i) %>% filter(est > 0)
 ggplot(both_i, aes(x = year, y = est, ymin = lwr, ymax = upr, colour = index)) + 
-  geom_ribbon(alpha = 0.3) +
-  geom_line() + 
+  geom_ribbon(alpha = 0.1) +
+  geom_line(alpha = 0.8) + 
   ylim(0, max(both_i$upr)) +
   coord_cartesian(expand = FALSE)
 ```
 
 ```{r}
-plot(ind_sdmTMB$est, vast_i$est);abline(0, 1)
-plot(ind_sdmTMB$upr, vast_i$upr);abline(0, 1)
-plot(ind_sdmTMB$lwr, vast_i$lwr);abline(0, 1)
+plot(ind$est, vast_i$est[vast_i$est != 0]);abline(0, 1)
+plot(ind$upr, vast_i$upr[vast_i$est != 0]);abline(0, 1)
+plot(ind$lwr, vast_i$lwr[vast_i$est != 0]);abline(0, 1)
 
-(ind_sdmTMB$est - vast_i$est) / vast_i$est
-(ind_sdmTMB$upr - vast_i$upr) / vast_i$upr
-(ind_sdmTMB$lwr - vast_i$lwr) / vast_i$lwr
+(ind$est - vast_i$est[vast_i$est != 0]) / vast_i$est[vast_i$est != 0]
+(ind$upr - vast_i$upr[vast_i$est != 0]) / vast_i$upr[vast_i$est != 0]
+(ind$lwr - vast_i$lwr[vast_i$est != 0]) / vast_i$lwr[vast_i$est != 0]
 ```
 
 This document was built using:
