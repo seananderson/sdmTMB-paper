@@ -18,15 +18,15 @@ SPDE-based,1,1,1$^5$,1,1,0$^6$,0,1
 NB1 distribution,1,0,1,1,1,0,0,1
 NB2 distribution,1,1$^7$,1,1,1,0,0,1
 Zero-truncated distributions,1,0,0,1,1,0,0,1
-Zero-inflated distributions,0,1,0,1,1,0,0,1
+Zero-inflated distributions,1,1,0,1,1,0,0,1
 Tweedie distribution,1,1,1$^8$,1,1,0,0,0
 Student-t distribution,1,0,1,1,1,0,0,0
 Censored Poisson distribution,1,0,0,1,1,0,0,0
 # other likelihood stuff,,,,,,,,
 log Gaussian Cox processes,0$^9$,0$^9$,0$^9$,1,1,0$^9$,0,0$^9$
 Multivariate responses,0,1,0,1,1,1,1,1
-Built-in delta/hurdle models,0$^{10}$,1,0$^{10}$,1,1,0,0,1
-Poisson-link delta model,0,1,0,1,1,0,0,0
+Built-in delta/hurdle models,1,1,0$^{10}$,1,1,0,0,1
+Poisson-link delta model,1,1,0,1,1,0,0,0
 Likelihood weights,1,0,1,1,1,1,0,1
 Maximum/marginal likelihood,1,1,1,0,0,0,0,0
 # REML,1,1,1,0,0,0,0,0
