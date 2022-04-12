@@ -307,7 +307,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 to_run <- expand.grid(
   n_obs = c(1000L),
   max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
-  iter = seq_len(20L)
+  iter = seq_len(50L)
 )
 
 # # # short test version
@@ -323,13 +323,14 @@ nrow(to_run)
 # test2 <- sim_fit_time(n_obs = 1000L, max.edge = 0.06, family = gaussian(), seed = 1 * 29212, iter = 1)
 
 # scramble for parallel task assignment:
-to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
+# to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
 
 # out <- purrr::pmap_dfr(to_run, sim_fit_time)
 
 # plan(multisession, workers = 5L)
 
 # out <- furrr::future_pmap_dfr(
+system.time({
 out <- purrr::pmap_dfr(
   to_run,
   sim_fit_time
@@ -344,9 +345,26 @@ out <- purrr::pmap_dfr(
   #   packages = c("mgcv", "inlabru", "INLA", "ggplot2", "dplyr", "spaMM", "sdmTMB")
   # )
 )
+})
 
-saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-PE.rds")
-out <- readRDS("analysis/timing-cache-parallel-spaMM-PE.rds")
+## # saveRDS(out, file = "analysis/timing-sdmTMB-ad-SA-March31.rds")
+## out2 <- readRDS("analysis/timing-sdmTMB-ad-SA-March31.rds")
+##
+## # saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-SA-March23.rds")
+## out <- readRDS("analysis/timing-cache-parallel-spaMM-SA-March23.rds")
+##
+##
+## out$sdmTMB <- NULL
+## out$sdmTMB_norm <- NULL
+##
+## out3 <- left_join(out, select(out2, sdmTMB, sdmTMB_norm, seed, iter, cutoff, n_obs, mesh_n, max.edge))
+## nrow(out3)
+## out <- out3
+## out <- select(out, sdmTMB, sdmTMB_norm, inlabru_eb:inla_eb_error)
+
+saveRDS(out, file = "analysis/timing-cache-parallel-2022-04-11.rds")
+out <- readRDS("analysis/timing-cache-parallel-2022-04-11.rds")
+
 # plan(sequential)
 
 # # -------tweedie
@@ -379,7 +397,7 @@ out <- readRDS("analysis/timing-cache-parallel-spaMM-PE.rds")
 # out <- readRDS("analysis/timing-cache-tweedie.rds")
 # plan(sequential)
 # out$inlabru <- NULL
-
+out$sdmTMB_norm <- NULL
 out_long <- tidyr::pivot_longer(
   out,
   # sdmTMB:inlabru,
@@ -410,7 +428,8 @@ out_long$mean_mesh_n <- as.factor(out_long$mean_mesh_n)
 out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cutoff)
 # out_long <- filter(out_long, max.edge > 0.05)
 out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
-  summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
+  # summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
+  summarise(lwr = quantile(time, probs = 0.025), upr = quantile(time, probs = 0.975), time = mean(time), mean_mesh_n = mean(mesh_n))
 # summarise(
 #   lwr = quantile(time, 0.025, na.rm = T), upr = quantile(time, 0.975, na.rm = T),
 #           time = median(time), mean_mesh_n = mean(mesh_n))
@@ -447,11 +466,11 @@ colour_vect <- c(
 
 leg <- tribble(
   ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 170, 0.8,
-  "sdmTMB(normalize = TRUE)", 400, 0.43,
-  "inlabru EB", 150, 8,
-  "spaMM", 500, 4.7,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 245, 40
+  "sdmTMB", 173, 0.26,
+  # "sdmTMB(normalize = TRUE)", 400, 0.24,
+  "inlabru EB", 173, 3.5,
+  "spaMM", 500, 2.0,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
 )
 
 g <- out_long_sum %>%
@@ -476,17 +495,17 @@ g <- out_long_sum %>%
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0.2, 102)) +
+  coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
   # guides(
     # colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
     # fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank())
   # )
-# g
+g
 
 .width <- 5
-ggsave("figs/timing-spatial.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing-spatial.png", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial-m1-april11.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial-m1-april11.png", width = .width, height = .width / 1.3)
 
 # group_by(out_long_sum, model_clean) %>%
 #   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
@@ -494,3 +513,7 @@ ggsave("figs/timing-spatial.png", width = .width, height = .width / 1.3)
 #   filter(!is.na(model_clean)) %>%
 #   mutate(ratio = max_t / min_t) %>%
 #   mutate(O_ratio = (max_n^(3/2)) / (min_n^(3/2)))
+
+
+x <- filter(out_long_sum, model_clean == "inlabru EB")$time / filter(out_long_sum, model_clean == "sdmTMB")$time
+round(x, 1)
