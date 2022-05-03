@@ -353,11 +353,12 @@ Validation and selection of state-space models is challenging, particularly when
 We provide several approaches to assist this process:
 (1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
 (2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or evaluate residuals (see `?extract_mcmc`).
-(4) The `residuals()` method returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
+(3) An sdmTMB model can be passed to the tmbstan package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or perform posterior predictive checks (see `?extract_mcmc`).
+(4) The `residuals()` method by default returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
-For state-space models, these residuals have known statistical issues [@thygesen2017a] but are quick to calculate.
-Simulation-based residuals [@dharma] (`dharma_residuals()`), one-step-ahead residuals [@thygesen2017a], or residuals from a single MCMC draw [e.g., @rufener2021] are also possible, but are slower.
+For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
+A version that uses Markov chain Monte Carlo (MCMC) to avoid this issue is recommended but slower (`?residuals.sdmTMB`).
+Simulation-based residuals [@dharma] (`dharma_residuals()`) are also possible.
 (5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 <!-- Simulations can also be passed to the R package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
 
@@ -436,13 +437,13 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 <!-- TODO: Line 242. Can sdmTMB be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within INLA/inlabru allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
 
 We ran a simple speed comparison between sdmTMB, inlabru/INLA, and mgcv for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
-In this test, sdmTMB was the fastest; however, inlabru/INLA and spaMM were less affected by mesh resolution than sdmTMB.
-mgcv was slightly slower than sdmTMB and was more affected by mesh resolution.
-With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models).
+In this test, sdmTMB was the fastest across all mesh resolutions; however, inlabru/INLA and spaMM were less affected by mesh resolution than sdmTMB.
+mgcv was most affected by mesh resolution.
+<!-- With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), sdmTMB was the fastest across all mesh resolutions (this option may not be possible or as fast for all models). -->
 <!-- Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown). -->
 <!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
 Our test was restricted to one core and default R algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
+Results with optimized math libraries on one core (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for sdmTMB and inlabru and a ~7--9-fold speed increase for mgcv.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
 
@@ -477,9 +478,9 @@ Users looking for calculation, with uncertainty, of derived variables such as ar
 
 
 Speed-wise, sdmTMB (and by association VAST) were fastest up to at least 1000 mesh nodes at approximately 4--16 times faster than INLA/inlabru across the range of mesh complexities considered here.
-These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of models that are generally slower to fit than GLMMs without random fields.
+These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 However, for users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by INLA/inlabru is likely to be considerably faster than passing the same model from sdmTMB/VAST to tmbstan for full Bayesian inference.
-Furthermore, although both INLA/inlabru and sdmTMB can use parallel processing, the PARDISO library [@pardiso-7.2c] within INLA/inlabru allows memory to be shared across cores allowing for better scaling with very large models.
+Furthermore, although both INLA/inlabru and sdmTMB can use parallel processing, the PARDISO library [@pardiso-7.2c] within INLA/inlabru allows memory to be shared across cores.
 
 <!-- However, with the SPDE, mgcv is typically slower than sdmTMB for similar models without optimized matrix libraries and lacks certain  -->
 
@@ -518,7 +519,7 @@ The included TMB `.cpp` file also provides a high-quality and tested model templ
 <!-- Line 275: I would suggest adding a MAJOR benefit of sdmTMB for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
 
 Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019].
-These data present statistical challenges to modelling them effectively and efficiently as appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
+These data present statistical challenges to modelling them effectively and efficiently since appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
 # Acknowledgements

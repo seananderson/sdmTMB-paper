@@ -39,10 +39,10 @@ for (i in seq_along(files)) {
 system("cd doc; ./clean-bib.sh")
 
 
-f <- paste(names_to, collapse = " ")
+# f <- paste(names_to, collapse = " ")
 
 # system(paste0("cd ~/Documents/sdmTMB-paper/;'/System/Library/Automator/Combine PDF Pages.action/Contents/Resources/join.py' -o sdmTMB-paper-combined.pdf ", f))
 
-system(paste0("cd ~/Dropbox/sdmTMB-paper/;/opt/homebrew/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=sdmTMB-paper-combined.pdf ", f))
+# system(paste0("cd ~/Dropbox/sdmTMB-paper/;/opt/homebrew/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=sdmTMB-paper-combined.pdf ", f))
 
 system("open ~/Dropbox/sdmTMB-paper/")
