@@ -15,7 +15,7 @@ output:
     keep_tex: true
 ---
 
-We are pleased to submit our manuscript "sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields" for consideration as Research Article in *Methods in Ecology and Evolution*.
+We are pleased to submit our manuscript "sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields" for consideration as a Research Article in *Methods in Ecology and Evolution*.
 
 Ecological data are frequently collected over space and often also at discreet points in time.
 Such data often suffer from spatial and/or spatiotemporal correlation.
