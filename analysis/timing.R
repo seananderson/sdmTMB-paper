@@ -1,3 +1,4 @@
+# Timing figure
 library(sdmTMB)
 library(dplyr)
 library(ggplot2)
@@ -5,18 +6,14 @@ library(INLA)
 library(inlabru)
 library(mgcv)
 library(spaMM)
-# library(tictoc)
-library(future)
-plan(multisession)
+
 INLA::inla.setOption(num.threads = "1:1")
 source(here::here("analysis/mgcv_spde_smooth.R"))
 
-if (Sys.info()[["user"]] == "seananderson") {
-  INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-  # INLA::inla.setOption(inla.mode="experimental")
-}
-
-# INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
+# if (Sys.info()[["user"]] == "seananderson") {
+# INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
+# INLA::inla.setOption(inla.mode="experimental")
+# }
 
 simulate_dat <- function(n_obs = 100,
                          cutoff = 0.1,
@@ -30,7 +27,6 @@ simulate_dat <- function(n_obs = 100,
                          plot = FALSE,
                          seed = sample.int(.Machine$integer.max, 1L)) {
   set.seed(seed)
-  # n_obs <- 200
   predictor_dat <- data.frame(
     X = runif(n_obs), Y = runif(n_obs),
     a1 = rnorm(n_obs)
@@ -39,8 +35,6 @@ simulate_dat <- function(n_obs = 100,
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
   segm.bnd <- inla.mesh.segment(loc.bnd)
 
-  # bnd <- INLA::inla.nonconvex.hull(cbind(predictor_dat$X, predictor_dat$Y),
-  # convex = -0.2)
   me <- INLA::inla.mesh.2d(
     boundary = segm.bnd,
     max.edge = c(max.edge, 0.2),
@@ -85,7 +79,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   sim_dat <- s$dat
   mesh <- s$mesh
   times <- list()
-  # browser()
   cat("fitting...\n")
 
   cat("sdmTMB\n")
@@ -96,16 +89,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     )
   })
   times$sdmTMB <- out[["elapsed"]]
-
-  cat("sdmTMB normalize\n")
-  out <- system.time({
-    fit2 <- sdmTMB(observed ~ a1,
-      data = sim_dat, mesh = mesh, family = family,
-      priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2)),
-      control = sdmTMBcontrol(normalize = TRUE)
-    )
-  })
-  times$sdmTMB_norm <- out[["elapsed"]]
 
   dat_sp <- sp::SpatialPointsDataFrame(cbind(sim_dat$X, sim_dat$Y),
     proj4string = sp::CRS("+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
@@ -143,10 +126,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     prior.sigma = c(2, 0.05)
   )
 
-
-  # g <- ggplot() + gg(mesh) + geom_point(data = dat, aes(X, Y))
-  # print(g)
-
   components <- observed ~ -1 + Intercept(1) + a1 +
     spatrf(main = coordinates, model = spde)
 
@@ -170,11 +149,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
           options = bru_options(
             control.inla = list(int.strategy = "eb", strategy = "gaussian"),
             bru_max_iter = 1, num.threads = "1:1"
-            # control.family = list(hyper =  list(
-            #   theta1 = list(initial = 0),
-            #   theta2 = list(initial = -4,
-            #     prior = "loggamma",
-            #     param = c(100, 100))))
           )
         )
       },
@@ -188,31 +162,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   }
   times$inlabru_eb <- out[["elapsed"]]
 
-  # cat("inlabru\n")
-  # out <- system.time({
-  #   tryCatch({fit_bru2 <- bru(
-  #     like,
-  #     components = components,
-  #     options = bru_options(
-  #       contrl.inla = list(int.strategy = "ccd"),
-  #       # contrl.inla = list(int.strategy = "ccd", strategy = "simplified.laplace"),
-  #       bru_max_iter = 1, num.threads = "1:1"
-  #       # control.family = list(hyper =  list(
-  #       #   theta1 = list(initial = 0),
-  #       #   theta2 = list(initial = -4,
-  #       #     prior = "loggamma",
-  #       #     param = c(100, 100))))
-  #     )
-  #   )}, error = function(e) NA)
-  # })
-  # if (!is.null(fit_bru2$error)) {
-  #   inla_error <- TRUE
-  # } else {
-  #   inla_error <- FALSE
-  # }
-  # times$inlabru <- out[["elapsed"]]
-
-  # attempt at a spaMM model
   cat("spaMM\n")
 
   loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
@@ -222,7 +171,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-  # note <<- below:
+  # note `<<-` below:
   # Avoids: `Hmmm... it looks like you should put some object(s) in control.HLfit$formula_env`
   spde_spaMM <<- INLA::inla.spde2.pcmatern(
     mesh = mesh2,
@@ -267,24 +216,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   })
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
-  # cat("mgcv\n")
-  #
-  # if (max.edge >= 0.061) {
-  #   out <- system.time({
-  #     fit <- tryCatch({
-  #       bam(observed ~ a1 + s(X, Y, bs = "spde", k = mesh2$n,
-  #         xt = list(mesh = mesh2)),
-  #         data = sim_dat,
-  #         family = family,
-  #         method = "ML",
-  #         control = gam.control(scalePenalty = FALSE))
-  #     }, error = function(e) NA)
-  #   })
-  # } else {
-  #   fit <- list(elapsed = NA)
-  # }
-  # times$mgcv_ml <- if (all(is.na(fit))) NA else out[["elapsed"]]
-
   out <- as_tibble(times)
   out$cutoff <- cutoff
   out$n_obs <- as.integer(n_obs)
@@ -292,17 +223,14 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out$seed <- seed
   out$mesh_n <- as.integer(mesh$n)
   out$max.edge <- max.edge
-  # out$inla_error = inla_error
   out$inla_eb_error <- inla_eb_error
-  # out$pardiso <- inla.pardiso.check()
   out
 }
 
-# test <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
-# test
-# test1 <- sim_fit_time(n_obs = 1000, max.edge = 0.2, family = gaussian(), seed = 1)
-# test1
-# test <- sim_fit_time(n_obs = 500, max.edge = 0.05, family = tweedie("log"), phi = 2, sigma_O = 0.5)
+test <- sim_fit_time(
+  n_obs = 500, max.edge = 0.05,
+  family = tweedie("log"), phi = 2, sigma_O = 0.5
+)
 
 to_run <- expand.grid(
   n_obs = c(1000L),
@@ -310,7 +238,8 @@ to_run <- expand.grid(
   iter = seq_len(50L)
 )
 
-# # # short test version
+to_run <- to_run[1:3, ]
+# # short test version
 # to_run <- expand.grid(
 #   n_obs = c(1000L),
 #   max.edge = c(0.15, 0.2),
@@ -320,88 +249,19 @@ to_run <- expand.grid(
 to_run$seed <- to_run$iter * 29212
 nrow(to_run)
 
-# test2 <- sim_fit_time(n_obs = 1000L, max.edge = 0.06, family = gaussian(), seed = 1 * 29212, iter = 1)
-
-# scramble for parallel task assignment:
-# to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
-
-# out <- purrr::pmap_dfr(to_run, sim_fit_time)
-
-# plan(multisession, workers = 5L)
-
-# out <- furrr::future_pmap_dfr(
+# don't run in parallel to ensure all timing is comparable:
 system.time({
-out <- purrr::pmap_dfr(
-  to_run,
-  sim_fit_time
-  # .progress = TRUE,
-  # .env_globals = parent.frame(),
-  # .options = furrr::furrr_options(
-  #   seed = TRUE,
-  #   globals = c(
-  #     "simulate_dat", "sim_fit_time",
-  #     "Predict.matrix.spde.smooth", "smooth.construct.spde.smooth.spec"
-  #   ),
-  #   packages = c("mgcv", "inlabru", "INLA", "ggplot2", "dplyr", "spaMM", "sdmTMB")
-  # )
-)
+  out <- purrr::pmap_dfr(
+    to_run,
+    sim_fit_time
+  )
 })
-
-## # saveRDS(out, file = "analysis/timing-sdmTMB-ad-SA-March31.rds")
-## out2 <- readRDS("analysis/timing-sdmTMB-ad-SA-March31.rds")
-##
-## # saveRDS(out, file = "analysis/timing-cache-parallel-spaMM-SA-March23.rds")
-## out <- readRDS("analysis/timing-cache-parallel-spaMM-SA-March23.rds")
-##
-##
-## out$sdmTMB <- NULL
-## out$sdmTMB_norm <- NULL
-##
-## out3 <- left_join(out, select(out2, sdmTMB, sdmTMB_norm, seed, iter, cutoff, n_obs, mesh_n, max.edge))
-## nrow(out3)
-## out <- out3
-## out <- select(out, sdmTMB, sdmTMB_norm, inlabru_eb:inla_eb_error)
 
 saveRDS(out, file = "analysis/timing-cache-parallel-2022-04-11.rds")
 out <- readRDS("analysis/timing-cache-parallel-2022-04-11.rds")
 
-# plan(sequential)
-
-# # -------tweedie
-# to_run <- expand.grid(
-#   # n_obs = c(100, 200, 500, 1000, 2000, 5000),
-#   n_obs = c(1000L),
-#   # n_obs = c(100L),
-#   max.edge = c(0.05, 0.075, 0.1, 0.15, 0.2),
-#   # max.edge = c(0.2),
-#   iter = seq_len(6L)
-# )
-# to_run$seed <- to_run$iter * 2912
-# nrow(to_run)
-# to_run <- to_run[sample(seq_len(nrow(to_run)), replace = FALSE), ]
-#
-# # out <- purrr::pmap_dfr(to_run, sim_fit_time)
-# library(future)
-# plan(multisession, workers = 6L)
-# out <- furrr::future_pmap_dfr(
-# # out <- purrr::pmap_dfr(
-#   to_run,
-#   sim_fit_time,
-#   family = tweedie("log"),
-#   phi = 2,
-#   sigma_O = 0.5,
-#   .progress = TRUE,
-#   .options = furrr::furrr_options(seed = TRUE)
-# )
-# saveRDS(out, file = "analysis/timing-cache-tweedie.rds")
-# out <- readRDS("analysis/timing-cache-tweedie.rds")
-# plan(sequential)
-# out$inlabru <- NULL
-out$sdmTMB_norm <- NULL
 out_long <- tidyr::pivot_longer(
   out,
-  # sdmTMB:inlabru,
-  # sdmTMB:inlabru_eb,
   sdmTMB:mgcv_disc,
   names_to = "model",
   values_to = "time"
@@ -409,14 +269,8 @@ out_long <- tidyr::pivot_longer(
 clean_names <- tribble(
   ~model, ~model_clean,
   "sdmTMB", "sdmTMB",
-  "sdmTMB_norm", "sdmTMB(normalize = TRUE)",
-  "inlabru", "inlabru",
   "inlabru_eb", "inlabru EB",
-  "INLA", "INLA",
-  "INLA_eb", "INLA EB",
-  "INLA_eb_nolike", "INLA EB no like()",
   "spaMM", "spaMM",
-  "mgcv_ml", "mgcv::bam\n(discretize = F) SPDE",
   "mgcv_disc", "mgcv::bam\n(discretize = TRUE) SPDE"
 )
 clean_names$model_clean <- factor(clean_names$model_clean, levels = clean_names$model_clean)
@@ -426,48 +280,20 @@ out_long <- out_long %>%
   mutate(mean_mesh_n = paste0("Mesh n = ", round(mean(mesh_n))))
 out_long$mean_mesh_n <- as.factor(out_long$mean_mesh_n)
 out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cutoff)
-# out_long <- filter(out_long, max.edge > 0.05)
 out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
-  # summarise(lwr = min(time), upr = max(time), time = mean(time), mean_mesh_n = mean(mesh_n))
   summarise(lwr = quantile(time, probs = 0.025), upr = quantile(time, probs = 0.975), time = mean(time), mean_mesh_n = mean(mesh_n))
-# summarise(
-#   lwr = quantile(time, 0.025, na.rm = T), upr = quantile(time, 0.975, na.rm = T),
-#           time = median(time), mean_mesh_n = mean(mesh_n))
-
-# out_long_sum <- out_long_sum %>% group_by(model_clean) %>% mutate(model_clean = forcats::fct_reorder(model_clean, time, .fun = min))
-
-# remotes::install_github("clauswilke/colorblindr")
-
-# unikn package (Neth & Gradwohl, 2021)
-# unikn::pal_unikn_pair
-colour_vect <- c(
-  "#0A9086", # seegruen4
-  "#54BFB7",
-  # "#077187", #petrol
-  # "#4454C4FF",
-  # "#8290BB",
-  # "#3E5496", # karpfenblau4
-  "#FEA090", # peach
-  "#008ECE", # seeblau5
-  # "#E0607E", # pinky4
-  "#8E2043" # bordeaux
-)
 
 cols <- RColorBrewer::brewer.pal(6, "Dark2")
 colour_vect <- c(
   "sdmTMB" = cols[1],
-  "sdmTMB(normalize = TRUE)" = cols[5],
   "inlabru EB" = cols[3],
   "spaMM" = cols[4],
   "mgcv::bam\n(discretize = TRUE) SPDE" = cols[2]
 )
 
-# library(colorblindr)
-
 leg <- tribble(
   ~model_clean, ~mean_mesh_n, ~time,
   "sdmTMB", 173, 0.26,
-  # "sdmTMB(normalize = TRUE)", 400, 0.24,
   "inlabru EB", 173, 3.5,
   "spaMM", 500, 2.0,
   "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
@@ -482,38 +308,31 @@ g <- out_long_sum %>%
   scale_x_log10(breaks = c(250, 500, 1000)) +
   ggsidekick::theme_sleek() +
   theme(panel.grid.major = element_line(colour = "grey90")) +
-  # scale_x_log10(breaks = unique(out_long_sum$mean_mesh_n)) +
-  # scale_x_continuous(breaks = unique(out_long$n_obs)) +
-  # facet_wrap(vars(mean_mesh_n), nrow = 1L) +
-  # theme(legend.position = "bottom") +
-  # theme(legend.position = c(0.35, 0.87), legend.background = element_rect(fill = "white")) +
   theme(legend.position = c(0.4, 0.85)) +
-  # ggrepel::geom_text_repel(aes(label = model_clean), data = leg) +
   geom_text(aes(label = model_clean), data = leg, hjust = 0) +
-  # scale_fill_OkabeIto(order = c(2, 5, 7, 3, 4)) +
-  # scale_colour_OkabeIto(order = c(2, 5, 7, 3, 4)) +
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
   coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
-  # guides(
-    # colour = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank()),
-    # fill = guide_legend(nrow = 3, byrow = TRUE, title.theme = element_blank())
-  # )
 g
 
 .width <- 5
 ggsave("figs/timing-spatial-m1-april11.pdf", width = .width, height = .width / 1.3)
 ggsave("figs/timing-spatial-m1-april11.png", width = .width, height = .width / 1.3)
 
-# group_by(out_long_sum, model_clean) %>%
-#   summarise(min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
-#     max_n = max(mean_mesh_n)) %>%
-#   filter(!is.na(model_clean)) %>%
-#   mutate(ratio = max_t / min_t) %>%
-#   mutate(O_ratio = (max_n^(3/2)) / (min_n^(3/2)))
+cat("O ratio\n")
+group_by(out_long_sum, model_clean) %>%
+  summarise(
+    min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
+    max_n = max(mean_mesh_n)
+  ) %>%
+  filter(!is.na(model_clean)) %>%
+  mutate(ratio = max_t / min_t) %>%
+  mutate(O_ratio = (max_n^(3 / 2)) / (min_n^(3 / 2)))
 
+# INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
 
+cat("inlabru to sdmTMB timing ratios\n")
 x <- filter(out_long_sum, model_clean == "inlabru EB")$time / filter(out_long_sum, model_clean == "sdmTMB")$time
 round(x, 1)
