@@ -1,14 +1,15 @@
 ---
 title: "sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields"
 author: "|
-  Sean C. Anderson$^1$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca],
-  Eric J. Ward$^2$,
+  Sean C. Anderson$^{1,2}$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca],
+  Eric J. Ward$^3$,
   Philina A. English$^1$,
-  Lewis A. K. Barnett$^3$\n|
+  Lewis A. K. Barnett$^4$\n|
   $^1$Pacific Biological Station, Fisheries and Oceans Canada, Nanaimo, BC, Canada\n|
-  $^2$Northwest Fisheries Science Center, National Marine Fisheries Service,\n|
+  $^2$Department of Mathematics, Simon Fraser University, Burnaby, BC, Canada\n|
+  $^3$Northwest Fisheries Science Center, National Marine Fisheries Service,\n|
       National Oceanic and Atmospheric Administration, Seattle, WA, USA\n|
-  $^3$Alaska Fisheries Science Center, National Marine Fisheries Service,\n|
+  $^4$Alaska Fisheries Science Center, National Marine Fisheries Service,\n|
       National Oceanic and Atmospheric Administration, Seattle, WA, USA\n|
     Running headline: sdmTMB: spatial and spatiotemporal GLMMs\n"
 output:
@@ -18,6 +19,7 @@ output:
       number_sections: false
       fig_caption: true
       highlight: "monochrome"
+      keep_tex: true
 csl: mee.csl
 bibliography: refs.bib
 link-citations: yes
