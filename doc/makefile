@@ -1,12 +1,7 @@
-TEXT = paper
-REFS = refs
+all: paper.pdf sdmTMB-cover.pdf
 
-all: $(TEXT).pdf appendix-model.pdf
-
-%.pdf: %.Rmd $(REFS).bib
+paper.pdf: paper.Rmd refs.bib
 	Rscript -e "rmarkdown::render('paper.Rmd')"
-continuous:
-	while true; do make --silent; sleep 3; done
 
-appendix-model.pdf: appendix-model.Rmd refs.bib
-	Rscript -e "rmarkdown::render('appendix-model.Rmd')"
+sdmTMB-cover.pdf: sdmTMB-cover.md template.tex
+	Rscript -e "rmarkdown::render('sdmTMB-cover.md')"
