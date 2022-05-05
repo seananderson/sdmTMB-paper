@@ -23,3 +23,4 @@ figs/
 temp-*
 !mcmc_residuals.rds
 doc/appendix-VAST/*
+doc/appendix-snow-sdmTMB_files*
