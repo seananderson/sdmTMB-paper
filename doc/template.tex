@@ -1,0 +1,45 @@
+\documentclass[$fontsize$,letterpaper]{letter}
+\usepackage[margin=$margin$]{geometry}
+\geometry{letterpaper}
+\usepackage{graphicx}
+\addtolength{\topmargin}{$topmargin$}
+\addtolength{\textheight}{$textheightextra$}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{textcomp}
+\usepackage[sb]{libertine}
+\usepackage[varqu,varl]{inconsolata}% sans serif typewriter
+\usepackage[libertine,bigdelims,vvarbb]{newtxmath} % bb from STIX
+\usepackage[cal=boondoxo]{mathalfa} % mathcal
+\useosf % osf for text, not math
+\usepackage[supstfm=libertinesups,%
+  supscaled=1.2,%
+  raised=-.13em]{superiors}
+
+\signature{}
+\address{
+  $name$ \\
+  $title$ \\
+  Fisheries and Oceans Canada \\
+  Pacific Biological Station \\
+  3190 Hammond Bay Rd, \\
+  Nanaimo, BC V9T 6N7 \\
+  $email$
+}
+
+\begin{document}
+\begin{letter}{}
+\pagestyle{empty}
+
+\opening{$opening$,}
+
+$body$
+
+% \vspace{0mm}
+\closing{$closing$,\\
+\fromsig{\includegraphics[scale=0.42]{/Users/seananderson/Dropbox/sig.pdf}}\\
+$signedname$
+}
+
+\end{letter}
+\end{document}
