@@ -320,8 +320,7 @@ $$
 $$
 
 where $\boldsymbol{\zeta}$ is a random field representing a spatially varying coefficient.
-Usually, $\bm{X}^{\mathrm{svc}}_{\s, t}$ would represent a prediction matrix that is constant spatially for a given time $t$.
-Currently, $\bm{X}^{\mathrm{svc}}_{t}$ is restricted to a single covariate (column vector), supplied by a one-sided formula to `spatial_varying`.
+Usually, $\bm{X}^{\mathrm{svc}}_{\s, t}$ would represent a prediction matrix that is constant spatially for a given time $t$ as defined by a one-sided formula supplied to `spatial_varying`.
 For example `spatial_varying = ~ 0 + x`, where `0` omits the intercept.
 
 The random fields are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\zeta$)
