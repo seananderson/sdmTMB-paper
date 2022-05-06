@@ -5,6 +5,11 @@ output:
     highlight: pygments
     toc: false
     number_sections: true
+header-includes:
+  \usepackage[left]{lineno}
+  \usepackage{bm}
+  \usepackage{amssymb}
+  \linenumbers
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -218,8 +223,8 @@ if (file.exists(here("doc", "appendix-VAST-tweedie", "Index.png"))) {
 We can compare the index we would get using sdmTMB. To get and equivalent index (not bias corrected), we predict on the survey grid (`qcs_grid`), tell it the area of each grid cell (4 km^2^), and pass the output to `get_index()`.
 
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
-pred <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE, area = 4)
-ind_sdmTMB <- get_index(pred)
+pred <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE)
+ind_sdmTMB <- get_index(pred, area = 4)
 ```
 
 Now, we can compare the indices. In the ribbon plot below, the lines perfectly covered each other and so we added a small jitter amount to make them both visible.

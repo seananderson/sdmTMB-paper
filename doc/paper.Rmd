@@ -24,12 +24,13 @@ csl: mee.csl
 bibliography: refs.bib
 link-citations: yes
 header-includes:
-  \usepackage{setspace}\onehalfspacing
+  \usepackage{setspace}\doublespacing
   \usepackage[left]{lineno}
   \usepackage{bm}
   \usepackage{amssymb}
   \usepackage{tablefootnote}
   \linenumbers
+  \setlength{\parskip}{1.0\baselineskip}
   \newcommand{\beginsupplement}{
   \setcounter{equation}{0}
   \renewcommand{\theequation}{S.\arabic{equation}}

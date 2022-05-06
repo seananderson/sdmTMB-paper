@@ -210,10 +210,8 @@ We can compare the index we would get using sdmTMB. Since sdmTMB does not have b
 
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
 tictoc::tic()
-p <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE,
-  area = rep(4, nrow(qcs_grid))
-)
-ind <- get_index(p, bias_correct = FALSE)
+p <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = FALSE, area = rep(4, nrow(qcs_grid)))
 tictoc::toc()
 ```
 

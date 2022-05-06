@@ -5,6 +5,11 @@ output:
     highlight: pygments
     toc: true
     number_sections: true
+header-includes:
+  \usepackage[left]{lineno}
+  \usepackage{bm}
+  \usepackage{amssymb}
+  \linenumbers
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}

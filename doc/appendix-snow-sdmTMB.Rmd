@@ -8,6 +8,11 @@ output:
 urlcolor: blue
 bibliography: refs.bib
 csl: mee.csl
+header-includes:
+  \usepackage[left]{lineno}
+  \usepackage{bm}
+  \usepackage{amssymb}
+  \linenumbers
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -150,10 +155,10 @@ m2 <- sdmTMB(count ~ 1 + nao + (1 | year_f),
 )
 ```
 
-
 # Model validation
 
 ## Basic inspection
+
 ```{r save-models, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=TRUE}
 if (!rds_saved) {
   saveRDS(m0, here::here("data/snow_w_main_effect_0_150km.rds"))
@@ -174,9 +179,14 @@ if (rds_saved) {
 AIC(m0, m1, m2)
 ```
 
-According to AIC, the `nbinom2()` (negative binomial, NB2) distribution appears to have the most parsimonious fit. 
+According to AIC, the `nbinom2()` (negative binomial, NB2) distribution has the most parsimonious fit.
+We could also check residual distributions at this stage.
 We will rerun with `reml = TRUE` to ensure better estimation of the random effects that dominate this model and check that the gradients are all small enough.
 If the gradients aren't quite small enough, we can easily run additional optimization steps using the `run_extra_optimization()` function.
+
+```{r sanity, echo=TRUE}
+sanity(m2)
+```
 
 ```{r rds2, echo=FALSE, cache=FALSE}
 rds_saved2 <- file.exists(here::here("data/snow_w_main_effect_150km_reml.rds"))
@@ -193,10 +203,6 @@ m <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   data = snow, mesh = mesh,
   silent = TRUE
 )
-
-if (max(m$gradients) > 0.01) {
-  m <- run_extra_optimization(m, newton_loops = 1L, nlminb_loops = 0L)
-}
 ```
 
 ```{r save-reml-model, warning=FALSE, message=FALSE, echo=FALSE, cache=FALSE, eval=FALSE}
@@ -229,6 +235,7 @@ We can then generate predictions and residuals for the original data locations:
 
 ```{r predict, message=FALSE}
 pred <- predict(m)
+set.seed(19208)
 pred$resid <- residuals(m)
 ```
 
@@ -243,29 +250,29 @@ qqnorm(pred$resid)
 qqline(pred$resid)
 ```
 
-More accurate residuals can be generated using tmbstan, but this is a very slow process!
-In this case, it took more than 2.5 hrs.
+More accurate residuals can be generated using tmbstan, but this a slower process.
+These are randomized quantile residuals where the fixed effects are fixed at their MLE (maximum likelihoood estimate) values and the random effects are sampled with MCMC via tmbstan/Stan.
+To calculate these, we have to use the version of our model fit without REML.
+We would ideally sample with more MCMC samples than this and assess convergence by setting `print_stan_model = TRUE`.
 
-```{r stan-resids, eval=FALSE}
-stan_fit <- tmbstan::tmbstan(m$tmb_obj, iter = 100, chains = 1, warmup = 99)
-eta <- predict(m, tmbstan_model = stan_fit)
-mu <- m$family$linkinv(as.numeric(eta))
-r_mcmc <- sdmTMB:::qres_nbinom2(m, y = m$data$count, mu = mu)
-saveRDS(r_mcmc, "data/mcmc_residuals.rds")
-```
-
-```{r stan-dat, echo=FALSE, cache=FALSE}
-r_mcmc <- readRDS(here::here("data/mcmc_residuals.rds"))
+```{r stan-resids}
+f <- here::here("data/mcmc_residuals.rds") # for caching
+set.seed(82919)
+if (!file.exists(f)) {
+  mcmc_resids <- residuals(m2, type = "mle-mcmc", mcmc_iter = 101, mcmc_warmup = 100)
+  saveRDS(mcmc_resids, f)
+} else {
+  mcmc_resids <- readRDS(f)
+}
 ```
 
 ```{r stan-qqnorm, out.width="33%"}
-qqnorm(r_mcmc)
-qqline(r_mcmc)
+qqnorm(mcmc_resids)
+qqline(mcmc_resids)
 ```
 
 We can also test for zero-inflation using the `simulate.sdmTMB()` function and a couple functions from the DHARMa package.
-If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead. 
-This is not built directly into sdmTMB, but can be achieved by fitting the two components separately. See the steps in the vignette [Fitting delta models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/delta-models.html).
+If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead (e.g., `delta_truncated_nbinom2()` or possibly even `delta_gamma()` if we were willing to treat the counts as continuous. 
 
 ```{r zero-test, echo=TRUE, message=FALSE}
 s_nb2 <- simulate(m, nsim = 500)
@@ -299,93 +306,6 @@ ggplot(pred, aes(X, Y, colour = resid)) +
   scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
   theme(axis.text = element_blank(), axis.ticks = element_blank())
 ```
-
-<!-- ## Cross-validation -->
-
-<!-- Cross-validation can also be used to assess model performance. -->
-<!-- Here, we use the `future` package to speed up the running of multiple models and save a smaller version of the output that doesn't include the full model information. -->
-<!-- We use `k_folds = 5`, which amounts to training on 80% of the data and testing with 20% for each model. -->
-<!-- Block cross-validation, which can be done using custom folds defined using the `fold_ids` argument, is generally recommended for spatiotemporal data. -->
-<!-- However, random folds created by `sdmTMB_cv()` are appropriate in this case, because we are only interested in predicting within the spatial and temporal range of our data and are attempting to estimate the spatial variation in the effect of NAO. -->
-
-<!-- ```{r cv, eval=FALSE, cache=FALSE} -->
-<!-- library(future) -->
-<!-- plan(multisession) -->
-<!-- options(future.rng.onMisuse = "ignore") -->
-
-<!-- m_cv <- sdmTMB_cv(count ~ 1 + nao + (1 | year_f), -->
-<!--   spatial_varying = ~ 0 + nao, -->
-<!--   time = "year", -->
-<!--   spatial = "on", -->
-<!--   spatiotemporal = "iid", -->
-<!--   family = nbinom2(link = "log"), -->
-<!--   reml = TRUE, -->
-<!--   use_initial_fit = TRUE, -->
-<!--   data = snow, mesh = mesh, -->
-<!--   k_folds = 5 -->
-<!-- ) -->
-<!-- plan(sequential) -->
-<!-- saveRDS(m_cv, file = here::here("data/owlcvallreml.rds")) -->
-<!-- # m_cv$models[[1]] # to retrieve just the model built excluding the first fold -->
-<!-- cv <- m_cv -->
-<!-- cv$models <- NA -->
-<!-- saveRDS(cv, file = here::here("data/owlcvdatreml.rds")) -->
-<!-- ``` -->
-
-<!-- First, we should check that all the models converged and have gradients < 0.01. -->
-
-<!-- ```{r explore-cv, message=FALSE, cache=FALSE} -->
-<!-- cv <- readRDS(here::here("data/owlcvdatreml.rds")) -->
-<!-- cv$converged -->
-<!-- max(cv$max_gradients) -->
-<!-- ``` -->
-
-<!-- If we were conducting model selection, we might contrast the log likelihoods (`cv$sum_loglik`), and the expected log predictive density (`cv$elpd`) for the left out data between different model configurations instead of relying on AIC. -->
-<!-- We can also check the prediction accuracy on left-out data by plotting the `cv_predicted` against the observed `count` in log space. -->
-
-<!-- ```{r cv-pred-obs, out.width="70%", cache=FALSE} -->
-<!-- cvdat <- cv$data %>% filter(cv_loglik > -60) # this removes one extreme outlier -->
-<!-- ggplot(cvdat, aes(log(count + 1), log(cv_predicted + 1), colour = -cv_loglik)) + -->
-<!--   geom_abline(slope = 1, colour = "gray") + -->
-<!--   geom_point(size = 2, alpha = 0.25) + -->
-<!--   scale_colour_viridis_c( -->
-<!--     direction = -1, option = "A", begin = 0.2, end = 0.9 -->
-<!--   ) + -->
-<!--   coord_fixed(ylim = c(0, 3.8)) + -->
-<!--   theme_bw() -->
-<!-- ``` -->
-
-<!-- These predictions for left-out locations match the observed counts just as well as those based on the model built using all the data shown below. -->
-<!-- # Does this mean that we are at least not over-fit, despite the spatiotemporal random fields and spatially varying coefficient? -->
-
-<!-- ```{r full-pred-obs, echo=FALSE, out.width="70%"} -->
-<!-- ggplot(pred, aes(log(count + 1), log(exp(est) + 1), colour = resid)) + -->
-<!--   geom_abline(slope = 1, colour = "gray") + -->
-<!--   # geom_point(size = 0.75, alpha=0.5) + facet_wrap(~year) + -->
-<!--   geom_point(size = 2, alpha = 0.25) + -->
-<!--   coord_fixed(ylim = c(0, 3.8)) + -->
-<!--   scale_colour_viridis_c( -->
-<!--     "residuals", -->
-<!--     direction = -1, option = "A", begin = 0.2, end = 0.9 -->
-<!--   ) + -->
-<!--   theme_bw() #+ theme(strip.background = element_rect(fill = NA, colour = NA)) -->
-<!-- ``` -->
-
-<!-- We can also explore the spatiotemporal variation in the predictive accuracy of our model by plotting the `cv_loglik`. -->
-
-<!-- ```{r cv-map, cache = FALSE} -->
-<!-- ggplot(cvdat, aes(X, Y, colour = -cv_loglik)) + -->
-<!--   geom_point(size = 0.25) + -->
-<!--   scale_colour_viridis_c( -->
-<!--     direction = -1, option = "A", begin = 0.2, end = 0.9, -->
-<!--     guide = guide_colourbar(title.position = "top") -->
-<!--   ) + -->
-<!--   coord_fixed() + -->
-<!--   theme(axis.text = element_blank(), axis.ticks = element_blank()) + -->
-<!--   facet_wrap(~year) -->
-<!-- ``` -->
-
-<!-- \clearpage -->
 
 # Plotting spatial predictions
 
@@ -425,22 +345,22 @@ The simulation draws for both can then be combined before calculating the median
 b <- tidy(m, conf.int = TRUE)
 
 nsim <- 500
-zeta_sim <- predict(m, nsim = nsim, sims_var = "zeta_s")
+zeta_s <- predict(m, nsim = nsim, sims_var = "zeta_s")
 sims <- spread_sims(m, nsim = nsim)
 beta <- sims$nao
-combined <- beta + t(zeta_sim)
+combined <- beta + t(zeta_s)
 
-p$zeta_sim <- apply(t(zeta_sim), 2, median)
-p$nao_effect_sim <- apply(combined, 2, median)
-p$nao_effect_lwr <- apply(combined, 2, quantile, probs = 0.10)
-p$nao_effect_upr <- apply(combined, 2, quantile, probs = 0.90)
+p$zeta_s <- as.numeric(apply(t(zeta_s), 2, median))
+p$nao_effect_sim <- as.numeric(apply(combined, 2, median))
+p$nao_effect_lwr <- as.numeric(apply(combined, 2, quantile, probs = 0.10))
+p$nao_effect_upr <- as.numeric(apply(combined, 2, quantile, probs = 0.90))
 
 p_mean <- p %>%
   group_by(CBCID) %>% summarise(
     year = max(year),
     X = mean(X), Y = mean(Y),
     mean_est_count = exp(mean(est)),
-    nao_effect = b[b$term == "nao", 2] + mean(zeta_s),
+    nao_effect = b[b$term == "nao", "estimate"] + mean(zeta_s),
     nao_sim = mean(nao_effect_sim),
     nao_lwr = mean(nao_effect_lwr),
     nao_upr = mean(nao_effect_upr)
@@ -448,7 +368,7 @@ p_mean <- p %>%
 ```
 
 ```{r}
-nao_effect_lwr95 <- apply(combined, 2, quantile, probs = 0.025)
+nao_effect_lwr95 <- as.numeric(apply(combined, 2, quantile, probs = 0.025))
 ```
 
 The main effect of NAO indicates that there is a weak average positive effect of annual mean NAO on overall counts `r round(b[b$term == "nao", 2], 2)` (`b[b$term == "nao", 2]`), while for individual count locations the median estimated effects of NAO range from `r round(min(p_mean$nao_sim), 2)` to `r round(max(p_mean$nao_sim),2)` (`range(p_mean$nao_sim)`).

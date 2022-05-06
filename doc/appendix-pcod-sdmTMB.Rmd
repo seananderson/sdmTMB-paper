@@ -7,6 +7,11 @@ output:
     number_sections: true
 bibliography: refs.bib
 csl: mee.csl
+header-includes:
+  \usepackage[left]{lineno}
+  \usepackage{bm}
+  \usepackage{amssymb}
+  \linenumbers
 ---
 
 ```{r setup, include = FALSE, cache=FALSE}
@@ -46,6 +51,8 @@ plot(mesh)
 
 Next we will fit a GLMM (generalized linear mixed effects model). For this example, we will include `0 + as.factor(year)` so that there is a factor predictor that represents the mean estimate for each time slice. Setting `silent = FALSE` would give us optimization details as the model fits but clutter the R Markdown output.
 
+An alternative would be to model catch as the response with an offset (`offset` argument) for log area swept.
+
 ```{r fit-pcod, warning=FALSE, message=FALSE}
 fit <- sdmTMB(density ~ 0 + as.factor(year),
   data = pcod,
@@ -75,8 +82,24 @@ pred <- predict(fit)
 We can inspect simulated residuals from the DHARMa package:
 
 ```{r sim-resids, out.width="4in", warning=FALSE, results='hide'}
+set.seed(123)
 simulate(fit, nsim = 500) %>%
   dharma_residuals(fit)
+```
+
+Or perhaps better, use MCMC residuals:
+
+```{r mcmc-resids, warning=FALSE, results='hide', cache=TRUE}
+set.seed(123)
+r <- residuals(fit,
+  type = "mle-mcmc", 
+  mcmc_iter = 400, mcmc_warmup = 300
+)
+```
+
+```{r mcmc-resids-vis, out.width="4in"}
+qqnorm(r)
+qqline(r)
 ```
 
 Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the sdmTMB package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`.
@@ -131,7 +154,7 @@ plot_map(pred_qcs, "epsilon_st") +
 The fastest way to assess uncertainty on our spatial predictions is with simulation from the joint precision matrix.
 
 ```{r sims}
-pred_sims <- predict(fit, newdata = qcs_grid, sims = 500)
+pred_sims <- predict(fit, newdata = qcs_grid, nsim = 500)
 dim(pred_sims)
 ```
 
@@ -152,11 +175,10 @@ We can calculate our standardized population index by predicting on our survey d
 qcs_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
   fit,
-  newdata = qcs_grid, return_tmb_object = TRUE,
-  area = qcs_grid$area
+  newdata = qcs_grid, 
+  return_tmb_object = TRUE
 )
-ind <- get_index(pred2)
-saveRDS(ind, "sdmTMB-index.rds")
+ind <- get_index(pred2, area = qcs_grid$area, bias_correct = TRUE)
 
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +
@@ -164,17 +186,6 @@ ggplot(ind, aes(year, est / 1000)) +
   ylab("Biomass (t)")
 ```
 
-The above example used the default `bias_correct = FALSE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more details can be found in the [TMB documentation](https://github.com/kaskr/adcomp/wiki) or [@thorson2016bias]. Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but can take considerable time and memory.
-
-As an alternative, we can use the output from the joint precision matrix simulation draws to calculate our index. This should approximate the output of `get_index(x, bias_correct = TRUE)`. However, we note that there may be situations where this approach may fail or be biased and experimentation is ongoing.
-
-```{r index-sims, fig.asp=0.45, out.width="5in"}
-ind <- get_index_sims(pred_sims, area = rep(4, nrow(pred_sims)), level = 0.95)
-
-ggplot(ind, aes(year, est / 1000)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr / 1000, ymax = upr / 1000), alpha = 0.4) +
-  ylab("Biomass (t)")
-```
+The above example uses `bias_correct = TRUE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more details can be found in the [TMB documentation](https://github.com/kaskr/adcomp/wiki) or [@thorson2016bias]. Leaving `bias_correct = FALSE` is fine for experimentation or a quick example, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but takes more time and memory than skipping the bias correction.
 
 # References

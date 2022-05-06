@@ -14,6 +14,7 @@ header-includes:
   \usepackage[left]{lineno}
   \usepackage{bm}
   \usepackage{amssymb}
+  \linenumbers
 ---
 
 ```{r setup, echo=FALSE, cache=FALSE}
@@ -47,7 +48,16 @@ We did this by setting the `max.edge` argument, which controls the largest allow
 We tested values of `max.edge` of 0.06, 0.075, 0.1, 0.15, and 0.2.
 In Figure 4, we report on the x-axis the number of mesh nodes ("knots") that result from each of these meshes.
 
-We conducted 20 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values.
+We conducted 50 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values.
+The models were fit on a 2022 14 inch M1 MacBook Pro with an Apple M1 Pro 10-core CPU and 32 GB of RAM in R 4.1.3 and the default Matrix library. The following package versions were used:
+
+```{r pkg-versions}
+packageVersion("INLA")
+packageVersion("inlabru")
+packageVersion("mgcv")
+packageVersion("spaMM")
+packageVersion("sdmTMB")
+```
 
 ## Illustration of the simulation components
 
@@ -230,7 +240,6 @@ We highlight some model validation in particular in this appendix.
 In addition to the validation discussed here, Appendix 5 contains a comparison with VAST and Appendix 4 contains a comparison with INLA/inlabru.
 
 This appendix illustrates a comparison of penalized smoothers with mgcv and a comparison of IID random intercepts with glmmTMB.
-<!-- Additionally, it illustrates some simulation testing of a spatial random field model with the main observation families within the sdmTMB package. -->
 
 ## Penalized smoothers
 
@@ -269,13 +278,14 @@ We can see the predictions match nearly exactly.
 Furthermore, we can use the in-development function `sdmTMB::plot_smooth()` to compare the smoothers themselves.
 Note that the sdmTMB version shows the marginal effect of a prediction including the intercept whereas the `mgcv::plot.gam()` shows the smooth component only.
 We therefore use `mgcv::predict.gam()` to make a matching plot.
-Below, we add a tiny jitter amount (`0.04`) to the mgcv output just so the two smoothers can both be visualized.
+Below, we add a tiny jitter amount (`0.02`) to the mgcv output just so the two smoothers can both be visualized.
 The blue lines are from mgcv and the black lines are from sdmTMB.
 
 ```{r plot-smooth, echo=TRUE, fig.asp=0.8, out.width="5in"}
 par(cex = 0.8)
 # sdmTMB:
 plot_smooth(m)
+# also see the more general visreg::visreg()
 
 # mgcv:
 x2 <- seq(0, 1, length.out = 100)
@@ -287,9 +297,9 @@ df <- data.frame(
   lwr = p_mgcv$fit - qv * p_mgcv$se.fit, 
   upr = p_mgcv$fit + qv * p_mgcv$se.fit
 )
-lines(df$x2, df$est + 0.04, col = "blue")
-lines(df$x2, df$lwr + 0.04, lty = 2, col = "blue")
-lines(df$x2, df$upr + 0.04, lty = 2, col = "blue")
+lines(df$x2, df$est + 0.02, col = "blue")
+lines(df$x2, df$lwr + 0.02, lty = 2, col = "blue")
+lines(df$x2, df$upr + 0.02, lty = 2, col = "blue")
 ```
 
 ### `s(x1, by = x2)`
