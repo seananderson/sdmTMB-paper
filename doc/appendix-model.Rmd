@@ -348,8 +348,7 @@ E.g., `(1 | g1) + (1 | g2)`, in which case they are assumed independent and unco
 
 ## Offset terms
 
-Offset terms can be included with the reserved word `offset` in the formula.
-E.g., `y ~ x + offset`.
+Offset terms can be included through the `offset` argument in `sdmTMB()`.
 These are included in the linear predictor as
 
 $$
@@ -359,6 +358,8 @@ $$
 $$
 
 where $O_{\s,t}$ is an offset term---a **log transformed** variable without a coefficient (assuming a log link).
+The offset is *not* included in the prediction.
+Therefore, if `offset` represents a measure of effort, for example, the prediction is for one unit of effort (`log(1) = 0`).
 
 # Observation model families
 
