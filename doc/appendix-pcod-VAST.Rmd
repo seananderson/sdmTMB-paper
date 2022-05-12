@@ -71,7 +71,7 @@ qcs_grid_ll <- subset(qcs_grid_ll, year == min(qcs_grid_ll$year))
 input_grid <- cbind(Lat = qcs_grid_ll$Y, Lon = qcs_grid_ll$X, Area_km2 = 4)
 
 settings <- make_settings(
-  n_x = 205, # number of vertices in the SPDE mesh
+  n_x = 185, # number of vertices in the SPDE mesh
   Region = "User",
   purpose = "index2", # index of abundance with Gamma for positive catches
   fine_scale = TRUE, # use bilinear interpolation from the INLA 'A' matrix
@@ -94,6 +94,10 @@ dir.create(paste0(here("doc", "appendix-VAST")), showWarnings = FALSE)
 
 # effort is 1 when using CPUE instead of observed weight as the response:
 pcod$effort <- 1
+if (FALSE) { # to check offset/effort
+  set.seed(1)
+  pcod$effort <- exp(rnorm(nrow(pcod), mean = 0, sd = 0.2))
+}
 pcod <- as.data.frame(pcod) # ensure not a tibble
 f <- here("doc", "appendix-VAST", "vast-cache.rds")
 if (!file.exists(f)) {
@@ -130,7 +134,8 @@ mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
 tictoc::tic()
 fit_sdmTMB <- sdmTMB(
   density ~ 0 + as.factor(year), 
-  data = pcod, mesh = mesh, 
+  data = pcod, mesh = mesh,
+  offset = log(pcod$effort),
   family = delta_gamma(),
   time = "year", silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1)
@@ -156,10 +161,17 @@ plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft", sdmTMB_p
   plot(years, b_year_vast, ylim = range(c(lwr_vast, upr_vast)))
   segments(years, lwr_vast, years, upr_vast)
   years <- years + 0.05
-  points(years, sdmTMB_est$b_j[,sdmTMB_pars])
-  segments(years, sdmTMB_est$b_j[,sdmTMB_pars] - 2 * sdmTMB_sd$b_j[,sdmTMB_pars], 
-    years, sdmTMB_est$b_j[,sdmTMB_pars] + 2 * sdmTMB_sd$b_j[,sdmTMB_pars],
+  if (sdmTMB_pars == 1) {
+    points(years, sdmTMB_est$b_j)
+    segments(years, sdmTMB_est$b_j - 2 * sdmTMB_sd$b_j, 
+    years, sdmTMB_est$b_j + 2 * sdmTMB_sd$b_j,
     col = "red")
+  } else {
+    points(years, sdmTMB_est$b_j2)
+       segments(years, sdmTMB_est$b_j2 - 2 * sdmTMB_sd$b_j2, 
+    years, sdmTMB_est$b_j2 + 2 * sdmTMB_sd$b_j2,
+    col = "red")
+  }
   legend("topright", legend = c("VAST", "sdmTMB"), 
     col = c("black", "red"), bty = "n", lty = c(1, 1))
 }
