@@ -1,5 +1,5 @@
 ---
-title: "sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields"
+title: "sdmTMB: an R package for fast, flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields"
 author: "|
   Sean C. Anderson$^{1,2}$^[Corresponding author: sean.anderson@dfo-mpo.gc.ca],
   Eric J. Ward$^3$,
