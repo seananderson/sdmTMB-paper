@@ -142,6 +142,10 @@ fit_sdmTMB <- sdmTMB(density ~ 0 + as.factor(year),
   time = "year", spatiotemporal = "iid", spatial = "on")
 ```
 
+```{r sdmTMB-example-print, echo = TRUE}
+fit_sdmTMB
+```
+
 We can compare the various parameter estimates. Note that VAST adds the dispersion parameter (`phi` in sdmTMB) into the mean of the Tweedie distribution, so we need to account for that when comparing main-effect estimates.
 
 ```{r sdmTMB-VAST-par-compare}
