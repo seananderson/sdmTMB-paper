@@ -218,7 +218,7 @@ if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
 }
 ```
 
-We can compare the index we would get using sdmTMB. Since sdmTMB does not have built-in delta models, we need some way of combining the predictions across the two models. Here, we will do that by simulating from the joint parameter precision matrix and calculating the index with those draws. This should be approximately comparable with the bias-corrected index calculated above with VAST.
+We can compare the index we would get using sdmTMB. 
 
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
 tictoc::tic()
