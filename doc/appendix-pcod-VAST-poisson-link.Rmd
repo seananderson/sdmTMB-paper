@@ -71,14 +71,14 @@ qcs_grid_ll <- subset(qcs_grid_ll, year == min(qcs_grid_ll$year))
 input_grid <- cbind(Lat = qcs_grid_ll$Y, Lon = qcs_grid_ll$X, Area_km2 = 4)
 
 settings <- make_settings(
-  n_x = 205, # number of vertices in the SPDE mesh
+  n_x = 185, # number of vertices in the SPDE mesh
   Region = "User",
   purpose = "index2", # index of abundance with Gamma for positive catches
   fine_scale = TRUE, # use bilinear interpolation from the INLA 'A' matrix
   zone = 9,
   FieldConfig = FieldConfig,
   RhoConfig = RhoConfig,
-  ObsModel = c(2, 1), # PG delta; c(10, 2) for Tweedie
+  ObsModel = c(2, 0), # conventional logit-linked delta-Gamma; c(10, 2) for Tweedie
   bias.correct = FALSE,
   use_anisotropy = FALSE,
   max_cells = Inf, # use all grid cells from the extrapolation grid
@@ -90,12 +90,16 @@ Next we will fit a GLMM (generalized linear mixed effects model).
 
 ```{r fit, echo = TRUE, results = 'hide'}
  # create folder for saved output:
-dir.create(paste0(here("doc", "appendix-VAST-poisson-link")), showWarnings = FALSE)
+dir.create(paste0(here("doc", "appendix-VAST")), showWarnings = FALSE)
 
 # effort is 1 when using CPUE instead of observed weight as the response:
 pcod$effort <- 1
+if (FALSE) { # to check offset/effort
+  set.seed(1)
+  pcod$effort <- exp(rnorm(nrow(pcod), mean = 0, sd = 0.2))
+}
 pcod <- as.data.frame(pcod) # ensure not a tibble
-f <- here("doc", "appendix-VAST-poisson-link", "vast-cache.rds")
+f <- here("doc", "appendix-VAST", "vast-cache.rds")
 if (!file.exists(f)) {
   tictoc::tic()
   fit <- fit_model(
@@ -106,7 +110,7 @@ if (!file.exists(f)) {
     b_i = pcod[, "density"],
     a_i = pcod[, "effort"],
     input_grid = input_grid,
-    working_dir = paste0(here("doc", "appendix-VAST-poisson-link"), "/")
+    working_dir = paste0(here("doc", "appendix-VAST"), "/")
   )
   tictoc::toc()
   saveRDS(fit, file = f)
@@ -115,7 +119,7 @@ if (!file.exists(f)) {
 }
 ```
 
-We can look at parameter estimates and their standard errors. 
+We can look at parameter estimates and their standard errors. First we see estimates from the binomial component and second we see estimates from the positive Gamma component.
 
 ```{r check-parameters, echo = TRUE}
 fit$parameter_estimates$SD
@@ -124,15 +128,16 @@ fit$parameter_estimates$SD
 TODO sdmTMB:
 
 ```{r sdmTMB-example, echo = TRUE, cache=TRUE}
-mesh <- sdmTMB::make_mesh(pcod, xy_cols = c("X", "Y"),
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"),
   mesh = fit$spatial_list$MeshList$isotropic_mesh)
 
 tictoc::tic()
 fit_sdmTMB <- sdmTMB(
   density ~ 0 + as.factor(year), 
-  data = pcod, mesh = mesh, 
-  family = delta_poisson_link_gamma(),
-  time = "year", silent = F,
+  data = pcod, mesh = mesh,
+  offset = log(pcod$effort),
+  family = delta_gamma(),
+  time = "year", silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1)
 )
 tictoc::toc()
@@ -156,10 +161,17 @@ plot_betas <- function(vast_model, sdmTMB_model, vast_par = "beta1_ft", sdmTMB_p
   plot(years, b_year_vast, ylim = range(c(lwr_vast, upr_vast)))
   segments(years, lwr_vast, years, upr_vast)
   years <- years + 0.05
-  points(years, sdmTMB_est$b_j[,sdmTMB_pars])
-  segments(years, sdmTMB_est$b_j[,sdmTMB_pars] - 2 * sdmTMB_sd$b_j[,sdmTMB_pars], 
-    years, sdmTMB_est$b_j[,sdmTMB_pars] + 2 * sdmTMB_sd$b_j[,sdmTMB_pars],
+  if (sdmTMB_pars == 1) {
+    points(years, sdmTMB_est$b_j)
+    segments(years, sdmTMB_est$b_j - 2 * sdmTMB_sd$b_j, 
+    years, sdmTMB_est$b_j + 2 * sdmTMB_sd$b_j,
     col = "red")
+  } else {
+    points(years, sdmTMB_est$b_j2)
+       segments(years, sdmTMB_est$b_j2 - 2 * sdmTMB_sd$b_j2, 
+    years, sdmTMB_est$b_j2 + 2 * sdmTMB_sd$b_j2,
+    col = "red")
+  }
   legend("topright", legend = c("VAST", "sdmTMB"), 
     col = c("black", "red"), bty = "n", lty = c(1, 1))
 }
@@ -179,30 +191,30 @@ While making custom plots of individual elements would require considerable addi
 plot(
   fit,
   check_residuals = FALSE,
-  working_dir = paste0(here("doc", "appendix-VAST-poisson-link"), "/")
+  working_dir = paste0(here("doc", "appendix-VAST"), "/")
 )
 ```
 
 The saved plots can be perused by browsing the exported image files in the working directory, but here we will read in some key plots as an example. We can start by looking at the location of samples and knots.
 
 ```{r plot-knots, echo = TRUE, out.width="6in"}
-knitr::include_graphics(here("doc", "appendix-VAST-poisson-link", "Data_and_knots.png"))
+knitr::include_graphics(here("doc", "appendix-VAST", "Data_and_knots.png"))
 ```
 
 Then we can look at maps of the predicted population densities (here on the log scale).
 
 ```{r plot-density, echo = TRUE, out.width="6in"}
-knitr::include_graphics(here("doc", "appendix-VAST-poisson-link", "ln_density-predicted.png"))
+knitr::include_graphics(here("doc", "appendix-VAST", "ln_density-predicted.png"))
 ```
 
 And finally the biomass index.
 
 ```{r plot-index, echo = TRUE, out.width="3in"}
-if (file.exists(here("doc", "appendix-VAST-poisson-link", "Index-Biomass.png"))) {
-  knitr::include_graphics(here("doc", "appendix-VAST-poisson-link", "Index-Biomass.png"))
+if (file.exists(here("doc", "appendix-VAST", "Index-Biomass.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST", "Index-Biomass.png"))
 }
-if (file.exists(here("doc", "appendix-VAST-poisson-link", "Index.png"))) {
-  knitr::include_graphics(here("doc", "appendix-VAST-poisson-link", "Index.png"))
+if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST", "Index.png"))
 }
 ```
 
@@ -211,38 +223,7 @@ We can compare the index we would get using sdmTMB. Since sdmTMB does not have b
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
 tictoc::tic()
 p <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE)
-
-d <- p$data
-n_i <- exp(d$est1)
-w_i <- exp(d$est2)
-p_i <- 1 - exp(-n_i)
-r_i <- (n_i * w_i) / p_i
-d_i <- p_i * r_i
-d2_i <- exp(d$est1 + d$est2)
-plot(d_i, d2_i)
-
-library(dplyr)
-nd <- qcs_grid
-# nd <- pcod
-nd$d_i <- d_i
-ind_r <- group_by(nd, year) %>% 
-  summarise(total = sum(d_i))
-ind_r$total * 1
-
-n_i <- exp(r$proj_eta[,1])
-w_i <- exp(r$proj_eta[,2])
-p_i <- 1 - exp(-n_i)
-r_i <- (n_i * w_i) / p_i
-d_i <- p_i * r_i
-d2_i <- exp(d$est1 + d$est2)
-nd$d_i <- d_i
-ind_r_tmb <- group_by(nd, year) %>% 
-  summarise(total = sum(d_i))
-ind_r_tmb$total * 1
-
-
-
-ind <- get_index(p, bias_correct = FALSE, area = 1)
+ind <- get_index(p, bias_correct = FALSE, area = rep(4, nrow(qcs_grid)))
 tictoc::toc()
 ```
 
@@ -252,7 +233,7 @@ Now, we can compare the indices.
 ```{r index-compare, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-vast_i <- read.csv(here("doc/appendix-VAST-poisson-link/Index.csv")) %>%
+vast_i <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
   mutate(index = "VAST", year = as.numeric(Time), est = Estimate, 
     se = Std..Error.for.ln.Estimate.) %>% 
   select(index, year, est, se) %>% 

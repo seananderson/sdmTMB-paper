@@ -24,3 +24,6 @@ temp-*
 !mcmc_residuals.rds
 doc/appendix-VAST/*
 doc/appendix-snow-sdmTMB_files*
+doc/appendix-VAST-pp/Index.csv
+doc/appendix-VAST-pp/parameter_estimates.txt
+mee-id.txt
