@@ -23,7 +23,7 @@ abstract: >
   Geostatistical data---spatially referenced observations of a continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions. However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement such that spatial autocorrelation is frequently ignored, or addressed in less ecologically interpretable ways.
   Here, we introduce the R package sdmTMB, which extends the flexible interface familiar to users of glm(), lme4, glmmTMB, or mgcv to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), although penalised likelihood and Bayesian inference (via tmbstan/Stan) are also possible. We describe the statistical model, illustrate the package's use to advance research and monitoring through two case studies, and compare the functionality, speed, and interface to related software.
   The case studies illustrate sdmTMB’s unmatched flexibility and useability by implementing penalised smoothers, non-stationary processes (time-varying and spatially varying relationships), and anisotropy (asymmetry in spatial correlations that commonly occurs along ecological gradients and is not available in INLA/inlabru, the most commonly used packages for this class of models). Modelling of these ecologically ubiquitous, but computationally complex, relationships is further aided by built-in handling of delta/hurdle models, break-point effects, abundance index standardisation, and diagnostic tools including out-of-sample cross validation. Finally, we demonstrate that sdmTMB is 4–16 times faster than INLA or inlabru.
-  sdmTMB's accessible interface has already opened this useful class of models to a wider audience within species distribution modelling. We anticipate its application to the full spectrum of novel ecological problems that involve geostatistical data will prove equally fruitful.
+  sdmTMB's accessible interface has already opened this useful class of models to a wider audience within species distribution modelling. We anticipate its application to the full spectrum of problems involving geostatistical data---both within and beyond ecology---will prove equally fruitful.
 output:
   bookdown::pdf_book:
     template: template-peerj.tex
@@ -225,6 +225,22 @@ Here, `cutoff` defines the minimum allowed distance between mesh vertices in the
 Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`.
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
+(ref:pcod-fig-cap) **Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.**
+(A) SPDE mesh (lines) combined with the trawl survey observations (points).
+Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
+The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
+(B) Spatial random field:
+these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
+(C) Overall prediction: these estimates represent the combination of all fixed and random effects. Crosses illustrate center of gravity (`get_cog()`) from a spatiotemporal version; lighter crosses are more recent.
+(D) Conditional effect of depth modelled as a penalized smoother. These predictions are made omitting the spatial random field.
+(E) Standardized area-weighted population index derived from a spatiotemporal version (`get_index()`). The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
+<!-- LB: I wasn't sure which panel the statement about omitting the spatial random field applied to, but moved things around. -->
+
+```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center', fig.pos="htb"}
+pcodfig <- here::here("figs", "pcod-fig.pdf")
+knitr::include_graphics(pcodfig)
+```
+
 We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
@@ -303,21 +319,6 @@ fit_spatiotemporal <- sdmTMB(
 
 We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \@ref(fig:pcod-fig)E, Article S2).
 
-(ref:pcod-fig-cap) **Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.**
-(A) SPDE mesh (lines) combined with the trawl survey observations (points).
-Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
-The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
-(B) Spatial random field:
-these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect.
-(C) Overall prediction: these estimates represent the combination of all fixed and random effects. Crosses illustrate center of gravity (`get_cog()`) from a spatiotemporal version; lighter crosses are more recent.
-(D) Conditional effect of depth modelled as a penalized smoother. These predictions are made omitting the spatial random field.
-(E) Standardized area-weighted population index derived from a spatiotemporal version (`get_index()`). The line represents the estimate and the ribbon indicates a 95\% confidence interval (+/- 2 SEs).
-<!-- LB: I wasn't sure which panel the statement about omitting the spatial random field applied to, but moved things around. -->
-
-```{r pcod-fig, fig.cap="(ref:pcod-fig-cap)", out.width="5.2in", fig.align='center'}
-pcodfig <- here::here("figs", "pcod-fig.pdf")
-knitr::include_graphics(pcodfig)
-```
 
 # Example of a spatially varying coefficient with citizen science data  {-}
 <!-- # Estimate a spatially varying effect from citizen science data -->
@@ -349,7 +350,7 @@ This result is consistent with owls closest to the Atlantic coast and those migr
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).
 The effect is multiplicative on owl count per NAO unit.
 
-```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center'}
+```{r owl-nao, fig.cap="(ref:owl-nao-fig)", out.width="4.1in", fig.align='center', fig.pos="hb"}
 owl <- here::here("figs", "owl-nao-effect.png")
 knitr::include_graphics(owl)
 ```
@@ -388,6 +389,24 @@ Of these packages, only sdmTMB and inlabru can currently fit threshold (e.g., ho
 spaMM is limited to a spatial random field and spBayes implements spatiotemporal fields, but only as a random walk.
 There is considerable variability in the available observation likelihoods across packages (Table 1).
 We provide comparisons of the syntax and the reproducibility of results from models fit using INLA or inlabru (Article S4) and VAST (Article S5).
+
+(ref:timing-fig) **Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.**
+Lines represent means and ribbons 95% quantiles across 50 random iterations.
+Note the log x and y axes.
+<!-- sdmTMB used the default settings and `sdmTMBcontrol(normalize = TRUE)`, which calculates the random effect normalizing constant in R. -->
+VAST is similar to sdmTMB and so is not shown.
+inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
+mgcv used `bam()`, `method = "fREML"`, and discretized covariates [@miller2019].
+<!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
+Note that spaMM only fits spatial, not spatiotemporal, models.
+All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.
+<!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
+
+```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center', fig.pos="htb"}
+f <- here::here("figs", "timing-spatial-m1-april11.pdf")
+knitr::include_graphics(f)
+```
+
 
 ```{r compare-table, results='asis'}
 library(kableExtra)
@@ -453,22 +472,7 @@ Results with optimized math libraries on one core (openBLAS: @penblas2021 and PA
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that VAST does not) -->
 
-(ref:timing-fig) **Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.**
-Lines represent means and ribbons 95% quantiles across 50 random iterations.
-Note the log x and y axes.
-<!-- sdmTMB used the default settings and `sdmTMBcontrol(normalize = TRUE)`, which calculates the random effect normalizing constant in R. -->
-VAST is similar to sdmTMB and so is not shown.
-inlabru used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation.
-mgcv used `bam()`, `method = "fREML"`, and discretized covariates [@miller2019].
-<!-- inlabru/INLA could be faster with the PARDISO sparse linear solver and TMB could be faster with an optimized BLAS library. -->
-Note that spaMM only fits spatial, not spatiotemporal, models.
-All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.
-<!-- https://www.sciencedirect.com/science/article/abs/pii/S0167739X00000765 -->
-
-```{r timing, fig.cap="(ref:timing-fig)", out.width="3.5in", fig.align='center'}
-f <- here::here("figs", "timing-spatial-m1-april11.pdf")
-knitr::include_graphics(f)
-```
+<!-- \clearpage -->
 
 # Discussion {-}
 
