@@ -85,13 +85,13 @@ Such models quickly become computationally limiting due to the need to invert la
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can greatly improve computational efficiency [e.g., @heaton2019].
-The SPDE approach is a solution popularized via the INLA R package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
+The SPDE approach is a solution popularized via the R-INLA package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in TMB [Template Model Builder, @kristensen2016] that partially relies on INLA to create input matrices [e.g., @osgood-zimmerman2021].
 Details are beyond the scope of this paper and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit approximations to GRFs to large spatial datasets [@lindgren2011].
 
 Systems for specifying statistical models that can include the SPDE, such as INLA and TMB, are flexible and powerful but are challenging to use for many applied ecologists.
 For example, TMB requires the user to program in a C++ template and it can be slow to experiment with multiple models when writing bespoke model code.
 Packages such as lme4 [@bates2015] and glmmTMB [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
-Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack some functionality.
+Packages such as VAST [@thorson2019] and inlabru [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used lme4 or glmmTMB, or lack key functionality.
 We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
 
 Here, we introduce the R package sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using TMB for model fitting and INLA to set up SPDE matrices.
