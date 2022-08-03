@@ -78,7 +78,7 @@ settings <- make_settings(
   zone = 9,
   FieldConfig = FieldConfig,
   RhoConfig = RhoConfig,
-  ObsModel = c(2, 0), # conventional logit-linked delta-Gamma; c(10, 2) for Tweedie
+  ObsModel = c(2, 1), # conventional logit-linked delta-Gamma; c(10, 2) for Tweedie
   bias.correct = FALSE,
   use_anisotropy = FALSE,
   max_cells = Inf, # use all grid cells from the extrapolation grid
@@ -90,7 +90,7 @@ Next we will fit a GLMM (generalized linear mixed effects model).
 
 ```{r fit, echo = TRUE, results = 'hide'}
  # create folder for saved output:
-dir.create(paste0(here("doc", "appendix-VAST")), showWarnings = FALSE)
+dir.create(paste0(here("doc", "appendix-VAST-pg")), showWarnings = FALSE)
 
 # effort is 1 when using CPUE instead of observed weight as the response:
 pcod$effort <- 1
@@ -99,7 +99,7 @@ if (FALSE) { # to check offset/effort
   pcod$effort <- exp(rnorm(nrow(pcod), mean = 0, sd = 0.2))
 }
 pcod <- as.data.frame(pcod) # ensure not a tibble
-f <- here("doc", "appendix-VAST", "vast-cache.rds")
+f <- here("doc", "appendix-VAST-pg", "vast-cache.rds")
 if (!file.exists(f)) {
   tictoc::tic()
   fit <- fit_model(
@@ -110,7 +110,7 @@ if (!file.exists(f)) {
     b_i = pcod[, "density"],
     a_i = pcod[, "effort"],
     input_grid = input_grid,
-    working_dir = paste0(here("doc", "appendix-VAST"), "/")
+    working_dir = paste0(here("doc", "appendix-VAST-pg"), "/")
   )
   tictoc::toc()
   saveRDS(fit, file = f)
@@ -136,7 +136,7 @@ fit_sdmTMB <- sdmTMB(
   density ~ 0 + as.factor(year), 
   data = pcod, mesh = mesh,
   offset = log(pcod$effort),
-  family = delta_gamma(),
+  family = delta_poisson_link_gamma(),
   time = "year", silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1)
 )
@@ -191,30 +191,30 @@ While making custom plots of individual elements would require considerable addi
 plot(
   fit,
   check_residuals = FALSE,
-  working_dir = paste0(here("doc", "appendix-VAST"), "/")
+  working_dir = paste0(here("doc", "appendix-VAST-pg"), "/")
 )
 ```
 
 The saved plots can be perused by browsing the exported image files in the working directory, but here we will read in some key plots as an example. We can start by looking at the location of samples and knots.
 
 ```{r plot-knots, echo = TRUE, out.width="6in"}
-knitr::include_graphics(here("doc", "appendix-VAST", "Data_and_knots.png"))
+knitr::include_graphics(here("doc", "appendix-VAST-pg", "Data_and_knots.png"))
 ```
 
 Then we can look at maps of the predicted population densities (here on the log scale).
 
 ```{r plot-density, echo = TRUE, out.width="6in"}
-knitr::include_graphics(here("doc", "appendix-VAST", "ln_density-predicted.png"))
+knitr::include_graphics(here("doc", "appendix-VAST-pg", "ln_density-predicted.png"))
 ```
 
 And finally the biomass index.
 
 ```{r plot-index, echo = TRUE, out.width="3in"}
-if (file.exists(here("doc", "appendix-VAST", "Index-Biomass.png"))) {
-  knitr::include_graphics(here("doc", "appendix-VAST", "Index-Biomass.png"))
+if (file.exists(here("doc", "appendix-VAST-pg", "Index-Biomass.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST-pg", "Index-Biomass.png"))
 }
-if (file.exists(here("doc", "appendix-VAST", "Index.png"))) {
-  knitr::include_graphics(here("doc", "appendix-VAST", "Index.png"))
+if (file.exists(here("doc", "appendix-VAST-pg", "Index.png"))) {
+  knitr::include_graphics(here("doc", "appendix-VAST-pg", "Index.png"))
 }
 ```
 
@@ -233,7 +233,7 @@ Now, we can compare the indices.
 ```{r index-compare, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-vast_i <- read.csv(here("doc/appendix-VAST/Index.csv")) %>%
+vast_i <- read.csv(here("doc/appendix-VAST-pg/Index.csv")) %>%
   mutate(index = "VAST", year = as.numeric(Time), est = Estimate, 
     se = Std..Error.for.ln.Estimate.) %>% 
   select(index, year, est, se) %>% 
