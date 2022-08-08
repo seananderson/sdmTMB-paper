@@ -1,5 +1,5 @@
 files <- c(
-  "paper",
+  "sdmTMB-paper",
   "appendix-model",
   "appendix-pcod-sdmTMB",
   "appendix-snow-sdmTMB",
