@@ -59,6 +59,8 @@ knitr::opts_chunk$set(
 
 \linenumbers
 
+\setcounter{page}{1}
+
 # sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields
 
 # Abstract
@@ -66,19 +68,17 @@ knitr::opts_chunk$set(
 Geostatistical data---spatially referenced observations of a continuous spatial phenomenon---are ubiquitous in ecology and can reveal ecological processes and inform management decisions. 
 However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement. 
 Therefore, spatial autocorrelation is frequently ignored, or addressed in less ecologically interpretable ways.
-Here, we introduce the R package sdmTMB, which extends the flexible interface familiar to users of lme4, glmmTMB, or mgcv to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. 
+Here, we introduce the R package sdmTMB, which extends the flexible interface familiar to users of lme4, glmmTMB, or mgcv to include spatial and spatiotemporal latent fields using a predictive-process SPDE- (stochastic partial differential equation) based approach. 
 Estimation is conducted via maximum marginal likelihood with Template Model Builder (TMB), although penalised likelihood and Bayesian inference (via tmbstan/Stan) are also possible. 
 We describe the statistical model, illustrate the package's use through two case studies, and compare the functionality, speed, and interface to related software.
-The case studies illustrate sdmTMB’s unmatched flexibility and usability by implementing penalised smoothers, non-stationary processes (time-varying and spatially varying relationships), and anisotropy (asymmetry in spatial correlations that commonly occurs along ecological gradients and is not available in INLA/inlabru, the most commonly used packages for this class of models). 
+The case studies illustrate sdmTMB’s unmatched flexibility and usability by implementing penalised smoothers, non-stationary processes (time-varying and spatially varying relationships), and anisotropy (asymmetry in spatial correlations that commonly occurs along ecological gradients and is not available in INLA/inlabru). 
 Modelling of these ecologically ubiquitous, but computationally complex, relationships is further aided by built-in handling of delta/hurdle models, break-point effects, abundance index standardisation, and diagnostic tools including out-of-sample cross validation. 
 Finally, we demonstrate that sdmTMB is 4–16 times faster than INLA or inlabru.
 sdmTMB's accessible interface has already opened this useful class of models to a wider audience within species distribution modelling. 
-We anticipate that its application to the full spectrum of problems involving geostatistical data---both within and beyond ecology---will prove equally fruitful.
+We anticipate that its application to the full spectrum of problems involving geostatistical data will prove equally fruitful.
 
 Keywords:
 Gaussian Markov random fields (GMRF),
-generalized linear mixed effects models (GLMM),
-INLA,
 SPDE,
 species distribution modelling,
 R package,
@@ -239,6 +239,7 @@ We can then fit a model with spatial random fields (`spatial = "on"`) via the fu
 We use a penalized smoother for depth as a main effect via `s()` from the mgcv package.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 An alternative would be the `delta_gamma()` family to specify a delta/hurdle model [@aitchison1955] or to model catch weight with an offset for log(area swept).
+We could allow for spatial anisotropy by adding `anisotropy = TRUE` [@lindgren2011; @thorson2015ices].
 <!-- We could instead model catch weight as the response with an offset for log(area). -->
 
 \onehalfspacing
@@ -303,7 +304,7 @@ p <- predict(fit, newdata = qcs_grid)
 The output of `predict()` is a data frame containing overall estimates in link space, estimates from the non-random-field components (intercept and depth), and estimates from the random field components.
 We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig. \@ref(fig:pcod-fig)B--D.
 
-We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
+We could extend the spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
 Here we will keep the spatial field and structure the spatiotemporal random fields as AR(1).
 
 \onehalfspacing
@@ -506,31 +507,17 @@ Spatially and spatiotemporally explicit data are increasingly collected in ecolo
 These data present statistical challenges to modelling them effectively and efficiently since appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
 We hope the development of user-friendly interfaces such as sdmTMB opens this useful class of models to a wider audience of users.
 
-<!-- Significance statement  -->
-<!-- Authors must provide a statement outlining why Ecography is the best outlet for publication. This should include a description of why the submitted work makes a significant contribution to and is of general interest for understanding spatial and temporal patterns in ecology. You must provide a clear statement of how the manuscript builds on both recent work by yourself or your coauthors cited in this manuscript (published during the past 12 months, or in press, or submitted) and other published work. -->
-
-<!-- Data archiving statement  -->
-<!-- For articles published in Ecography, it is required that authors deposit data supporting their accepted papers in public archives of their choice (see section on Data sharing and repositories below). Authors must confirm that they deposit their data in a public repository and indicate the repository of their choice. -->
-
-<!-- Conflict of interest statement  -->
-<!-- Ecography requires that all authors disclose any potential sources of conflict of interest. Any interest or relationship, financial or otherwise, that might be perceived as influencing an author’s objectivity is considered a potential source of conflict of interest. For more information, please read our ethics and policies page. -->
-
-<!-- Ethics statement  -->
-<!-- Please provide an ethics statement with relevant fieldwork details (approvals, licences, permissions) to be included in the published article. The details of any museum specimens used (e.g. the specimen numbers and the institutions holding these) must be provided either in the manuscript or the supplementary files. For more information about preparing this section please visit our ethics and policies page. -->
-
-<!-- Funding statement  -->
-<!-- If applicable, please provide a ‘funding statement’ that can be included in the published article. List the sources of funding for each author. Here you may also list service providers that did provide facilities or equipment. -->
-
-<!-- Acknowledgements  -->
-<!-- Those who contributed to the work but do not meet our authorship criteria may be listed in the Acknowledgements. Authors are responsible for ensuring that anyone named in the acknowledgements agrees to be named. -->
-
 # Acknowledgements {-}
 
-sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue2009; @lindgren2011; @lindgren2015] R packages.
-sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages.
-Penalized spline support was possible thanks to mgcv [@wood2017a].
-We thank the authors of all these packages.
-We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
+sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue2009; @lindgren2011; @lindgren2015] R packages. sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages. Penalized spline support was possible thanks to mgcv [@wood2017a]. We thank the authors of all these packages.
+
+*Individual acknowledgements omitted from this submitted main text file*
+
+<!-- sdmTMB would not be possible without the TMB [@kristensen2016] and INLA [@rue2009; @lindgren2011; @lindgren2015] R packages. -->
+<!-- sdmTMB is heavily inspired by and in some places code has been adapted from both the VAST [@thorson2019] and glmmTMB [@brooks2017] R packages. -->
+<!-- Penalized spline support was possible thanks to mgcv [@wood2017a]. -->
+<!-- We thank the authors of all these packages. -->
+<!-- We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript. -->
 
 <!-- A development version of sdmTMB is available at <https://github.com/pbs-assess/sdmTMB>. -->
 <!-- sdmTMB will be available on CRAN before publication. -->
