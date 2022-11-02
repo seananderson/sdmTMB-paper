@@ -122,7 +122,7 @@ The random fields in sdmTMB are structured as MVN constrained by a Matérn covar
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays at the same rate in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately (`share_range` argument).
 
-(ref:diagram-fig) Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.
+(ref:diagram-fig) **Components of an sdmTMB model with illustrations, descriptions, examples, notation, and example code.**
 An sdmTMB model can be built from any combination of the process components (first six rows) plus an observation component (last row).
 The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
 Notation:
@@ -197,7 +197,7 @@ Here, `cutoff` defines the minimum allowed distance between mesh vertices in the
 Alternatively, we could have created any mesh via the INLA package and supplied it to `make_mesh()`.
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \@ref(fig:pcod-fig)A).
 
-(ref:pcod-fig-cap) Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
+(ref:pcod-fig-cap) **Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.**
 (A) SPDE mesh (lines) combined with the trawl survey observations (points).
 Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation.
 The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
@@ -315,7 +315,7 @@ fit_owls <- sdmTMB(
 We found a weak average positive effect of the annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect (Fig. \@ref(fig:owl-nao), Appendix S3).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
 
-(ref:owl-nao-fig) Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US.
+(ref:owl-nao-fig) **Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US.**
 Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).
 The effect is multiplicative on owl count per NAO unit.
 
@@ -359,7 +359,7 @@ spaMM is limited to a spatial random field and spBayes implements spatiotemporal
 There is considerable variability in the available observation likelihoods across packages (Table 1).
 We provide comparisons of the syntax and the reproducibility of results from models fit using INLA or inlabru (Appendix S4) and VAST (Appendix S5).
 
-(ref:timing-fig) Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
+(ref:timing-fig) **Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.**
 Lines represent means and ribbons 95% quantiles across 50 random iterations.
 Note the log x and y axes.
 <!-- sdmTMB used the default settings and `sdmTMBcontrol(normalize = TRUE)`, which calculates the random effect normalizing constant in R. -->
