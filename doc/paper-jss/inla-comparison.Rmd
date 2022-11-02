@@ -273,25 +273,22 @@ Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` t
 `control.compute` ` = list(config = TRUE)`.
 
 ```{r inla-densities, echo=FALSE}
+old_inla <- any(grepl(
+  "year_factoryear_factor",
+  names(m_inla$marginals.fixed)
+))
+yrs <- seq(2007, 2017, 2)
+if (old_inla) {
+  yf <- "year_factoryear_factor"
+} else {
+  yf <- "year_factor"
+}
 x <- list()
-x[[1]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2007) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2007")
-x[[2]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2009) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2009")
-x[[3]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2011) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2011")
-x[[4]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2013) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2013")
-x[[5]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2015) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2015")
-x[[6]] <- inla.smarginal(m_inla$marginals.fixed$year_factor2017) %>%
-  as_tibble() %>%
-  mutate(variable = "as.factor.year.2017")
+for (i in seq_along(yrs)) {
+  x[[i]] <- inla.smarginal(m_inla$marginals.fixed[[paste0(yf, yrs[i])]]) %>%
+    as_tibble() %>%
+    mutate(variable = paste0("as.factor.year.", yrs[i]))
+}
 x[[7]] <- inla.smarginal(m_inla$marginals.hyperpar$`Range for i`) %>%
   as_tibble() %>%
   mutate(variable = "range")
@@ -304,10 +301,7 @@ x[[9]] <- inla.smarginal(m_inla$marginals.hyperpar$`GroupRho for i`) %>%
 post_inla1 <- dplyr::bind_rows(x)
 post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
   levels = unique(post_inla1$variable),
-  labels = c(
-    "2007", "2009", "2011", "2013", "2015", "2017",
-    "Range", "Random Field SD", "AR1 rho"
-  )
+  labels = c(yrs, "Range", "Random Field SD", "AR1 rho")
 ))
 ```
 
