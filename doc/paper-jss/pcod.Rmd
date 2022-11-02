@@ -1,6 +1,6 @@
 \clearpage
 
-# Example: spatiotemporal modelling of Pacific cod
+# Example: spatiotemporal modelling of Pacific cod {#app:pcod}
 
 ```{r setup-pcod, include = FALSE, cache=FALSE}
 knitr::opts_chunk$set(

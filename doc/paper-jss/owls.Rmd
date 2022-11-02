@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 knitr::knit_hooks$set(optipng = knitr::hook_optipng)
 ```
 
-# Example: spatially varying effect on owl counts
+# Example: spatially varying effect on owl counts {#app:owls}
 
 ## Background
 

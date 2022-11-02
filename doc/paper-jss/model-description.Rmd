@@ -1,6 +1,6 @@
 \clearpage
 
-# Model description
+# Model description {#app:model}
 
 \newcommand{\s}{\boldsymbol{s}}
 

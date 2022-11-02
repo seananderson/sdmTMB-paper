@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-\section{Comparison between INLA, inlabru, and sdmTMB}
+# Comparison between INLA, inlabru, and sdmTMB {#app:inla}
 
 In this example, we will fit a presence-absence dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
 We will use a binomial distribution and a logit link.

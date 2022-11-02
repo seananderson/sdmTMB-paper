@@ -1,4 +1,4 @@
-# Speed testing related packages
+# Speed testing related packages {#app:speed}
 
 Here we describe the methods underlying the speed testing in Fig.\ \ref{fig:timing}.
 We simulated 1000 spatial observations with both x and y coordinates from uniform(0, 1) distributions.

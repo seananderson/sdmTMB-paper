@@ -92,7 +92,7 @@ Areal data (data aggregated to polygon or grid level) may be analyzed using othe
 \pkg{sdmTMB} can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004] (e.g., spatial variance and range---the distance at which points are effectively independent).
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}, Appendix 1).
+The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}, Appendix \ref{app:model}).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
 
@@ -102,10 +102,10 @@ The random fields in \pkg{sdmTMB} are structured as MVN constrained by a Matérn
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance in the latitudinal direction may differ from the longitudinal direction) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately (`share_range` argument).
 
-By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}, Appendix 1).
+By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}, Appendix \ref{app:model}).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix 1).
-The smoothers in \pkg{sdmTMB} can mimic most `mgcv::s()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)` [@wood2017a].
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix \ref{app:model}).
+The smoothers in \pkg{sdmTMB} can mimic most `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)` [@wood2017a].
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood.
 Internally, a \pkg{TMB} [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in \proglang{R} [@gay1990; @r2021].
@@ -118,7 +118,6 @@ Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-
 
 The results from an \pkg{sdmTMB} model can be used to generate various quantities of interest.
 For example, \pkg{sdmTMB} provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
-
 
 \begin{landscape}
 \begin{figure}[p]
@@ -133,7 +132,7 @@ We refer to design matrices as $\bm{X}$.
 The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
-See Appendix 1 for a full description of the model.
+See Appendix \ref{app:model} for a full description of the model.
 Note that \texttt{s()} denotes a smoother as in \pkg{mgcv} [@wood2017a], \texttt{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \texttt{(1|g)} denotes a random intercept by group \texttt{g}, and \texttt{~ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
@@ -154,7 +153,6 @@ Our data frame `pcod` (built into the package) has a column `year` for the year 
 ```{r sdmTMB-lib, eval=TRUE}
 library(sdmTMB)
 ```
-
 
 ```{r, echo=TRUE, eval=FALSE}
 library(sdmTMB)
@@ -183,7 +181,6 @@ We can then fit a model with spatial random fields (`spatial = "on"`) via the fu
 We use a penalized smoother for depth as a main effect via `s()` from the \pkg{mgcv} package.
 We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
 An alternative would be the `delta_gamma()` family [@aitchison1955] or to model catch weight with an offset for log(area swept) (via the `offset` argument).
-<!-- We could instead model catch weight as the response with an offset for log(area). -->
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
 fit <- sdmTMB(
@@ -195,9 +192,7 @@ fit <- sdmTMB(
 )
 ```
 
-<!-- Setting `silent = FALSE` would indicate optimization progress, which is helpful for larger models. -->
 We can get a summary of the fit with the `print()` or `summary()` methods or extract parameter estimates as a data frame with the `tidy()` method.
-<!-- (omitted for space). -->
 
 ```{r pcod-eg1-summary,eval=TRUE, echo=TRUE}
 summary(fit)
@@ -262,7 +257,7 @@ These predictions are made omitting the spatial random field.
 \end{figure}
 
 We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument (`time = "year"`) and specifying how we want the spatiotemporal random fields to be structured.
-Here we will keep the spatial field (`spatial = "on"`), structure the spatiotemporal random fields as independent (`spatiotemporal = "iid"`), include a time-varying intercept (`~ 1`) fit as an AR(1) process (`time_varying_type = "ar1"`), include anisotropy to allow spatial correlation to decay at different rates up the coast vs.\ away from the coast (`anisotropy = TRUE`), and use `silent = FALSE` to see model fitting progress.
+Here we will keep the spatial field (`spatial = "on"`), structure the spatiotemporal random fields as independent (`spatiotemporal = "iid"`), include a time-varying intercept (`~ 1`) fit as a random walk process (`time_varying_type = "rw"`), include anisotropy to allow spatial correlation to decay at different rates up the coast vs.\ away from the coast (`anisotropy = TRUE`), and use `silent = FALSE` to see model fitting progress.
 
 ```{r time1, cache=TRUE}
 t1 <- Sys.time()
@@ -278,7 +273,7 @@ fit_spatiotemporal <- sdmTMB(
   time = "year",
   spatial = "on",
   spatiotemporal = "iid",
-  time_varying_type = "ar1",
+  time_varying_type = "rw",
   anisotropy = TRUE,
   silent = FALSE
 )
@@ -292,9 +287,9 @@ t2 <- Sys.time()
 summary(fit_spatiotemporal)
 ```
 
-This model took approximately `r round(as.numeric(t2 - t1), 0)` seconds to fit on our laptop. 
+<!-- This model took approximately `r round(as.numeric(t2 - t1), 0)` seconds to fit on our laptop.  -->
 We could inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
-We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig.\ \ref{fig:pcod-fig}E, Appendix 2).
+We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig.\ \ref{fig:pcod-fig}E, Appendix \ref{app:pcod}).
 
 # Example of a spatially varying coefficient with citizen science data
 
@@ -318,8 +313,9 @@ fit_owls <- sdmTMB(
 )
 ```
 
-We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect (Fig.\ \ref{fig:owl-nao}, Appendix 3).
+We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect (Fig.\ \ref{fig:owl-nao}).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
+We provide an extended version of this example in Appendix \ref{app:owls}.
 
 ```{r owl-nao, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit.", out.width="4.1in", fig.align='center'}
 owl <- here::here("figs", "owl-nao-effect.png")
@@ -472,7 +468,7 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 
 <!-- TODO: Line 242. Can \pkg{sdmTMB} be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within \pkg{INLA}/\pkg{inlabru} allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
 
-We ran a simple speed comparison between \pkg{sdmTMB}, \pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix 6).
+We ran a simple speed comparison between \pkg{sdmTMB}, \pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \@ref(fig:timing), Appendix \ref{app:speed}).
 In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however, \pkg{INLA}/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \pkg{sdmTMB}.
 \pkg{mgcv} was most affected by mesh resolution.
 <!-- With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), \pkg{sdmTMB} was the fastest across all mesh resolutions (this option may not be possible or as fast for all models). -->
@@ -493,12 +489,12 @@ All platforms were restricted to one core and could be faster with parallel comp
 # Discussion
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
-Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface and speed.
+Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed.
 We think users familiar with `stats::glm()`, \pkg{lme4}, or \pkg{glmmTMB} will find \pkg{sdmTMB} most approachable.
 Users familiar with \pkg{INLA} will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code [@miller2019] and \pkg{INLA}/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} is the sole option for fitting some multivariate models;
-alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications (Appendix 5), users fitting "simple" univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \pkg{sdmTMB} more straightforward to use.
+alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting "simple" univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \pkg{sdmTMB} more straightforward to use.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \pkg{sdmTMB} or \pkg{VAST} (although such quantities can be post hoc derived with other packages).
 <!-- Speed-wise, the TMB-based packages \pkg{sdmTMB} and \pkg{VAST} were fastest up to at least 1000 mesh nodes, which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2022]. -->
 
