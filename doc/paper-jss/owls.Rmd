@@ -143,7 +143,7 @@ sanity(fit_owl)
 ```
 #> ✓ Non-linear minimizer suggests successful convergence
 #> ✓ Hessian matrix is positive definite
-#> ✓ No extreme or very small eigen values detected
+#> ✓ No extreme or very small eigenvalues detected
 #> ✗ `ln_tau_E` gradient > 0.001
 #>   See `?run_extra_optimization()`
 #>   Or refit with `control = sdmTMBcontrol(newton_loops = 1)`
@@ -168,7 +168,7 @@ fit_owl$gradients
 We can run additional optimization steps using the `run_extra_optimization()` function.
 
 ```{r owl-newton, results='hide', eval=!rds_saved2}
-fit_owl2 <- run_extra_optimization(fit_owl, nlminb_loops = 0, newton_loops = 1)
+fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
 ```
 
 ```{r cache-negb2-2, echo=FALSE, eval=!rds_saved2}
@@ -188,7 +188,7 @@ sanity(fit_owl2)
 ```
 #> ✓ Non-linear minimizer suggests successful convergence
 #> ✓ Hessian matrix is positive definite
-#> ✓ No extreme or very small eigen values detected
+#> ✓ No extreme or very small eigenvalues detected
 #> ✓ No gradients with respect to fixed effects are >= 0.001
 #> ✓ No fixed-effect standard errors are NA
 #> ✓ No fixed-effect standard errors look unreasonably large
@@ -237,11 +237,23 @@ For the purposes of this building this appendix quickly, we will not run this co
 mcmc_resids <- residuals(fit_owl, type = "mle-mcmc", mcmc_iter = 101, mcmc_warmup = 100)
 ```
 
-We can also test for zero-inflation using the `simulate.sdmTMB()` function and a couple functions from the \pkg{DHARMa} package.
+We can also test for zero-inflation using the `simulate.sdmTMB()` function.
 If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead (e.g., `delta_truncated_nbinom2()` or possibly even `delta_gamma()` if we were willing to treat the counts as continuous. 
 
 ```{r zero-test-owls, echo=TRUE, message=FALSE}
-s_nb2 <- simulate(fit_owl2, nsim = 500)
+s_nb2 <- simulate(fit_owl2, nsim = 400)
+```
+
+The proportion of zeros looks approximately the same in the simulated and real data.
+
+```{r zero-test-owls2, echo=TRUE}
+mean(s_nb2 == 0)
+mean(snow$count == 0)
+```
+
+And we can more formally test this with functions from the \pkg{DHARMa} package.
+ 
+```{r zero-test-owls3, echo=TRUE}
 pred_fixed <- fit_owl2$family$linkinv(pred$est_non_rf)
 r_nb2 <- DHARMa::createDHARMa(
   simulatedResponse = s_nb2,
@@ -317,7 +329,7 @@ p_mean <- p %>%
     year = max(year),
     X = mean(X), Y = mean(Y),
     mean_est_count = exp(mean(est)),
-    nao_effect = b[b$term == "nao", "estimate"] + mean(zeta_s),
+    nao_effect = b$estimate[b$term == "nao"] + mean(zeta_s),
     nao_sim = mean(nao_effect_sim),
     nao_lwr = mean(nao_effect_lwr),
     nao_upr = mean(nao_effect_upr)
