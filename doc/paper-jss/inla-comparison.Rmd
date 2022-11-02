@@ -1,18 +1,5 @@
 \clearpage
 
-```{r setup-inla-comparison, include = FALSE, cache=FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 7,
-  fig.asp = 0.618,
-  cache = TRUE,
-  autodep = TRUE,
-  warning = FALSE,
-  message = FALSE
-)
-```
-
 # Comparison between INLA, inlabru, and sdmTMB {#app:inla}
 
 In this example, we will fit a presence-absence dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
@@ -355,12 +342,12 @@ ggplot(as.data.frame(pred_bru)) +
 Equivalent predictions are more complicated to extract from \pkg{INLA}, but are easy to plot for the original sample locations.
 
 ```{r inla-pred, out.width="5.5in"}
-idx <- inla.stack.index(sdat, "stdata")$data
-d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
-
-ggplot(d) +
-  geom_point(aes(X, Y, colour = inla_pred), size = 2) +
-  facet_wrap(~year) +
-  scale_colour_viridis_c() +
-  coord_fixed()
+# idx <- inla.stack.index(sdat, "stdata")$data
+# d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
+# 
+# ggplot(d) +
+#   geom_point(aes(X, Y, colour = inla_pred), size = 2) +
+#   facet_wrap(~year) +
+#   scale_colour_viridis_c() +
+  # coord_fixed()
 ```

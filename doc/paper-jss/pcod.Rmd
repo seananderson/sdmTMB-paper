@@ -4,13 +4,6 @@
 
 ```{r setup-pcod, include = FALSE, cache=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 7,
-  fig.asp = 0.618,
-  cache = TRUE,
-  autodep = TRUE,
-  cache.comments = FALSE,
   echo = TRUE
 )
 ```

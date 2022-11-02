@@ -1,21 +1,5 @@
 \clearpage
 
-```{r setup-owls, include = FALSE, cache=FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 7,
-  fig.asp = 0.7,
-  cache = TRUE,
-  autodep = TRUE,
-  cache.comments = FALSE,
-  dev = "png",
-  dpi = 150,
-  optipng = "-strip all"
-)
-knitr::knit_hooks$set(optipng = knitr::hook_optipng)
-```
-
 # Example: spatially varying effect on owl counts {#app:owls}
 
 ## Background

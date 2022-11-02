@@ -53,9 +53,18 @@ knitr::opts_chunk$set(
   warning = FALSE,
   collapse = TRUE,
   comment = "#>",
-  prompt = FALSE
-  # R.options = list(prompt = " ", continue = " ")
+  prompt = FALSE,
+  cache = TRUE,
+  autodep = TRUE,
+  fig.width = 7,
+  fig.asp = 0.618,
+  cache.comments = FALSE,
+  dev = "png",
+  dpi = 180
+  # optipng = "-strip all"
+  # R.options = list(prompt = "R> ", continue = "> ")
 )
+# knitr::knit_hooks$set(optipng = knitr::hook_optipng)
 ```
 
 \clearpage 
@@ -118,12 +127,12 @@ Internally, a \pkg{TMB} [@kristensen2016] model template is used to calculate th
 Random effects are estimated at values that maximize the log likelihood conditional on the estimated fixed effects and are integrated over via the Laplace approximation [@kristensen2016].
 After rapid model exploration with maximum likelihood, one can optionally pass an \pkg{sdmTMB} model to the \proglang{R} package \pkg{tmbstan} [@monnahan2018] to estimate the joint posterior distribution for Bayesian inference.
 
-\pkg{sdmTMB} models can include penalized likelihoods by assigning priors to model parameters (`?\pkg{sdmTMB}priors`).
+\pkg{sdmTMB} models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
 
 The results from an \pkg{sdmTMB} model can be used to generate various quantities of interest.
-For example, \pkg{sdmTMB} provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
+For example, for the field of ecology, \pkg{sdmTMB} provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
 
 \begin{landscape}
 \begin{figure}[p]
@@ -157,6 +166,7 @@ Our data frame `pcod` (built into the package) has a column `year` for the year 
 ```{r sdmTMB-lib0, eval=TRUE, echo=FALSE}
 library(sdmTMB)
 # simplify for paper:
+pcod_original <- pcod # save it for later
 pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |> 
   tibble::as_tibble()
 ```
@@ -254,6 +264,7 @@ Here, we will predict on a 2x2 km grid (`qcs_grid`) that covers the entire regio
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
 
 ```{r pcod-eg1-suppress-depth2, eval=TRUE, echo=FALSE}
+qcs_grid_original <- qcs_grid
 qcs_grid$depth_scaled <- NULL # for simplicity in paper
 qcs_grid$depth_scaled2 <- NULL # for simplicity in paper
 ```
@@ -324,6 +335,11 @@ summary(fit_spatiotemporal)
 We could inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
 We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \ref{fig:pcod-fig}E, Appendix \ref{app:pcod}).
 
+```{r pcod-restore, echo=FALSE}
+pcod <- pcod_original
+qcs_grid <- qcs_grid_original
+```
+
 # Example of a spatially varying coefficient with citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
@@ -336,7 +352,7 @@ We fit counts observed in North America during annual Christmas Bird Counts [@cb
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owls <- sdmTMB(
   count ~ nao + (1 | year_factor),
-  spatial_varying = ~ 0 + nao,
+  spatial_varying = ~ nao,
   family = nbinom2(link = "log"), 
   data = snow, 
   mesh = mesh,
@@ -573,9 +589,9 @@ The included \pkg{TMB} `.cpp` file also provides a high-quality and tested model
 <!-- Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data. -->
 <!-- Line 275: I would suggest adding a MAJOR benefit of \pkg{sdmTMB} for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
 
-Spatially and spatiotemporally explicit data are increasingly collected in ecology and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019].
-These data present statistical challenges to modelling them effectively and efficiently since appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate.
-We hope the development of user-friendly interfaces such as \pkg{sdmTMB} opens this useful class of models to a wider audience of users.
+<!-- Spatially and spatiotemporally explicit data are increasingly collected and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019]. -->
+<!-- These data present statistical challenges to modelling them effectively and efficiently since appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate. -->
+<!-- We hope the development of user-friendly interfaces such as \pkg{sdmTMB} opens this useful class of models to a wider audience of users. -->
 
 # Acknowledgements
 
