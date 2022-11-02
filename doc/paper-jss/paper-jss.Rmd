@@ -38,6 +38,10 @@ preamble: >
   \usepackage{tablefootnote}
   \usepackage{threeparttable}
   \usepackage{booktabs}
+  \usepackage{pifont}
+  \usepackage{newunicodechar}
+  \newunicodechar{✓}{\ding{51}}
+  \newunicodechar{✗}{\ding{55}}
 output: rticles::jss_article
 ---
 
@@ -218,15 +222,15 @@ sanity(fit)
 ```
 
 ```
-#> Non-linear minimizer suggests successful convergence
-#> Hessian matrix is positive definite
-#> No extreme or very small eigen values detected
-#> No gradients with respect to fixed effects are >= 0.001
-#> No fixed-effect standard errors are NA
-#> No fixed-effect standard errors look unreasonably large
-#> No sigma parameters are < 0.01
-#> No sigma parameters are > 100
-#> Range parameter doesn't look unreasonably large
+#> ✓ Non-linear minimizer suggests successful convergence
+#> ✓ Hessian matrix is positive definite
+#> ✓ No extreme or very small eigen values detected
+#> ✓ No gradients with respect to fixed effects are >= 0.001
+#> ✓ No fixed-effect standard errors are NA
+#> ✓ No fixed-effect standard errors look unreasonably large
+#> ✓ No sigma parameters are < 0.01
+#> ✓ No sigma parameters are > 100
+#> ✓ Range parameter doesn't look unreasonably large
 ```
 
 We can make predictions with the `predict()` method (`?predict.sdmTMB`) and optionally use the `newdata` argument to predict on a new data frame with any locations and values for the predictor columns.

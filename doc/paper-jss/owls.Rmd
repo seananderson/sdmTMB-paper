@@ -141,22 +141,22 @@ sanity(fit_owl)
 ```
 
 ```
-#>   Non-linear minimizer suggests successful convergence
-#>   Hessian matrix is positive definite
-#>   No extreme or very small eigen values detected
-#> x `ln_tau_E` gradient > 0.001
+#> ✓ Non-linear minimizer suggests successful convergence
+#> ✓ Hessian matrix is positive definite
+#> ✓ No extreme or very small eigen values detected
+#> ✗ `ln_tau_E` gradient > 0.001
 #>   See `?run_extra_optimization()`
 #>   Or refit with `control = sdmTMBcontrol(newton_loops = 1)`
 #> 
-#> x `ln_phi` gradient > 0.001
+#> ✗ `ln_phi` gradient > 0.001
 #>   See `?run_extra_optimization()`
 #>   Or refit with `control = sdmTMBcontrol(newton_loops = 1)`
 #> 
-#>   No fixed-effect standard errors are NA
-#>   No fixed-effect standard errors look unreasonably large
-#>   No sigma parameters are < 0.01
-#>   No sigma parameters are > 100
-#>   Range parameter doesn't look unreasonably large
+#> ✓ No fixed-effect standard errors are NA
+#> ✓ No fixed-effect standard errors look unreasonably large
+#> ✓ No sigma parameters are < 0.01
+#> ✓ No sigma parameters are > 100
+#> ✓ Range parameter doesn't look unreasonably large
 ```
 
 We note that some log-likelihood gradients are slightly large for some fixed effects.
@@ -186,15 +186,15 @@ sanity(fit_owl2)
 ```
 
 ```
-#> Non-linear minimizer suggests successful convergence
-#> Hessian matrix is positive definite
-#> No extreme or very small eigen values detected
-#> No gradients with respect to fixed effects are >= 0.001
-#> No fixed-effect standard errors are NA
-#> No fixed-effect standard errors look unreasonably large
-#> No sigma parameters are < 0.01
-#> No sigma parameters are > 100
-#> Range parameter doesn't look unreasonably large
+#> ✓ Non-linear minimizer suggests successful convergence
+#> ✓ Hessian matrix is positive definite
+#> ✓ No extreme or very small eigen values detected
+#> ✓ No gradients with respect to fixed effects are >= 0.001
+#> ✓ No fixed-effect standard errors are NA
+#> ✓ No fixed-effect standard errors look unreasonably large
+#> ✓ No sigma parameters are < 0.01
+#> ✓ No sigma parameters are > 100
+#> ✓ Range parameter doesn't look unreasonably large
 ```
 
 Print the model to inspect the fit:
