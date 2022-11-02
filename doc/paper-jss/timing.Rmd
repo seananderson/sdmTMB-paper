@@ -1,0 +1,244 @@
+# Speed testing related packages
+
+Here we describe the methods underlying the speed testing in Fig.\ \ref{fig:timing}.
+We simulated 1000 spatial observations with both x and y coordinates from uniform(0, 1) distributions.
+Each iteration generated unique coordinates, predictor data, Gaussian random field values, and observation error.
+The Gaussian random field was parameterized with a range of 0.5 and marginal standard deviation of 0.2.
+The model included an intercept with a value of 0.2 and a normal(0, 1) predictor with an associated coefficient of -0.4.
+The observation error was Gaussian with a standard deviation of 0.3.
+
+We generated a mesh that was consistent across simulated data sets for a given mesh resolution.
+We did this by setting the `max.edge` argument, which controls the largest allowed triangle edge length.
+We tested values of `max.edge` of 0.06, 0.075, 0.1, 0.15, and 0.2.
+In Figure 4, we report on the x-axis the number of mesh nodes ("knots") that result from each of these meshes.
+
+We conducted 50 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values.
+The models were fit on a 2022 14 inch M1 MacBook Pro with an Apple M1 Pro 10-core CPU and 32 GB of RAM in R 4.1.3 and the default Matrix library. The following package versions were used:
+
+```{r pkg-versions, echo=TRUE}
+packageVersion("INLA")
+packageVersion("inlabru")
+packageVersion("mgcv")
+packageVersion("spaMM")
+packageVersion("sdmTMB")
+```
+
+## Illustration of generating the INLA mesh
+
+```{r pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE}
+library("INLA")
+library("inlabru")
+library("ggplot2")
+library("sdmTMB")
+library("mgcv")
+library("spaMM")
+```
+
+We will illustrate with a `max.edge` of 0.06:
+
+```{r mesh-timing, echo=TRUE}
+max_edge <- 0.06
+loc_bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+segm_bnd <- INLA::inla.mesh.segment(loc_bnd)
+mesh <- INLA::inla.mesh.2d(
+  boundary = segm_bnd,
+  max.edge = c(max_edge, 0.2),
+  offset = c(0.1, 0.05)
+)
+```
+
+This mesh has `r mesh$n` (`mesh$n`) vertices.
+
+Here are the other meshes used from least to most vertices:
+
+```{r mesh-vis-timing, out.width="6.5in", fig.width=10, fig.asp=1.2, echo=FALSE}
+max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
+g <- list()
+for (i in seq_along(max_edge_vec)) {
+  .mesh <- INLA::inla.mesh.2d(
+    boundary = segm_bnd,
+    max.edge = c(max_edge_vec[i], 0.2),
+    offset = c(0.1, 0.05)
+  )
+  g[[i]] <- ggplot() +
+    gg(.mesh) +
+    theme_light() +
+    coord_equal(expand = FALSE) +
+    ggtitle(paste("Mesh vertices =", .mesh$n))
+}
+cowplot::plot_grid(plotlist = g, ncol = 2)
+```
+
+## Illustration of simulating data
+
+```{r sim-timing, echo=TRUE}
+set.seed(1)
+
+n_obs <- 1000L
+predictor_dat <- data.frame(
+  X = runif(n_obs), Y = runif(n_obs),
+  a1 = rnorm(n_obs)
+)
+mesh_sdmTMB <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), mesh = mesh)
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1 + a1,
+  data = predictor_dat,
+  mesh = mesh_sdmTMB,
+  family = gaussian(),
+  range = 0.5,
+  phi = 0.3,
+  sigma_O = 0.2,
+  B = c(0.2, -0.4) # B0 = intercept, B1 = a1 slope
+)
+```
+
+Look at the simulated data:
+
+```{r sim-dat-plot-timing, out.width="5in", cache=FALSE, echo=FALSE}
+ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
+  geom_point() +
+  scale_color_gradient2() +
+  coord_fixed() +
+  theme_light()
+```
+
+## Example sdmTMB model fit
+
+```{r sdmTMBfit-timing, echo=TRUE}
+fit_sdmTMB <- sdmTMB(
+  observed ~ a1,
+  data = sim_dat, mesh = mesh_sdmTMB, family = gaussian(),
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
+)
+```
+
+## Example spaMM model fit
+
+```{r spaMMfit-timing, echo=TRUE, cache=TRUE}
+spde <- INLA::inla.spde2.pcmatern(
+  mesh = mesh,
+  prior.range = c(0.05, 0.05),
+  prior.sigma = c(2, 0.05)
+)
+
+fit_spaMM <- fitme(
+  observed ~ a1 + IMRF(1 | X + Y, model = spde),
+  family = gaussian(), data = sim_dat
+)
+```
+
+## Example inlabru model fit
+
+```{r inlabrufit-timing, echo=TRUE, cache=TRUE}
+# convert to sp SpatialPointsDataFrame first:
+dat_sp <- sp::SpatialPointsDataFrame(
+  cbind(sim_dat$X, sim_dat$Y),
+  proj4string = sp::CRS(
+    "+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
++ +y_0=0 +datum=NAD83 +units=km +no_defs"
+  ), data = sim_dat
+)
+components <- observed ~ -1 + Intercept(1) + a1 +
+  spatrf(main = coordinates, model = spde)
+like <- like(observed ~ Intercept + a1 + spatrf,
+  family = "gaussian", data = dat_sp
+)
+fit_bru <- bru(
+  like,
+  components = components,
+  options = bru_options(
+    control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+    bru_max_iter = 1, num.threads = "1:1"
+  )
+)
+```
+
+## Example mgcv model fit
+
+```{r mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE, cache=TRUE}
+# -------------------------------------------------------------------------
+# Code in this chunk is from:
+#
+# Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial
+# Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020).
+# https://doi.org/10.1007/s13253-019-00377-z
+#
+# Re-used here under a Creative Commons Attribution 4.0 International License
+# http://creativecommons.org/licenses/by/4.0/
+smooth.construct.spde.smooth.spec <- function(object, data, knots) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  if (is.null(object$xt)) {
+    if (dim == 1) {
+      t <- seq(min(x), max(x), len = object$bs.dim)
+      mesh <- INLA::inla.mesh.1d(loc = t, degree = 2, boundary = "free")
+    } else {
+      stop("For 2D, mesh must be supplied as argument xt$mesh in s(...,xt = )")
+    }
+  } else {
+    if (class(object$xt$mesh) != "inla.mesh") stop("xt must be NULL or an inla.mesh object")
+    mesh <- object$xt$mesh
+  }
+  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
+  inlamats <- INLA::inla.mesh.fem(mesh)
+  object$S <- list()
+  object$S[[1]] <- as.matrix(inlamats$c1)
+  object$S[[2]] <- 2 * as.matrix(inlamats$g1)
+  object$S[[3]] <- as.matrix(inlamats$g2)
+  object$L <- matrix(c(2, 2, 2, 4, 2, 0), ncol = 2)
+  object$rank <- rep(object$bs.dim, 3)
+  object$null.space.dim <- 0
+  object$mesh <- mesh
+  object$df <- ncol(object$X)
+  class(object) <- "spde.smooth"
+  return(object)
+}
+Predict.matrix.spde.smooth <- function(object, data) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  Xp <- INLA::inla.spde.make.A(object$mesh, x)
+  return(as.matrix(Xp))
+}
+# End of code from
+# Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial
+# Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020).
+# https://doi.org/10.1007/s13253-019-00377-z
+#
+# Re-used here under a Creative Commons Attribution 4.0 International License
+# http://creativecommons.org/licenses/by/4.0/
+# -------------------------------------------------------------------------
+```
+
+```{r mgcvfit-timing, echo=TRUE, eval=FALSE}
+# define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth():
+# from supplement of:
+# Miller, D.L., Glennie, R. & Seaton, A.E. (2019). Understanding the Stochastic
+# Partial Differential Equation approach to smoothing. Journal of Agricultural,
+# Biological and Environmental Statistics.
+# https://doi.org/10.1007/s13253-019-00377-z
+fit_bam <- bam(
+  observed ~ a1 + s(X, Y,
+    bs = "spde", k = mesh$n,
+    xt = list(mesh = mesh)
+  ),
+  data = sim_dat,
+  family = gaussian(),
+  method = "fREML",
+  control = gam.control(scalePenalty = FALSE), discrete = TRUE
+)
+```

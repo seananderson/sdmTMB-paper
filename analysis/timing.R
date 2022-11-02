@@ -1,19 +1,83 @@
-# Timing figure
-library(sdmTMB)
-library(dplyr)
-library(ggplot2)
-library(INLA)
-library(inlabru)
-library(mgcv)
-library(spaMM)
+# Timing figure -----------------------------------------------------------
+
+library("sdmTMB")
+library("dplyr")
+library("ggplot2")
+library("INLA")
+library("inlabru")
+library("mgcv")
+library("spaMM")
+dir.create("figs", showWarnings = FALSE)
+dir.create("analysis", showWarnings = FALSE)
 
 INLA::inla.setOption(num.threads = "1:1")
-source(here::here("analysis/mgcv_spde_smooth.R"))
 
-# if (Sys.info()[["user"]] == "seananderson") {
-# INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-# INLA::inla.setOption(inla.mode="experimental")
-# }
+# source(here::here("analysis/mgcv_spde_smooth.R"))
+# -------------------------------------------------------------------------
+# Code in this chunk is from:
+#
+# Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial
+# Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020).
+# https://doi.org/10.1007/s13253-019-00377-z
+#
+# Re-used here under a Creative Commons Attribution 4.0 International License
+# http://creativecommons.org/licenses/by/4.0/
+smooth.construct.spde.smooth.spec <- function(object, data, knots) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  if (is.null(object$xt)) {
+    if (dim == 1) {
+      t <- seq(min(x), max(x), len = object$bs.dim)
+      mesh <- INLA::inla.mesh.1d(loc = t, degree = 2, boundary = "free")
+    } else {
+      stop("For 2D, mesh must be supplied as argument xt$mesh in s(...,xt = )")
+    }
+  } else {
+    if (class(object$xt$mesh) != "inla.mesh") stop("xt must be NULL or an inla.mesh object")
+    mesh <- object$xt$mesh
+  }
+  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
+  inlamats <- INLA::inla.mesh.fem(mesh)
+  object$S <- list()
+  object$S[[1]] <- as.matrix(inlamats$c1)
+  object$S[[2]] <- 2 * as.matrix(inlamats$g1)
+  object$S[[3]] <- as.matrix(inlamats$g2)
+  object$L <- matrix(c(2, 2, 2, 4, 2, 0), ncol = 2)
+  object$rank <- rep(object$bs.dim, 3)
+  object$null.space.dim <- 0
+  object$mesh <- mesh
+  object$df <- ncol(object$X)
+  class(object) <- "spde.smooth"
+  return(object)
+}
+Predict.matrix.spde.smooth <- function(object, data) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  Xp <- INLA::inla.spde.make.A(object$mesh, x)
+  return(as.matrix(Xp))
+}
+# End of code from
+# Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial
+# Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020).
+# https://doi.org/10.1007/s13253-019-00377-z
+#
+# Re-used here under a Creative Commons Attribution 4.0 International License
+# http://creativecommons.org/licenses/by/4.0/
+# -------------------------------------------------------------------------
 
 simulate_dat <- function(n_obs = 100,
                          cutoff = 0.1,
@@ -137,8 +201,6 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   } else {
     stop("Family not found")
   }
-  # INLA::inla.setOption("pardiso.license", "~/Dropbox/licenses/pardiso.lic")
-  # INLA::inla.setOption(inla.mode="experimental")
 
   out <- system.time({
     tryCatch(
@@ -201,14 +263,15 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out <- system.time({
     fit <- tryCatch(
       {
-        bam(observed ~ a1 + s(X, Y,
-          bs = "spde", k = mesh2$n,
-          xt = list(mesh = mesh2)
-        ),
-        data = sim_dat,
-        family = family,
-        method = "fREML",
-        control = gam.control(scalePenalty = FALSE), discrete = TRUE
+        bam(
+          observed ~ a1 + s(X, Y,
+            bs = "spde", k = mesh2$n,
+            xt = list(mesh = mesh2)
+          ),
+          data = sim_dat,
+          family = family,
+          method = "fREML",
+          control = gam.control(scalePenalty = FALSE), discrete = TRUE
         )
       },
       error = function(e) NA
@@ -227,23 +290,18 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out
 }
 
-test <- sim_fit_time(
-  n_obs = 500, max.edge = 0.05,
-  family = tweedie("log"), phi = 2, sigma_O = 0.5
-)
-
+# fast run:
 to_run <- expand.grid(
   n_obs = c(1000L),
-  max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
-  iter = seq_len(50L)
+  max.edge = c(0.06, 0.1, 0.2),
+  iter = seq_len(1L)
 )
 
-to_run <- to_run[1:3, ]
-# # short test version
+# full run:
 # to_run <- expand.grid(
 #   n_obs = c(1000L),
-#   max.edge = c(0.15, 0.2),
-#   iter = seq_len(2L)
+#   max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
+#   iter = seq_len(50L)
 # )
 
 to_run$seed <- to_run$iter * 29212
@@ -257,8 +315,8 @@ system.time({
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-parallel-2022-04-11.rds")
-out <- readRDS("analysis/timing-cache-parallel-2022-04-11.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
+out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
@@ -302,7 +360,10 @@ leg <- tribble(
 g <- out_long_sum %>%
   filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
+    alpha = 0.2,
+    colour = NA
+  ) +
   geom_line(lwd = 0.7) +
   scale_y_log10() +
   scale_x_log10(breaks = c(250, 500, 1000)) +
@@ -318,21 +379,14 @@ g <- out_long_sum %>%
 g
 
 .width <- 5
-ggsave("figs/timing-spatial-m1-april11.pdf", width = .width, height = .width / 1.3)
-ggsave("figs/timing-spatial-m1-april11.png", width = .width, height = .width / 1.3)
-
-cat("O ratio\n")
-group_by(out_long_sum, model_clean) %>%
-  summarise(
-    min_t = min(time), max_t = max(time), min_n = min(mean_mesh_n),
-    max_n = max(mean_mesh_n)
-  ) %>%
-  filter(!is.na(model_clean)) %>%
-  mutate(ratio = max_t / min_t) %>%
-  mutate(O_ratio = (max_n^(3 / 2)) / (min_n^(3 / 2)))
-
-# INLA expectation: linear growth in n_obs and O(n_mesh^(3/2)) growth in n_mesh
+ggsave("figs/timing-spatial.pdf", width = .width, height = .width / 1.3)
 
 cat("inlabru to sdmTMB timing ratios\n")
-x <- filter(out_long_sum, model_clean == "inlabru EB")$time / filter(out_long_sum, model_clean == "sdmTMB")$time
+x <- filter(
+  out_long_sum,
+  model_clean == "inlabru EB"
+)$time /
+  filter(out_long_sum, model_clean == "sdmTMB")$time
 round(x, 1)
+
+sessionInfo()

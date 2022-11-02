@@ -1,33 +1,25 @@
 ---
 documentclass: jss
 author:
-  - name: FirstName LastName
-    orcid: 0000-0000-0000-0000
-    affiliation: University/Company
-    # use this syntax to add text on several lines
+  - name: Sean C. Anderson
+    orcid: 0000-0001-9563-1937
+    affiliation: 'Pacific Biological Station, Fisheries and Oceans Canada \AND'
     address: |
-      | First line
-      | Second line
-    email: \email{name@company.com}
-    url: http://rstudio.com
-  - name: Second Author
-    orcid: 0000-0000-0000-0000
-    affiliation: 'Affiliation \AND'
-    # To add another line, use \AND at the end of the previous one as above
-  - name: Third Author
-    orcid: 0000-0000-0000-0000
-    address: |
-      | Department of Statistics and Mathematics,
-      | Faculty of Biosciences,
-      | Universitat Autònoma de Barcelona
-    affiliation: |
-      | Universitat Autònoma
-      | de Barcelona
-    # use a different affiliation in adress field (differently formated here)
-    affiliation2: Universitat Autònoma de Barcelona
+      | Pacific Biological Station, Nanaimo, BC, Canada
+    email: \email{sean.anderson@dfo-mpo.gc.ca}
+  - name: Eric J. Ward
+    orcid: 0000-0002-4359-0296
+    affiliation: 'Northwest Fisheries Science Center, National Marine Fisheries Service \AND'
+  - name: Philina A. English
+    orcid: 0000-0003-2992-6782
+    address: ''
+    affiliation: 'Pacific Biological Station, Fisheries and Oceans Canada \AND'
+  - name: Lewis A. K. Barnett
+    orcid: 0000-0002-9381-8375
+    affiliation: 'Alaska Fisheries Science Center, National Marine Fisheries Service'
 bibliography: refs.bib
 title:
-  formatted: "\\pkg{sdmTMB}: An \\proglang{R} Package for Fast, Flexible, and Accessible Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields"
+  formatted: "\\pkg{sdmTMB}: An \\proglang{R} Package for Fast, Flexible, and User-Friendly Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields"
   # If you use tex in the formatted title, also supply version without
   plain:     "sdmTMB: An R Package for Fast, Flexible, and Accessible Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields"
   # For running headers, if needed
@@ -129,7 +121,8 @@ For example, \pkg{sdmTMB} provides functionality for generating population-level
 
 \begin{landscape}
 \begin{figure}[p]
-{\centering \includegraphics[width=9in]{../../figs/diagram}}
+\centering 
+\includegraphics[width=9in]{../../figs/diagram}
 \caption[]{
 Components of an \pkg{sdmTMB} model with illustrations, descriptions, examples, notation, and example code.
 An \pkg{sdmTMB} model can be built from any combination of the process components (first six rows) plus an observation component (last row).
@@ -222,10 +215,22 @@ tidy(fit, conf.int = TRUE)
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 ```
 
-And we can run some basic checks on our model with the `sanity()` function:
+We can run some basic checks on our model with the `sanity()` function:
 
-```{r pcod-eg1-sanity}
+```{r pcod-eg1-sanity, eval=TRUE, echo=TRUE}
 sanity(fit)
+```
+
+```
+#> Non-linear minimizer suggests successful convergence
+#> Hessian matrix is positive definite
+#> No extreme or very small eigen values detected
+#> No gradients with respect to fixed effects are >= 0.001
+#> No fixed-effect standard errors are NA
+#> No fixed-effect standard errors look unreasonably large
+#> No sigma parameters are < 0.01
+#> No sigma parameters are > 100
+#> Range parameter doesn't look unreasonably large
 ```
 
 We can make predictions with the `predict()` method (`?predict.sdmTMB`) and optionally use the `newdata` argument to predict on a new data frame with any locations and values for the predictor columns.
@@ -245,7 +250,8 @@ The output of `predict()` is a data frame containing overall estimates in link s
 We show a basic plot of the estimated spatial random field, predictions across a depth gradient, and predictions in space in Fig.\ \ref{fig:pcod-fig}B--D.
 
 \begin{figure}
-{\centering \includegraphics[width=5.2in]{../../figs/pcod-fig}}
+\centering
+\includegraphics[width=5.2in]{../../figs/pcod-fig}
 \caption[]{Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada. 
 (A) SPDE mesh (lines) combined with the trawl survey observations (points). Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. The circle area corresponds to biomass density of Pacific cod caught on individual trawls. 
 (B) Spatial random field: these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect. (C) Overall prediction: these estimates represent the combination of all fixed and random effects. Crosses illustrate center of gravity (\texttt{get\_cog()}) from a spatiotemporal version; lighter crosses are more recent.
@@ -254,8 +260,8 @@ These predictions are made omitting the spatial random field.
 (E) Standardized area-weighted population index derived from a spatiotemporal version (\texttt{get\_index()}). The line represents the estimate and the ribbon indicates a 95\% confidence interval ($\pm$ 2 SEs).}\label{fig:pcod-fig}
 \end{figure}
 
-We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument and specifying how we want the spatiotemporal random fields to be structured.
-Here we will keep the spatial field and structure the spatiotemporal random fields as AR(1).
+We could extend this spatial model to be a spatiotemporal one simply by supplying the year column name to the `time` argument (`time = "year"`) and specifying how we want the spatiotemporal random fields to be structured.
+Here we will keep the spatial field (`spatial = "on"`), structure the spatiotemporal random fields as independent (`spatiotemporal = "iid"`), include a time-varying intercept (`~ 1`) fit as an AR(1) process (`time_varying_type = "ar1"`), include anisotropy to allow spatial correlation to decay at different rates up the coast vs.\ away from the coast (`anisotropy = TRUE`), and use `silent = FALSE` to see model fitting progress.
 
 ```{r time1, cache=TRUE}
 t1 <- Sys.time()
@@ -273,7 +279,7 @@ fit_spatiotemporal <- sdmTMB(
   spatiotemporal = "iid",
   time_varying_type = "ar1",
   anisotropy = TRUE,
-  silent = FALSE # print fitting progress
+  silent = FALSE
 )
 ```
 
@@ -286,7 +292,7 @@ summary(fit_spatiotemporal)
 ```
 
 This model took approximately `r round(as.numeric(t2 - t1), 0)` seconds to fit on our laptop. 
-We can inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
+We could inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
 We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig.\ \ref{fig:pcod-fig}E, Appendix 2).
 
 # Example of a spatially varying coefficient with citizen science data
@@ -477,7 +483,8 @@ Results with optimized math libraries on one core (openBLAS: @penblas2021 and PA
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that \pkg{VAST} does not) -->
 
 \begin{figure}
-{\centering \includegraphics[width=3.5in]{../../figs/timing-spatial-m1-april11}}
+\centering
+\includegraphics[width=3.5in]{../../figs/timing-spatial-m1-april11}
 \caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95% quantiles across 50 random iterations. Note the log x and y axes. \pkg{VAST} is similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = 'fREML'}, and discretized covariates [@miller2019]. Note that spaMM only fits spatial, not spatiotemporal, models.
 All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
 \end{figure}
@@ -548,3 +555,21 @@ Penalized spline support was possible thanks to \pkg{mgcv} [@wood2017a].
 We thank the authors of all these packages.
 We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
+\clearpage
+
+\appendix
+
+```{r child="model-description.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```
+
+```{r child="pcod.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```
+
+```{r child="owls.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```
+
+```{r child="inla-comparison.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```
+
+```{r child="timing.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```
