@@ -95,7 +95,7 @@ sim_dat <- sdmTMB_simulate(
 
 Look at the simulated data:
 
-```{r sim-dat-plot-timing, out.width="5in", cache=FALSE, echo=FALSE}
+```{r sim-dat-plot-timing, out.width="5in", echo=FALSE}
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +

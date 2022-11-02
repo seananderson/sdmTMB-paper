@@ -3,10 +3,20 @@ documentclass: jss
 author:
   - name: Sean C. Anderson
     orcid: 0000-0001-9563-1937
-    affiliation: 'Pacific Biological Station, Fisheries and Oceans Canada \AND'
+    affiliation: 'Pacific Biological Station'
     address: |
       | Pacific Biological Station, Nanaimo, BC, Canada
     email: \email{sean.anderson@dfo-mpo.gc.ca}
+  - name: Eric J. Ward
+    orcid: 0000-0002-4359-0296
+    affiliation: 'Northwest Fisheries Science Center \AND'
+  - name: Philina A. English
+    orcid: 0000-0003-2992-6782
+    address: ''
+    affiliation: 'Pacific Biological Station'
+  - name: Lewis A. K. Barnett
+    orcid: 0000-0002-9381-8375
+    affiliation: 'Alaska Fisheries Science Center'
 bibliography: refs.bib
 title:
   formatted: "\\pkg{sdmTMB}: An \\proglang{R} Package for Fast, Flexible, and User-Friendly Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields"
@@ -18,8 +28,8 @@ abstract: >
   Geostatistical data are pervasive and available in increasingly large volumes. However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or Bayesian inference via \pkg{tmbstan} and \pkg{rstan}). We describe the model and use case studies to illustrate sdmTMB's flexibility by implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (asymmetry in spatial correlations). Additional functionality includes delta (hurdle) models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB is 4–16 times faster than INLA. We anticipate sdmTMB's accessible interface will help open this useful class of models to the full spectrum geostatistical analysts.
 keywords:
   # at least one keyword must be supplied
-  formatted: [test]
-  plain:     [test]
+  formatted: [Gaussian Markov random fields (GMRF), generalized linear mixed effects models (GLMM), INLA, SPDE, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder]
+  plain:     [Gaussian Markov random fields (GMRF), generalized linear mixed effects models (GLMM), INLA, SPDE, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder]
 preamble: >
   \usepackage{amsmath}
   \usepackage{amssymb}
@@ -42,6 +52,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+\clearpage 
 # Introduction
 
 Data are often collected in space or in space repeatedly over time.
