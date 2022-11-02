@@ -91,7 +91,7 @@ Systems for specifying statistical models that can include the SPDE, such as \pk
 For example, \pkg{TMB} requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code.
 Packages such as \pkg{lme4} [@bates2015] and \pkg{glmmTMB} [@brooks2017] let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality.
 Packages such as \pkg{VAST} [@thorson2019] and \pkg{inlabru} [@bachl2019] are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used \pkg{lme4} or \pkg{glmmTMB}, or lack some functionality.
-We provide a more detailed comparison of related software packages in Table 1 and the Discussion.
+We provide a more detailed comparison of related software packages in Table \ref{tab:functionality} and the Discussion.
 
 Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which implements geostatistical spatial and spatiotemporal GLMMs using \pkg{TMB} for model fitting and \pkg{INLA} to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} [@wood2017a], for a specific class of spatial and spatiotemporal models.
@@ -397,14 +397,14 @@ ind <- get_index(p)
 # Package comparisons
 
 There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
-\pkg{sdmTMB}, \pkg{VAST}, \pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include \pkg{spBayes} in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table 1).
+\pkg{sdmTMB}, \pkg{VAST}, \pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models; we also include \pkg{spBayes} in our software comparison as it is a prominent package that can fit related predictive-process models without the SPDE (Table \ref{tab:functionality}).
 \pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
 \pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
 To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
 <!-- However, \pkg{VAST} is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
 Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
 \pkg{spaMM} is limited to a spatial random field and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
-There is considerable variability in the available observation likelihoods across packages (Table 1).
+There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
 We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{INLA} or \pkg{inlabru} (Appendix 4) and \pkg{VAST} (Appendix 5).
 
 ```{r compare-table, results='asis', eval=FALSE}
@@ -466,6 +466,7 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 \fontsize{8}{10}\selectfont
 \begin{threeparttable}
 \begin{tabular}[t]{lllllll}
+\label{tab:functionality}
 \toprule
  & \pkg{sdmTMB} & \pkg{VAST} & \pkg{INLA}/\pkg{inlabru} & \pkg{mgcv} & \pkg{spBayes} & \pkg{spaMM}\\
 \midrule
@@ -538,7 +539,7 @@ All platforms were restricted to one core and could be faster with parallel comp
 # Discussion
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
-Assuming a given package can fit the model of interest (Table 1), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed.
+Assuming a given package can fit the model of interest (Table \ref{tab:functionality}), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed.
 We think users familiar with `stats::glm()`, \pkg{lme4}, or \pkg{glmmTMB} will find \pkg{sdmTMB} most approachable.
 Users familiar with \pkg{INLA} will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code [@miller2019] and \pkg{INLA}/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
@@ -597,7 +598,7 @@ The included \pkg{TMB} `.cpp` file also provides a high-quality and tested model
 
 \pkg{sdmTMB} would not be possible without the \pkg{TMB} [@kristensen2016] and \pkg{INLA} [@rue2009; @lindgren2011; @lindgren2015] \proglang{R} packages.
 \pkg{sdmTMB} is heavily inspired by and in some places code has been adapted from both the \pkg{VAST} [@thorson2019] and \pkg{glmmTMB} [@brooks2017] \proglang{R} packages.
-Penalized spline support was possible thanks to \pkg{mgcv} [@wood2017a].
+Smoother support was possible thanks to \pkg{mgcv} [@wood2017a].
 We thank the authors of all these packages.
 We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
