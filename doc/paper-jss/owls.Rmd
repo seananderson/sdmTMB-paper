@@ -199,13 +199,13 @@ sanity(fit_owl2)
 
 Print the model to inspect the fit:
 
-```{r print-fit-owls, warning=FALSE, echo=TRUE, message=FALSE, cache=FALSE}
+```{r print-fit-owls, warning=FALSE, echo=TRUE, message=FALSE}
 print(fit_owl2)
 ```
 
 View the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`.
 
-```{r tidy-owls, cache=FALSE}
+```{r tidy-owls}
 tidy(fit_owl2, conf.int = TRUE)
 tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
 ```
@@ -253,7 +253,7 @@ DHARMa::testZeroInflation(r_nb2, plot = FALSE)
 
 We do not find evidence of zero inflation.
 
-```{r theme-owls, cache=FALSE, echo=FALSE}
+```{r theme-owls, echo=FALSE}
 theme_set(theme_bw() + theme(
   plot.title = element_text(size = 12),
   legend.position = "top", legend.justification = c(0, 0), # move legend to top left
@@ -353,7 +353,7 @@ ggplot(data = p_proj) +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="90%", cache=FALSE, fig.asp=0.3}
+```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="90%",fig.asp=0.3}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -407,7 +407,7 @@ These are the predictions of winter owl counts that incorporate all fixed effect
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects-owls, echo=FALSE, eval=TRUE, cache=FALSE, dpi=220}
+```{r plot-all-effects-owls, echo=FALSE, eval=TRUE, dpi=220}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
