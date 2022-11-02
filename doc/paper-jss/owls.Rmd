@@ -172,7 +172,7 @@ fit_owl2 <- run_extra_optimization(fit_owl, nlminb_loops = 0, newton_loops = 1)
 ```
 
 ```{r cache-negb2-2, echo=FALSE, eval=!rds_saved2}
-saveRDS(fit_owl, here::here("data/snow_w_main_effect_0_150km2.rds"))
+saveRDS(fit_owl2, here::here("data/snow_w_main_effect_0_150km2.rds"))
 ```
 
 ```{r read-negb2-2, echo=FALSE, eval=rds_saved2}
