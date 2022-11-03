@@ -466,7 +466,6 @@ knitr::kable(d, format = "latex", caption = "Comparison of functionality between
 \fontsize{8}{10}\selectfont
 \begin{threeparttable}
 \begin{tabular}[t]{lllllll}
-\label{tab:functionality}
 \toprule
  & \pkg{sdmTMB} & \pkg{VAST} & \pkg{INLA}/\pkg{inlabru} & \pkg{mgcv} & \pkg{spBayes} & \pkg{spaMM}\\
 \midrule
@@ -513,8 +512,8 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \item $^1$Technically possible but non-trivial. $^2$Penalized smoother GAMs that determine `wiggliness'. $^3$\pkg{inlabru} but not \pkg{INLA}. $^4$Spatiotemporal fields as random walk only. $^5$SPDE approach as in Miller et al. (2019). $^6$Does have predictive process knots. $^7$Zero-inflated NB2 only. $^8$Tweedie power parameter fixed for \texttt{mgcv::gamm()}. $^9$Possible as log-linked Poisson GLMM with aggregated data. $^{10}$Hurdle models possible by fitting components separately.
 \end{tablenotes}
 \end{threeparttable}
+\label{tab:functionality}
 \end{table}
-
 
 <!-- TODO: Line 242. Can \pkg{sdmTMB} be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within \pkg{INLA}/\pkg{inlabru} allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
 
@@ -606,17 +605,17 @@ We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, an
 
 \appendix
 
-```{r child="model-description.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```{r child="model-description.Rmd", eval=TRUE}
 ```
 
-```{r child="pcod.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```{r child="pcod.Rmd", eval=TRUE}
 ```
 
-```{r child="owls.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```{r child="owls.Rmd", eval=TRUE}
 ```
 
-```{r child="inla-comparison.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```{r child="inla-comparison.Rmd", eval=TRUE}
 ```
 
-```{r child="timing.Rmd", echo=FALSE, cache=FALSE, eval=TRUE}
+```{r child="timing.Rmd", eval=TRUE}
 ```
