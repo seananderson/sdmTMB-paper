@@ -403,7 +403,7 @@ For each year in the model, we can generate predictions of winter owl counts tha
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects-owls, echo=FALSE, eval=TRUE, dpi=220, fig.cap="Predicted winter owl counts that incorporate all fixed effects and random effects.", fig.pos='h', fig.align='center'}
+```{r plot-all-effects-owls, out.width="85%", echo=FALSE, eval=TRUE, dpi=300, fig.cap="Predicted winter owl counts that incorporate all fixed effects and random effects.", fig.pos='h', fig.align='center'}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
@@ -417,7 +417,9 @@ ggplot(data = p_proj) +
     guide = guide_colourbar(title.position = "top")
   ) +
   labs(colour = "Predicted counts") +
-  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
+  theme(axis.text = element_blank(), 
+  legend.title = element_text(size = 8, hjust = 0), legend.key.height = unit(0.25, "cm"), 
+  axis.ticks = element_blank()) +
   facet_wrap(~year_f)
 ```
 
@@ -452,7 +454,7 @@ We can also look at the spatiotemporal random effects (`epsilon_st`) that repres
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be factors like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="Spatiotemporal random effects.", fig.pos='h', fig.align='center'}
+```{r plot-spatiotemporal-effects-owls, out.width="85%", echo=FALSE, eval=TRUE, dpi=300, fig.cap="Spatiotemporal random effects.", fig.pos='h', fig.align='center'}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = epsilon_st),
@@ -463,7 +465,9 @@ ggplot(data = filter(p_proj, year > 1978)) +
     ylim = c(min(p_proj$Y), max(p_proj$Y))
   ) +
   scale_colour_gradient2(guide = guide_colourbar(title.position = "top")) +
-  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
+  theme(axis.text = element_blank(), 
+  legend.title = element_text(size = 8, hjust = 0), legend.key.height = unit(0.25, "cm"), 
+  axis.ticks = element_blank()) +
   facet_wrap(~year_f)
 ```
 
@@ -471,7 +475,7 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 Finally, the non-random field based elements in the model are represented by `est_non_rf` variable in the prediction dataframe, and in this case only include the overall effect of mean annual NAO and the random intercepts for year (Fig.\ \ref{fig:plot-fixed-effects-owls}).
 
-```{r plot-fixed-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="The colour of each year represents the non-random field based elements in this model.", fig.pos='h', fig.align='center'}
+```{r plot-fixed-effects-owls, out.width="85%", echo=FALSE, eval=TRUE, dpi=300, fig.cap="Predictions for each year based on only the non-random field elements in this model.", fig.pos='h', fig.align='center'}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)),
@@ -485,6 +489,8 @@ ggplot(data = filter(p_proj, year > 1978)) +
     breaks = c(0.03, 0.05, 0.07),
     guide = guide_colourbar(title.position = "top")
   ) +
-  theme(axis.text = element_blank(), axis.ticks = element_blank()) +
+  theme(axis.text = element_blank(), 
+  legend.title = element_text(size = 8, hjust = 0), legend.key.height = unit(0.25, "cm"), 
+  axis.ticks = element_blank()) +
   facet_wrap(~year_f)
 ```
