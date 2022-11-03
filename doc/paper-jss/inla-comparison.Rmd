@@ -222,9 +222,9 @@ tidy(m, "ran_pars", conf.int = TRUE)
 Note that, within \pkg{sdmTMB}, the standard errors for variance terms are not reported in the `tidy()` function as they could be misleading if considered in natural (rather than log) space.
 The confidence intervals are, however, reported.
 
-Comparing the fixed effects shows the estimates from all three models are also very similar.
+Comparing the fixed effects shows the estimates from all three models are also very similar (Fig.\ \ref{fig:coef-plot}).
 
-```{r coef-plot, fig.asp=0.4, out.width="85%", echo=FALSE}
+```{r coef-plot, fig.asp=0.4, out.width="85%", echo=FALSE, fig.cap="Fixed effect estimates from all three models with 95 percent CI.", fig.pos='h', fig.align='center'}
 inla_coefs <- m_inla$summary.fixed[, c("0.025quant", "mean", "0.975quant")] %>%
   rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>%
   mutate(term = unique(sdmTMB_coefs$term), model = "INLA")
@@ -255,7 +255,8 @@ post_sdmTMB <- post_sdmTMB %>%
 ```
 
 We can then compare the distribution of these \pkg{sdmTMB} simulations to the marginal posterior densities from \pkg{INLA}
-From \pkg{INLA}, we can extract the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the \pkg{sdmTMB} `gather_sims()` function.
+From \pkg{INLA} (Fig.\ \ref{fig:compare-plot}). 
+We do this by extracting the marginal posterior densities using `inla.smarginal()` and name them to match the variable names from the \pkg{sdmTMB} `gather_sims()` function.
 Alternatively, we could use `inla.posterior.sample(result = m_inla, n = 1000)` to sample from the \pkg{INLA} model posterior assuming we had set\
 `control.compute` ` = list(config = TRUE)`.
 
@@ -292,9 +293,9 @@ post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
 ))
 ```
 
-In this plot, the blue histograms are from \pkg{sdmTMB} and the density lines are from \pkg{INLA}:
+<!-- In this plot, the blue histograms are from \pkg{sdmTMB} and the density lines are from \pkg{INLA}: -->
 
-```{r compare-plot, out.width="6in"}
+```{r compare-plot, out.width="6in", fig.cap="Blue histograms represent simulated draws from the joint precision matrix of the sdmTMB model compared with the marginal posterior densities from the INLA model.", fig.align='center'}
 ggplot(post_inla2) +
   geom_histogram(
     data = post_sdmTMB, aes(.value, after_stat(density)), bins = 30,
@@ -306,7 +307,7 @@ ggplot(post_inla2) +
 
 ## Annual distribution maps
 
-We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the \pkg{sdmTMB} package to map occurrence probabilities in each year in space.
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the \pkg{sdmTMB} package to map occurrence probabilities in each year in space (Fig.\ \ref{fig:maps}).
 For \pkg{sdmTMB}, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`, equivalent to inverse logit here), to produce occurrence probabilities:
 
 ```{r sdm-predictions}
@@ -314,7 +315,7 @@ nd <- filter(qcs_grid, year >= 2007)
 pred <- predict(m, newdata = nd)
 ```
 
-```{r maps, out.width="5.5in"}
+```{r maps, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the sdmTMB model.", fig.align='center'}
 inverse_link <- m$family$linkinv
 ggplot(pred) +
   geom_raster(aes(X, Y, fill = inverse_link(est))) +
@@ -323,9 +324,9 @@ ggplot(pred) +
   coord_fixed()
 ```
 
-We can get similar predictions with \pkg{inlabru} using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation:
+We can get similar predictions with \pkg{inlabru} using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation (Fig.\ \ref{fig:inlabru-pred}).
 
-```{r inlabru-pred, out.width="5.5in"}
+```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the inlabru model.", fig.align='center'}
 nd_bru <- nd
 nd_bru <- dplyr::left_join(nd_bru, yr_lu, by = "year")
 sp::coordinates(nd_bru) <- c("X", "Y")
