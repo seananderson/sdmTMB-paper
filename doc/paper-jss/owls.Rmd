@@ -1,5 +1,16 @@
 \clearpage
 
+```{r setup-owls, include = FALSE, cache=FALSE}
+theme_set(theme_bw() + theme(
+  plot.title = element_text(size = 12),
+  legend.position = "top", legend.justification = c(0, 0), # move legend to top left
+  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
+  strip.background = element_rect(fill = NA, colour = NA), # de-emphasize facet labels
+  panel.grid.major = element_line(colour = "grey90"), # for lat/lons
+  axis.title = element_blank() # lat/lon is clear from axis text
+)) 
+```
+
 # Example: spatially varying effect on owl counts {#app:owls}
 
 ## Background
@@ -57,9 +68,9 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 +datum=NAD83 +units=m +no_defs"
 ```
 
-First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
+First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations (Fig.\ \ref{fig:mesh-owls}). The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh-owls, echo=TRUE, out.width="4in"}
+```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="Mesh used for model is based on X and Y that use an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='h', fig.align='center'}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 
 # built-in plot() method:
@@ -71,7 +82,7 @@ ggplot() + inlabru::gg(mesh$mesh) +
   theme_light()
 ```
 
-The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) knots. 
+The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) knots.
 
 <!-- Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. The dataframe also contains the Southern Oscillation Index (SOI), which is related to El Niño cycles, but we will only consider NAO in this example because any effect of SOI was even weaker.  -->
 
@@ -204,9 +215,9 @@ pred$resid <- residuals(fit_owl2)
 
 ## Checking residuals
 
-We can inspect randomized quantile residuals, although this method has known issues [@thygesen2017a]. 
+We can inspect randomized quantile residuals (Fig.\ \ref{fig:qqnorm-owls}), although this method has known issues [@thygesen2017a]. 
 
-```{r qqnorm-owls, out.width="60%"}
+```{r qqnorm-owls, out.width="60%", fig.cap="Randomized quantile residuals.", fig.pos='h', fig.align='center'}
 qqnorm(pred$resid)
 qqline(pred$resid)
 ```
@@ -248,17 +259,6 @@ DHARMa::testZeroInflation(r_nb2, plot = FALSE)
 ```
 
 We do not find evidence of zero inflation.
-
-```{r theme-owls, echo=FALSE}
-theme_set(theme_bw() + theme(
-  plot.title = element_text(size = 12),
-  legend.position = "top", legend.justification = c(0, 0), # move legend to top left
-  legend.title = element_text(size = 10, hjust = 0), legend.key.height = unit(0.3, "cm"),
-  strip.background = element_rect(fill = NA, colour = NA), # de-emphasize facet labels
-  panel.grid.major = element_line(colour = "grey90"), # for lat/lons
-  axis.title = element_blank() # lat/lon is clear from axis text
-)) 
-```
 
 ## Plotting spatial predictions
 
@@ -326,9 +326,9 @@ nao_effect_lwr95 <- as.numeric(apply(combined, 2, quantile, probs = 0.025))
 
 The main effect of NAO indicates that there is a weak average positive effect of annual mean NAO on overall counts `r round(b[b$term == "nao", 2], 2)` (`b[b$term == "nao", 2]`), while for individual count locations the median estimated effects of NAO range from `r round(min(p_mean$nao_sim), 2)` to `r round(max(p_mean$nao_sim),2)` (`range(p_mean$nao_sim)`).
 Based on the 80% CI calculated above, the resulting minimum estimated effects of NAO for each count location range from `r round(min(p_mean$nao_lwr), 2)` to `r round(max(p_mean$nao_lwr),2)` (`range(p_mean$nao_lwr)`) and the maximums range from `r round(min(p_mean$nao_upr), 2)` to `r round(max(p_mean$nao_upr),2)` (`range(p_mean$nao_upr)`). 
-All these effects are in link space (`link = "log"`) and could be exponentiated to give the expected multiplicative contribution to the predicted owl counts; however, the additive nature of the effect in link space is more intuitive to interpret visually, so this is what we will plot on our maps:
+All these effects are in link space (`link = "log"`) and could be exponentiated to give the expected multiplicative contribution to the predicted owl counts; however, the additive nature of the effect in link space is more intuitive to interpret visually, so this is what we will plot on our maps (Fig.\ \ref{fig:plot-map-ci}).
 
-```{r plot-map-owls, echo=FALSE, eval=TRUE, out.width="90%", echo=FALSE}
+```{r plot-map-owls, echo=FALSE, eval=TRUE, out.width="90%"}
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
@@ -345,11 +345,11 @@ ggplot(data = p_proj) +
   ) +
   guides(size = "none") +
   labs(colour = "Estimated effect in log space") +
-  ggtitle("Map of combined main and spatially varying effects of NAO on Snowy Owl count") +
+  # ggtitle("Map of combined main and spatially varying effects of NAO on Snowy Owl count") +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="90%",fig.asp=0.3}
+```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="90%",fig.asp=0.3, fig.cap="Map of combined main and spatially varying effects of NAO on Snowy Owl count with confidence intervals. In the west, the lower values span zero implying a no evidence of an effect at this confidence level, while in the southeast the lowest estimates are still positive. Note that the values are in log space and thus additive. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).", fig.pos='h', fig.align='center'}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -399,11 +399,11 @@ This result suggests that exploring the effects of NAO at finer temporal scales 
 
 ## Predicted counts
 
-These are the predictions of winter owl counts that incorporate all fixed effects and random effects. 
+For each year in the model, we can generate predictions of winter owl counts that incorporate all fixed effects and random effects (Fig.\ \ref{fig:plot-all-effects-owls}). 
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects-owls, echo=FALSE, eval=TRUE, dpi=220}
+```{r plot-all-effects-owls, echo=FALSE, eval=TRUE, dpi=220, fig.cap="Predicted winter owl counts that incorporate all fixed effects and random effects.", fig.pos='h', fig.align='center'}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
@@ -427,11 +427,11 @@ In addition to the spatially varying effect that we started with, there are thre
 
 ### 1. Static spatial random effects 
 
-We can look at the spatial random effects (`omega_s`) that represent consistent deviations in space that are not accounted for by our fixed effects. 
+We can look at the spatial random effects (`omega_s`) that represent consistent deviations in space that are not accounted for by our fixed effects (Fig.\ \ref{fig:plot-spatial-effects-owls}). 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
 These could be landcover, proximity to the breeding grounds, and effects of flyways and barriers such as coasts.
 
-```{r plot-spatial-effects-owls, echo=FALSE, eval=TRUE, out.width="5in", dpi=200}
+```{r plot-spatial-effects-owls, echo=FALSE, eval=TRUE, out.width="5in", dpi=200, fig.cap="Spatial random effects that apply across all years.", fig.pos='h', fig.align='center'}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = omega_s), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
@@ -448,11 +448,11 @@ ggplot(data = p_proj) +
 
 ### 2. Spatiotemporal random effects 
 
-Finally, we can look at the spatiotemporal random effects (`epsilon_st`) that represent deviations from the fixed effect predictions and the spatial random effect deviations. 
+We can also look at the spatiotemporal random effects (`epsilon_st`) that represent deviations from the fixed effect predictions and the spatial random effect deviations (Fig.\ \ref{fig:plot-spatiotemporal-effects-owls}). 
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be factors like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects-owls, echo=FALSE, eval=TRUE, dpi=210}
+```{r plot-spatiotemporal-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="Spatiotemporal random effects.", fig.pos='h', fig.align='center'}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = epsilon_st),
@@ -469,9 +469,9 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 ### 3. Just fixed effects
 
-In this case, these only include the overall effect of mean annual NAO and the random intercepts for year.
+Finally, the non-random field based elements in the model are represented by `est_non_rf` variable in the prediction dataframe, and in this case only include the overall effect of mean annual NAO and the random intercepts for year (Fig.\ \ref{fig:plot-fixed-effects-owls}).
 
-```{r plot-fixed-effects-owls, echo=FALSE, eval=TRUE, dpi=210}
+```{r plot-fixed-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="The facet colours represent the non-random field based elements in this model.", fig.pos='h', fig.align='center'}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)),
