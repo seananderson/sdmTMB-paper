@@ -19,7 +19,7 @@ We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purp
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with \pkg{INLA} (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
-For example, a mesh with a cutoff distance of 10 km can be made (Fig.\ \ref{fig:mesh}).
+For example, a mesh with a cutoff distance of 10 km can be made (Fig.\ \ref{fig:plot-mesh}).
 
 ```{r mesh, echo = TRUE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
@@ -71,7 +71,7 @@ simulate(fit, nsim = 500) %>%
   dharma_residuals(fit)
 ```
 
-Or perhaps better, use MCMC residuals (Fig.\ \ref{fig:mcmc-resids}).
+Or perhaps better, use MCMC residuals (Fig.\ \ref{fig:mcmc-resids-vis}).
 
 ```{r mcmc-resids, warning=FALSE, results='hide', cache=TRUE}
 set.seed(123)
