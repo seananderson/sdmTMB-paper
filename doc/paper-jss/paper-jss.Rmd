@@ -510,7 +510,7 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \end{tabular}
 \begin{tablenotes}
 \item \textit{Note: } 
-\item $^1$Technically possible but non-trivial. $^2$Penalized smoother GAMs that determine `wiggliness'. $^3$\pkg{inlabru} but not \pkg{INLA}. $^4$Spatiotemporal fields as random walk only. $^5$SPDE approach as in Miller et al. (2019). $^6$Does have predictive process knots. $^7$Zero-inflated NB2 only. $^8$Tweedie power parameter fixed for \texttt{mgcv::gamm()}. $^9$Possible as log-linked Poisson GLMM with aggregated data. $^{10}$Hurdle models possible by fitting components separately.
+\item $^1$Technically possible but non-trivial. $^2$Penalized smoother GAMs that determine `wiggliness'. $^3$\pkg{inlabru} but not \pkg{INLA}. $^4$Spatiotemporal fields as random walk only. $^5$SPDE approach as in \citet{miller2019}. $^6$Does have predictive process knots. $^7$Zero-inflated NB2 only. $^8$Tweedie power parameter fixed for \texttt{mgcv::gamm()}. $^9$Possible as log-linked Poisson GLMM with aggregated data. $^{10}$Hurdle models possible by fitting components separately.
 \end{tablenotes}
 \end{threeparttable}
 \label{tab:functionality}
