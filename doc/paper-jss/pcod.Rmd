@@ -19,13 +19,13 @@ We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purp
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with \pkg{INLA} (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
-For example, a mesh with a cutoff distance of 10 km can be made:
+For example, a mesh with a cutoff distance of 10 km can be made (Fig.\ \ref{fig:mesh}).
 
 ```{r mesh, echo = TRUE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
-```{r plot-mesh, cache=TRUE, fig.align='center', fig.asp=1, out.width="3in", echo=TRUE}
+```{r plot-mesh, cache=TRUE, fig.align='center', fig.asp=1, out.width="3in", echo=TRUE, fig.cap="This mesh uses a cutoff distance of 10 km.", fig.pos='h', fig.align='center'}
 plot(mesh)
 ```
 
@@ -63,15 +63,15 @@ We can predict on the original data locations:
 pred <- predict(fit)
 ```
 
-We can inspect simulated residuals from the DHARMa package:
+We can inspect simulated residuals from the DHARMa package (Fig.\ \ref{fig:sim-resids}).
 
-```{r sim-resids, out.width="4in", warning=FALSE, results='hide', cache=TRUE, echo=TRUE}
+```{r sim-resids, out.width="4in", warning=FALSE, results='hide', cache=TRUE, echo=TRUE, fig.cap="Simulated residuals from the DHARMa package.", fig.pos='h', fig.align='center'}
 set.seed(123)
 simulate(fit, nsim = 500) %>%
   dharma_residuals(fit)
 ```
 
-Or perhaps better, use MCMC residuals:
+Or perhaps better, use MCMC residuals (Fig.\ \ref{fig:mcmc-resids}).
 
 ```{r mcmc-resids, warning=FALSE, results='hide', cache=TRUE}
 set.seed(123)
@@ -81,7 +81,7 @@ r <- residuals(fit,
 )
 ```
 
-```{r mcmc-resids-vis, out.width="4in"}
+```{r mcmc-resids-vis, out.width="4in", fig.cap="MCMC residuals.", fig.pos='h', fig.align='center'}
 qqnorm(r)
 qqline(r)
 ```
@@ -103,35 +103,35 @@ plot_map <- function(dat, column) {
 }
 ```
 
-There are four kinds of predictions that we get out of the model. First we will show the predictions that incorporate all fixed effects and random effects:
+There are four kinds of predictions that we get out of the model. First we will show the predictions that incorporate all fixed effects and random effects (Fig.\ \ref{fig:plot-all-effects}). 
 
-```{r plot-all-effects}
+```{r plot-all-effects, fig.cap="Model predictions based on all fixed effects and random effects.", fig.pos='h', fig.align='center'}
 plot_map(pred_qcs, "exp(est)") +
-  scale_fill_viridis_c(trans = "log10") +
-  ggtitle("Prediction (fixed effects + all random effects)")
+  # ggtitle("Prediction (fixed effects + all random effects)") +
+  scale_fill_viridis_c(trans = "log10") 
 ```
 
-We can also look at just the fixed effects, here `year`:
+We can also look at just the fixed effects, here `year` (Fig.\ \ref{fig:plot-fix-defects}).
 
-```{r plot-fix-defects}
+```{r plot-fix-defects, fig.cap="Predictions based on only the non-random field elements.", fig.pos='h', fig.align='center'}
 plot_map(pred_qcs, "exp(est_non_rf)") +
-  ggtitle("Prediction (fixed effects only)") +
+  # ggtitle("Prediction (fixed effects only)") +
   scale_fill_viridis_c(trans = "sqrt")
 ```
 
-We can look at the spatial random effects that represent consistent deviations in space through time that are not accounted for by our fixed effects. In other words, these deviations represent consistent biotic and abiotic factors that are affecting biomass density but are not accounted for in the model.
+We can look at the spatial random effects that represent consistent deviations in space through time that are not accounted for by our fixed effects (Fig.\ \ref{fig:plot-spatial-effects}). In other words, these deviations represent consistent biotic and abiotic factors that are affecting biomass density but are not accounted for in the model.
 
-```{r plot-spatial-effects}
+```{r plot-spatial-effects, fig.cap="Spatial random effects only.", fig.pos='h', fig.align='center'}
 plot_map(pred_qcs, "omega_s") +
-  ggtitle("Spatial random effects only") +
+  # ggtitle("Spatial random effects only") +
   scale_fill_gradient2()
 ```
 
-Finally, we can look at the spatiotemporal random effects that represent deviations from the fixed effect predictions and the spatial random effect deviations. These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model.
+Finally, we can look at the spatiotemporal random effects that represent deviations from the fixed effect predictions and the spatial random effect deviations (Fig.\ \ref{fig:plot-spatiotemporal-effects}). These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model.
 
-```{r plot-spatiotemporal-effects}
+```{r plot-spatiotemporal-effects, fig.cap="Spatiotemporal random effects only.", fig.pos='h', fig.align='center'}
 plot_map(pred_qcs, "epsilon_st") +
-  ggtitle("Spatiotemporal random effects only") +
+  # ggtitle("Spatiotemporal random effects only") +
   scale_fill_gradient2()
 ```
 
@@ -142,9 +142,9 @@ pred_sims <- predict(fit, newdata = qcs_grid, nsim = 200)
 dim(pred_sims)
 ```
 
-This returns a matrix with a row for each row of the `newdata` data frame and a column for each replicate draw. We can use this matrix to calculate the standard deviation or coefficient of variation:
+This returns a matrix with a row for each row of the `newdata` data frame and a column for each replicate draw. We can use this matrix to calculate the standard deviation or coefficient of variation (Fig.\ \ref{fig:sims-cv-plot}).
 
-```{r sims-cv-plot, cache=TRUE}
+```{r sims-cv-plot, cache=TRUE, fig.cap="Spatiotemporal coefficient of variation.", fig.pos='h', fig.align='center'}
 qcs_grid$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
 ggplot(qcs_grid, aes(X, Y, fill = cv)) +
   geom_raster() +
@@ -153,9 +153,9 @@ ggplot(qcs_grid, aes(X, Y, fill = cv)) +
   scale_fill_viridis_c(trans = "log10", option = "D")
 ```
 
-We can calculate a standardized population index by predicting on our survey domain grid and setting `return_tmb_object = TRUE`. This returns the \pkg{TMB} objective function, which is required to pass the output to `get_index()`.
+We can calculate a standardized population index by predicting on our survey domain grid and setting `return_tmb_object = TRUE` (Fig.\ \ref{fig:pcod-app-index}). This returns the \pkg{TMB} objective function, which is required to pass the output to `get_index()`.
 
-```{r pcod-app-index, fig.asp=0.45, out.width="5in", cache=TRUE}
+```{r pcod-app-index, fig.asp=0.45, out.width="5in", cache=TRUE, fig.cap="Geostatistical population index.", fig.pos='h', fig.align='center'}
 qcs_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
   fit,

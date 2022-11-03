@@ -70,7 +70,7 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations (Fig.\ \ref{fig:mesh-owls}). The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="Mesh used for model is based on X and Y that use an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='h', fig.align='center'}
+```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='h', fig.align='center'}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 
 # built-in plot() method:
@@ -471,7 +471,7 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 Finally, the non-random field based elements in the model are represented by `est_non_rf` variable in the prediction dataframe, and in this case only include the overall effect of mean annual NAO and the random intercepts for year (Fig.\ \ref{fig:plot-fixed-effects-owls}).
 
-```{r plot-fixed-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="The facet colours represent the non-random field based elements in this model.", fig.pos='h', fig.align='center'}
+```{r plot-fixed-effects-owls, echo=FALSE, eval=TRUE, dpi=210, fig.cap="The colour of each year represents the non-random field based elements in this model.", fig.pos='h', fig.align='center'}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)),
