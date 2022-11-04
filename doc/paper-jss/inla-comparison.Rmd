@@ -350,5 +350,5 @@ Equivalent predictions are more complicated to extract from \pkg{INLA}, but are 
 #   geom_point(aes(X, Y, colour = inla_pred), size = 2) +
 #   facet_wrap(~year) +
 #   scale_colour_viridis_c() +
-  # coord_fixed()
+#   coord_fixed()
 ```

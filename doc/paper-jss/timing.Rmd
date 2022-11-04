@@ -1,18 +1,20 @@
+\clearpage
 # Speed testing related packages {#app:speed}
 
 Here we describe the methods underlying the speed testing in Fig.\ \ref{fig:timing}.
-We simulated 1000 spatial observations with both x and y coordinates from uniform(0, 1) distributions.
+
+We generated a mesh that was consistent across simulated data sets for a given mesh resolution (Fig.\ \ref{fig:mesh-vis-timing}).
+We did this by setting the `max.edge` argument, which controls the largest allowed triangle edge length.
+We tested values of `max.edge` of 0.06, 0.075, 0.1, 0.15, and 0.2.
+In Figure 4, we report on the x-axis the number of mesh nodes ("knots") that result from each of these meshes.
+
+We simulated 1000 spatial observations with both x and y coordinates from uniform(0, 1) distributions (Fig.\ \ref{fig:sim-dat-plot-timing}).
 Each iteration generated unique coordinates, predictor data, Gaussian random field values, and observation error.
 The Gaussian random field was parameterized with a range of 0.5 and marginal standard deviation of 0.2.
 The model included an intercept with a value of 0.2 and a normal(0, 1) predictor with an associated coefficient of -0.4.
 The observation error was Gaussian with a standard deviation of 0.3.
 
-We generated a mesh that was consistent across simulated data sets for a given mesh resolution.
-We did this by setting the `max.edge` argument, which controls the largest allowed triangle edge length.
-We tested values of `max.edge` of 0.06, 0.075, 0.1, 0.15, and 0.2.
-In Figure 4, we report on the x-axis the number of mesh nodes ("knots") that result from each of these meshes.
-
-We conducted 50 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values.
+We conducted 50 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values (Fig.\ \ref{fig:timing}).
 The models were fit on a 2022 14 inch M1 MacBook Pro with an Apple M1 Pro 10-core CPU and 32 GB of RAM in R 4.1.3 and the default Matrix library. The following package versions were used:
 
 ```{r pkg-versions, echo=TRUE}
@@ -49,9 +51,9 @@ mesh <- INLA::inla.mesh.2d(
 
 This mesh has `r mesh$n` (`mesh$n`) vertices.
 
-Here are the other meshes used from least to most vertices:
+<!-- Here are the other meshes used from least to most vertices: -->
 
-```{r mesh-vis-timing, out.width="6.5in", fig.width=10, fig.asp=1.2, echo=FALSE}
+```{r mesh-vis-timing, fig.width=7, fig.asp=1.1, echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='h', fig.align='center'}
 max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
 g <- list()
 for (i in seq_along(max_edge_vec)) {
@@ -68,6 +70,8 @@ for (i in seq_along(max_edge_vec)) {
 }
 cowplot::plot_grid(plotlist = g, ncol = 2)
 ```
+
+\clearpage
 
 ## Illustration of simulating data
 
@@ -93,9 +97,9 @@ sim_dat <- sdmTMB_simulate(
 )
 ```
 
-Look at the simulated data:
+<!-- Look at the simulated data: -->
 
-```{r sim-dat-plot-timing, out.width="5in", echo=FALSE}
+```{r sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='h', fig.align='center'}
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +
@@ -242,3 +246,5 @@ fit_bam <- bam(
   control = gam.control(scalePenalty = FALSE), discrete = TRUE
 )
 ```
+
+\clearpage
