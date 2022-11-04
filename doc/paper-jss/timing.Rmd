@@ -51,9 +51,7 @@ mesh <- INLA::inla.mesh.2d(
 
 This mesh has `r mesh$n` (`mesh$n`) vertices.
 
-<!-- Here are the other meshes used from least to most vertices: -->
-
-```{r mesh-vis-timing, fig.width=7, fig.asp=1.1, echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='h', fig.align='center'}
+```{r mesh-vis-timing, fig.width=7, fig.asp=1.1, echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='ht', fig.align='center'}
 max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
 g <- list()
 for (i in seq_along(max_edge_vec)) {
@@ -77,8 +75,7 @@ cowplot::plot_grid(plotlist = g, ncol = 2)
 
 ```{r sim-timing, echo=TRUE}
 set.seed(1)
-
-n_obs <- 1000L
+n_obs <- 1000
 predictor_dat <- data.frame(
   X = runif(n_obs), Y = runif(n_obs),
   a1 = rnorm(n_obs)
@@ -99,7 +96,7 @@ sim_dat <- sdmTMB_simulate(
 
 <!-- Look at the simulated data: -->
 
-```{r sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='h', fig.align='center'}
+```{r sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'}
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +
@@ -234,12 +231,13 @@ Predict.matrix.spde.smooth <- function(object, data) {
 ```
 
 ```{r mgcvfit-timing, echo=TRUE, eval=FALSE}
-# define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth():
+# define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth()
 # from supplement of:
 # Miller, D.L., Glennie, R. & Seaton, A.E. (2019). Understanding the Stochastic
 # Partial Differential Equation approach to smoothing. Journal of Agricultural,
 # Biological and Environmental Statistics.
 # https://doi.org/10.1007/s13253-019-00377-z
+
 fit_bam <- bam(
   observed ~ a1 + s(X, Y,
     bs = "spde", k = mesh$n,

@@ -224,7 +224,7 @@ The confidence intervals are, however, reported.
 
 Comparing the fixed effects shows the estimates from all three models are also very similar (Fig.\ \ref{fig:coef-plot}).
 
-```{r coef-plot, fig.asp=0.4, out.width="85%", echo=FALSE, fig.cap="Fixed effect estimates from all three models with 95 percent CI.", fig.pos='h', fig.align='center'}
+```{r coef-plot, fig.asp=0.4, out.width="85%", echo=FALSE, fig.cap="Fixed effect estimates from all three models with 95 percent CI.", fig.pos='ht', fig.align='center'}
 inla_coefs <- m_inla$summary.fixed[, c("0.025quant", "mean", "0.975quant")] %>%
   rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>%
   mutate(term = unique(sdmTMB_coefs$term), model = "INLA")

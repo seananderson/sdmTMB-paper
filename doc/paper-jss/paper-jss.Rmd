@@ -25,7 +25,7 @@ title:
   # For running headers, if needed
   short:     "\\pkg{sdmTMB}: geostatistical SPDE-based GLMMs with \\pkg{TMB}"
 abstract: >
-  Geostatistical data are pervasive and available in increasingly large volumes. However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or Bayesian inference via \pkg{tmbstan} and \pkg{rstan}). We describe the model and use case studies to illustrate sdmTMB's flexibility by implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (asymmetry in spatial correlations). Additional functionality includes delta (hurdle) models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB is 4–16 times faster than INLA. We anticipate sdmTMB's accessible interface will help open this useful class of models to the full spectrum geostatistical analysts.
+  Geostatistical data are pervasive and available in increasingly large datasets; however, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or Bayesian inference via \pkg{tmbstan} and \pkg{rstan}). We describe the model and explore case studies that illustrate \pkg{sdmTMB}'s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (asymmetry in spatial correlations). Additional functionality includes hurdle models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB can be 4–16 times faster than INLA. We hope \pkg{sdmTMB}'s accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
 keywords:
   # at least one keyword must be supplied
   formatted: [Gaussian Markov random fields (GMRF), generalized linear mixed effects models (GLMM), INLA, SPDE, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder]
@@ -45,7 +45,7 @@ preamble: >
 output: rticles::jss_article
 ---
 
-```{r, setup, include=FALSE}
+```{r main-setup, include=FALSE}
 options(prompt = 'R> ', continue = '+ ')
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -59,7 +59,7 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.asp = 0.618,
   fig.pos = "ht",
-  cache.comments = FALSE,
+  cache.comments = TRUE,
   dev = "png",
   dpi = 180
   # optipng = "-strip all"
@@ -75,7 +75,6 @@ Data are often collected in space or in space repeatedly over time.
 While such data are a rich source of information about mechanistic processes [@legendre1989a; @rossi1992; @tilman1997spatial], they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart due to measured and unmeasured variables [@cressie1993; @diggle2007; @cressie2011].
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation.
 Accounting for this residual correlation is important because doing so allows for valid statistical inference [@legendre1989a; @dormann2007], can improve predictions  [e.g., @shelton2014], and can be of interest itself by, for example, identifying locations with shared responses [e.g., @thorson2019d; @barnett2021].
-<!-- LB: seems like we needed some explicit example of why it would be of ecological interest itself to those who are unfamiliar, so I added allusion to local trends...but maybe also mentioning quantification of patchiness or something similar?. More generally, it might be good to expand on the utility of such models for applied ecology, if we can find room within the tight word limit? -->
 
 Geostatistical GLMMs (generalized linear mixed effects models) with spatially correlated random effects are a class of models appropriate for these data [@rue2005gmrf; @diggle2007; @cressie2011].
 Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time.
@@ -158,11 +157,6 @@ Note that \texttt{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \t
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial longitude and latitude `lon` and `lat`.
-
-```{r, include=FALSE}
-# simplify for paper
-# pcod <- dplyr::select(sdmTMB::pcod, year, density, depth, X, Y)
-```
 
 ```{r sdmTMB-lib0, eval=TRUE, echo=FALSE}
 library(sdmTMB)
@@ -332,7 +326,6 @@ t2 <- Sys.time()
 summary(fit_spatiotemporal)
 ```
 
-<!-- This model took approximately `r round(as.numeric(t2 - t1), 0)` seconds to fit on our laptop.  -->
 We could inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
 We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig. \ref{fig:pcod-fig}E, Appendix \ref{app:pcod}).
 
@@ -385,15 +378,6 @@ For state-space models, these residuals have known statistical issues with the L
 A version that uses Markov chain Monte Carlo (MCMC) to avoid this issue is recommended but slower (`?residuals.sdmTMB`).
 Simulation-based residuals [@dharma] (`dharma_residuals()`) are also possible.
 (5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function can simulate entirely new data to which models can be fit to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
-<!-- Simulations can also be passed to the \proglang{R} package DHARMa [@DHARMa] to calculate simulation-based residual diagnostics (APPENDIX OR VIGNETTE). -->
-
-<!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary \pkg{TMB} object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
-
-```{r, eval=FALSE, echo=FALSE}
-p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
-ind <- get_index(p)
-```
-
 
 # Package comparisons
 
@@ -402,7 +386,6 @@ There are many \proglang{R} packages capable of fitting geostatistical spatial o
 \pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
 \pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
 To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
-<!-- However, \pkg{VAST} is typically less effective at replicating nonlinear preferences than GAMs, which are supported by several of these packages [@brodie2020]. -->
 Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
 \pkg{spaMM} is limited to a spatial random field and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
 There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
