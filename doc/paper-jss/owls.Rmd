@@ -232,7 +232,11 @@ For the purposes of this building this appendix quickly, we will not run this co
 
 ```{r stan-resids-owls, eval=FALSE}
 fit_ml <- update(fit_owl, reml = FALSE)
-mcmc_resids <- residuals(fit_owl, type = "mle-mcmc", mcmc_iter = 101, mcmc_warmup = 100)
+mcmc_resids <- residuals(fit_owl,
+  type = "mle-mcmc",
+  mcmc_iter = 101,
+  mcmc_warmup = 100
+)
 ```
 
 We can test for zero-inflation using the `simulate.sdmTMB()` function.
