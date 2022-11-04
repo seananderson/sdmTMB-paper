@@ -532,8 +532,7 @@ Results with optimized math libraries on one core (openBLAS: @penblas2021 and PA
 \begin{figure}
 \centering
 \includegraphics[width=3.5in]{../../figs/timing-spatial-m1-april11}
-\caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95% quantiles across 50 random iterations. Note the log x and y axes. \pkg{VAST} is similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with `bru_max_iter = 1`, and the `like()` formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = 'fREML'}, and discretized covariates [@miller2019]. Note that spaMM only fits spatial, not spatiotemporal, models.
-All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
+\caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95\% quantiles across 50 random iterations. Note the log x and y axes. \pkg{VAST} is similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \texttt{bru\_max\_iter = 1}, and the \texttt{like()} formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = `fREML'}, and discretized covariates [@miller2019]. Note that spaMM only fits spatial, not spatiotemporal, models. All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
 \end{figure}
 
 # Discussion
