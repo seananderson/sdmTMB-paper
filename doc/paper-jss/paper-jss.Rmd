@@ -5,18 +5,23 @@ author:
     orcid: 0000-0001-9563-1937
     affiliation: 'Pacific Biological Station'
     address: |
-      | Pacific Biological Station, Nanaimo, BC, Canada
+      | Fisheries and Oceans Canada, Nanaimo, BC, Canada
     email: \email{sean.anderson@dfo-mpo.gc.ca}
   - name: Eric J. Ward
     orcid: 0000-0002-4359-0296
     affiliation: 'Northwest Fisheries Science Center \AND'
+    address: |
+      | National Oceanic and Atmospheric Administration, National Marine Fisheries Service, Seattle, WA, USA
   - name: Philina A. English
     orcid: 0000-0003-2992-6782
-    address: ''
     affiliation: 'Pacific Biological Station'
+    address: |
+      | Fisheries and Oceans Canada, Nanaimo, BC, Canada
   - name: Lewis A. K. Barnett
     orcid: 0000-0002-9381-8375
     affiliation: 'Alaska Fisheries Science Center'
+    address: |
+      | National Marine Fisheries Service, National Oceanic and Atmospheric Administration, Seattle, WA, USA
 bibliography: refs.bib
 title:
   formatted: "\\pkg{sdmTMB}: An \\proglang{R} Package for Fast, Flexible, and User-Friendly Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields"
@@ -25,7 +30,7 @@ title:
   # For running headers, if needed
   short:     "\\pkg{sdmTMB}: geostatistical SPDE-based GLMMs with \\pkg{TMB}"
 abstract: >
-  Geostatistical data are pervasive and available in increasingly large datasets; however, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \proglang{R}-\pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or via Bayesian inference with \pkg{tmbstan} and \pkg{rstan}. We describe the model and explore case studies that illustrate \pkg{sdmTMB}'s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (asymmetry in spatial correlations). Additional functionality includes hurdle models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB can be 4–16 times faster than \proglang{R}-\pkg{INLA}. We hope \pkg{sdmTMB}'s accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
+  Geostatistical data are common across scientific fields and available in increasingly large datasets. However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian random fields, are computationally intensive and challenging to implement for many users. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \proglang{R}-\pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or via Bayesian inference with \pkg{tmbstan} and \pkg{rstan}. We describe the model and explore case studies that illustrate \pkg{sdmTMB}'s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (asymmetry in spatial correlations). Additional functionality includes hurdle models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB can be 4–16 times faster than \proglang{R}-\pkg{INLA}. We hope \pkg{sdmTMB}'s accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
 keywords:
   # at least one keyword must be supplied
   formatted: [Gaussian Markov random fields (GMRF), generalized linear mixed effects model (GLMM), INLA, SPDE, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder]
@@ -334,7 +339,7 @@ pcod <- pcod_original
 qcs_grid <- qcs_grid_original
 ```
 
-# Example of a spatially varying coefficient with citizen science data
+# Spatially varying coefficient example with citizen science data
 
 Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
