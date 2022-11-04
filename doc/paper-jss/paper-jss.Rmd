@@ -222,7 +222,7 @@ fit <- sdmTMB(
 )
 ```
 
-We can get a summary of the fit with the `print()` or `summary()` methods or extract parameter estimates as a data frame with the `tidy()` method.
+We can get a summary of the fit with the `print()` or `summary()` methods.
 
 ```{r pcod-eg1-summary,eval=TRUE, echo=TRUE}
 summary(fit)

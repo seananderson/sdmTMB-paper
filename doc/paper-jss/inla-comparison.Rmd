@@ -58,7 +58,7 @@ sdmTMB_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
 loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 spde <- inla.spde2.pcmatern(
-  mesh = inla_mesh, # an smdTMB mesh could be inserted here with `sdmTMB_mesh$mesh`
+  mesh = inla_mesh, 
   prior.range = c(range_min, prior_prob),
   prior.sigma = c(sigma_max, prior_prob)
 )

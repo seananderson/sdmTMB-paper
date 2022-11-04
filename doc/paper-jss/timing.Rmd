@@ -112,8 +112,12 @@ ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
 ```{r sdmTMBfit-timing, echo=TRUE}
 fit_sdmTMB <- sdmTMB(
   observed ~ a1,
-  data = sim_dat, mesh = mesh_sdmTMB, family = gaussian(),
-  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
+  data = sim_dat, 
+  mesh = mesh_sdmTMB, 
+  family = gaussian(),
+  priors = sdmTMBpriors(
+    matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2)
+  )
 )
 ```
 
@@ -128,7 +132,8 @@ spde <- INLA::inla.spde2.pcmatern(
 
 fit_spaMM <- fitme(
   observed ~ a1 + IMRF(1 | X + Y, model = spde),
-  family = gaussian(), data = sim_dat
+  family = gaussian(), 
+  data = sim_dat
 )
 ```
 
@@ -243,7 +248,8 @@ fit_bam <- bam(
   data = sim_dat,
   family = gaussian(),
   method = "fREML",
-  control = gam.control(scalePenalty = FALSE), discrete = TRUE
+  control = gam.control(scalePenalty = FALSE), 
+  discrete = TRUE
 )
 ```
 

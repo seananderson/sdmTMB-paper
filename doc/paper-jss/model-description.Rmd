@@ -567,5 +567,3 @@ Standard errors can be observed in the output of `print.sdmTMB()` or by checking
 The maximum gradient of the marginal likelihood with respect to fixed-effect parameters can be checked by inspecting (`fit$gradients`).
 Guidance varies, but the maximum gradient should likely be at least $< 0.001$ before assuming the fitting routine is consistent with convergence.
 If maximum gradients are already relatively small, they can often be reduced further with additional optimization calls beginning at the previous best parameter vector as described above with `sdmTMB::run_extra_optimization()`.
-
-
