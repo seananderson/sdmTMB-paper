@@ -1,5 +1,11 @@
 \clearpage
 
+```{r inla-knitr-setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "pdf"
+)
+```
+
 # Comparison between INLA, inlabru, and sdmTMB {#app:inla}
 
 In this example, we will fit a presence-absence dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).

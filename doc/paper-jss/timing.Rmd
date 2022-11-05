@@ -1,4 +1,5 @@
 \clearpage
+
 # Speed testing related packages {#app:speed}
 
 Here we describe the methods underlying the speed testing in Fig.\ \ref{fig:timing}.

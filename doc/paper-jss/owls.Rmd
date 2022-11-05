@@ -1,5 +1,14 @@
 \clearpage
 
+```{r owl-knitr-setup, include=FALSE}
+knitr::opts_chunk$set(
+  dpi = 125,
+  dev = "png",
+  optipng = "-strip all"
+)
+knitr::knit_hooks$set(optipng = knitr::hook_optipng)
+```
+
 ```{r setup-owls, include = FALSE, cache=FALSE}
 theme_set(theme_bw() + theme(
   plot.title = element_text(size = 12),
@@ -70,7 +79,7 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations (Fig.\ \ref{fig:mesh-owls}). The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
 
-```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='ht', fig.align='center'}
+```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='ht', fig.align='center', dev='png', dpi=100}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 
 # built-in plot() method:
@@ -219,7 +228,7 @@ pred$resid <- residuals(fit_owl2)
 
 We can inspect randomized quantile residuals (Fig.\ \ref{fig:qqnorm-owls}), although this method has known issues when based on random effects derived with the Laplace approximation [@thygesen2017a]. 
 
-```{r qqnorm-owls, out.width="60%", fig.cap="Randomized quantile residuals.", fig.pos='ht', fig.align='center'}
+```{r qqnorm-owls, out.width="60%", fig.cap="Randomized quantile residuals.", fig.pos='ht', fig.align='center', dpi=90, dev='png'}
 qqnorm(pred$resid)
 qqline(pred$resid)
 ```
