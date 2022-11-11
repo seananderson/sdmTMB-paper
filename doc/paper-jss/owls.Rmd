@@ -298,7 +298,8 @@ if (!file.exists(here::here("data/ne_10m_lakes"))) {
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
 lakes <- sf::st_read(here::here("data/ne_10m_lakes"), quiet = TRUE)
-lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)# only large lakes
+# keep only large lakes
+lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
 ```
 
 ## Spatially varying effect
