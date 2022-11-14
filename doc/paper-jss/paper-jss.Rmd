@@ -89,7 +89,7 @@ Similarly to how random intercepts can account for correlation among groups, spa
 A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed to be drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn [@cressie1993; @diggle2007; @chiles1999].
 
 Such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data [e.g., @rue2005gmrf; @latimer2009].
-Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2021].
+Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2022].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can greatly improve computational efficiency [e.g., @heaton2019].
 The SPDE approach is a solution popularized via the \proglang{R}-\pkg{INLA} \proglang{R} package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in \pkg{TMB} [Template Model Builder, @kristensen2016] that partially relies on \proglang{R}\-pkg{INLA} to create input matrices [e.g., @thorson2019; @osgood-zimmerman2021].
