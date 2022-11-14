@@ -217,7 +217,7 @@ $$
 where $\epsilon_{\s,t}$ represent random field deviations at point $\s$ and time $t$.
 The random fields are assumed independent across time steps.
 
-Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$)
+Similarly to the spatial random fields, these spatiotemporal random fields (including all versions described below) are parameterized internally with a sparse precision matrix ($\boldsymbol{Q}_\epsilon$).
 
 $$
 \boldsymbol{\epsilon_{t}} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \sigma_\epsilon^2 \boldsymbol{Q}^{-1}_\epsilon\right).
