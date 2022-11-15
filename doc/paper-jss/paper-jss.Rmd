@@ -115,9 +115,10 @@ Areal data (data aggregated to polygon or grid level) may be analyzed using othe
 \pkg{sdmTMB} can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004] (e.g., spatial variance and range---the distance at which points are effectively independent).
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}; see the model description vignette in `browseVignettes("sdmTMB")` or [rendered on the web](https://pbs-assess.github.io/sdmTMB/articles/)).
+The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
+See the the model description vignette for a full description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
 
 The GLMMs underpinning \pkg{sdmTMB} models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., randomForest [@liaw2002], MaxEnt [@phillips2006], and most smooths in \pkg{mgcv} [@wood2017a]).
@@ -125,9 +126,9 @@ The random fields in \pkg{sdmTMB} are structured as MVN constrained by a Matérn
 The Matérn can accommodate a range of shapes and can be both isotropic (covariance decays the same in all directions) or anisotropic (covariance is directionally dependent) [@haskard2007].
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately (`share_range` argument).
 
-By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}, Appendix \ref{app:model}).
+By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()` (Appendix \ref{app:model}).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`).
 The smoothers in \pkg{sdmTMB} can mimic most `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers (`s(x, bs = "cc")`), and smoothers with specified basis dimensions (`s(x, k = 4)`) [@wood2017a].
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood.
@@ -155,7 +156,7 @@ We refer to design matrices as $\bm{X}$.
 The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
-See Appendix \ref{app:model} for a full description of the model.
+See the sdmTMB \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
 Note that \texttt{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \texttt{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \texttt{(1|g)} denotes a random intercept by group \texttt{g}, and \texttt{~ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
