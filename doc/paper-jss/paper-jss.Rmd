@@ -115,7 +115,7 @@ Areal data (data aggregated to polygon or grid level) may be analyzed using othe
 \pkg{sdmTMB} can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004] (e.g., spatial variance and range---the distance at which points are effectively independent).
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}, Appendix \ref{app:model}).
+The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}; see the model description vignette in `browseVignettes("sdmTMB")` or [rendered on the web](https://pbs-assess.github.io/sdmTMB/articles/)).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
 
@@ -597,7 +597,7 @@ We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, an
 
 \appendix
 
-```{r child="model-description.Rmd", eval=TRUE}
+```{r child="model-description.Rmd", eval=FALSE}
 ```
 
 ```{r child="pcod.Rmd", eval=TRUE}

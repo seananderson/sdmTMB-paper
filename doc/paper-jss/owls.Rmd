@@ -347,7 +347,7 @@ The main effect of NAO indicates that there is a weak average positive effect of
 Based on the 80% CI calculated above, the resulting minimum estimated effects of NAO for each count location range from `r round(min(p_mean$nao_lwr), 2)` to `r round(max(p_mean$nao_lwr),2)` (`range(p_mean$nao_lwr)`) and the maximums range from `r round(min(p_mean$nao_upr), 2)` to `r round(max(p_mean$nao_upr),2)` (`range(p_mean$nao_upr)`). 
 All these effects are in link space (`link = "log"`) and could be exponentiated to give the expected multiplicative contribution to the predicted owl counts; however, the additive nature of the effect in link space is more intuitive to interpret visually, so this is what we will plot on our maps (Fig.\ \ref{fig:plot-map-ci}).
 
-```{r plot-map-owls, echo=FALSE, eval=TRUE, out.width="90%"}
+```{r plot-map-owls, echo=FALSE, eval=TRUE, out.width="65%", dpi=140, dev="png"}
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
@@ -368,7 +368,7 @@ ggplot(data = p_proj) +
   theme(legend.position = c(0.1, 0.07), axis.title = element_blank())
 ```
 
-```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="90%",fig.asp=0.3, fig.cap="Map of combined main and spatially varying effects of NAO on Snowy Owl count with confidence intervals. In the west, the lower values span zero implying a no evidence of an effect at this confidence level, while in the southeast the lowest estimates are still positive. Note that the values are in log space and thus additive. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).", fig.pos='ht', fig.align='center'}
+```{r plot-map-ci, echo=FALSE, eval=TRUE, out.width="80%",fig.asp=0.3, fig.cap="Map of combined main and spatially varying effects of NAO on Snowy Owl count with confidence intervals. In the west, the lower values span zero implying a no evidence of an effect at this confidence level, while in the southeast the lowest estimates are still positive. Note that the values are in log space and thus additive. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8).", fig.pos='ht', fig.align='center', dpi=140, dev="png"}
 p1 <- ggplot(data = p_proj) +
   geom_point(
     data = p_mean,
@@ -422,7 +422,7 @@ For each year in the model, we can generate predictions of winter owl counts tha
 The mean estimated count is `r round(mean(exp(p$est)), 2)`, which is essentially equal to the observed mean of `r round(mean(snow$count), 2)`.
 The maximum estimated count was `r round(max(exp(p$est)))`, but the colour axis on this plot has been transformed and trimmed to improve the visibility of variation in the lower range of count estimates. 
 
-```{r plot-all-effects-owls, out.width="95%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=300, fig.cap="Predicted winter owl counts that incorporate all fixed effects and random effects.", fig.pos='ht', fig.align='center'}
+```{r plot-all-effects-owls, out.width="90%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=140, fig.cap="Predicted winter owl counts that incorporate all fixed effects and random effects.", fig.pos='ht', fig.align='center', dev="png"}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = exp(est)), size = 0.4, alpha = 0.5) +
   coord_sf(
@@ -452,7 +452,7 @@ We can look at the spatial random effects (`omega_s`) that represent consistent 
 In other words, these deviations represent consistent biotic and abiotic factors that are affecting winter owl counts.
 These could be landcover, proximity to the breeding grounds, and effects of flyways and barriers such as coasts.
 
-```{r plot-spatial-effects-owls, echo=FALSE, eval=TRUE, out.width="5in", dpi=200, fig.cap="Spatial random effects that apply across all years.", fig.pos='ht', fig.align='center'}
+```{r plot-spatial-effects-owls, echo=FALSE, eval=TRUE, out.width="3in", dpi=130, fig.cap="Spatial random effects that apply across all years.", fig.pos='ht', fig.align='center', dev = "png",}
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = omega_s), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
@@ -473,7 +473,7 @@ We can also look at the spatiotemporal random effects (`epsilon_st`) that repres
 These represent biotic and abiotic factors causing spatial correlation that are changing through time and are not accounted for in the model. 
 For owls, this is most likely to be factors like landcover changes, prey abundance cycles, and snow depth.
 
-```{r plot-spatiotemporal-effects-owls, out.width="95%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=300, fig.cap="Spatiotemporal random effects.", fig.pos='ht', fig.align='center'}
+```{r plot-spatiotemporal-effects-owls, out.width="75%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=120, fig.cap="Spatiotemporal random effects.", fig.pos='ht', fig.align='center', dev="png"}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = epsilon_st),
@@ -492,9 +492,9 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 ### 3. Just fixed effects
 
-Finally, the non-random field based elements in the model are represented by `est_non_rf` variable in the prediction dataframe, and in this case only include the overall effect of mean annual NAO and the random intercepts for year (Fig.\ \ref{fig:plot-fixed-effects-owls}).
+Finally, the non-random field based elements in the model are represented by `est_non_rf` variable in the prediction data frame, and in this case only include the overall effect of mean annual NAO and the random intercepts for year (Fig.\ \ref{fig:plot-fixed-effects-owls}).
 
-```{r plot-fixed-effects-owls, out.width="95%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=300, fig.cap="Predictions for each year based on only the non-random field elements.", fig.pos='ht', fig.align='center'}
+```{r plot-fixed-effects-owls, out.width="75%", fig.asp=0.8, echo=FALSE, eval=TRUE, dpi=120, fig.cap="Predictions for each year based on only the non-random field elements.", fig.pos='ht', fig.align='center', dev="png"}
 ggplot(data = filter(p_proj, year > 1978)) +
   geom_point(
     data = filter(p, year > 1978), aes(X, Y, colour = exp(est_non_rf)),
