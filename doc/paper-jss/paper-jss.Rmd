@@ -128,7 +128,7 @@ The Matérn standard deviations are estimated separately for the various fields 
 
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}).
 Turning off both spatial and spatiotemporal effects allows comparison with a standard non-spatial GLM or GLMM.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes; for example, hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`).
+We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes: hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`.
 The smoothers in \pkg{sdmTMB} can mimic most `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers (`s(x, bs = "cc")`), and smoothers with specified basis dimensions (`s(x, k = 4)`) [@wood2017a].
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood.
@@ -206,7 +206,7 @@ mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
 Here, `cutoff` defines the minimum allowed distance between mesh vertices in the units of `X` and `Y`.
-`make_mesh()` is a wrapper function for `INLA::inla.mesh.create()`.
+`make_mesh()` is a wrapper function for `INLA::inla.mesh.create()` and `cutoff` is passed through to it.
 Alternatively, we could have created any mesh via the \proglang{R}-\pkg{INLA} package and supplied it to the `mesh` argument in `make_mesh()`.
 We can inspect our mesh object with the associated plotting method (`plot(mesh)`; see Fig. \ref{fig:pcod-fig}A).
 
