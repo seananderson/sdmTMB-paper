@@ -29,7 +29,7 @@ INLA::inla.setOption(num.threads = "1:1")
 ```
 
 We will use a data set built into the package: trawl survey data for Pacific cod in Queen Charlotte Sound as described in earlier appendices.
-\pkg{INLA} requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
+Since \pkg{INLA} requires sequentially numbered time steps, we start by selecting the years we will include in this model and creating the year index variable `i_year`:
 
 ```{r pcod-inla-comparison-data, echo=TRUE}
 d <- pcod %>% filter(year >= 2007)
@@ -52,9 +52,9 @@ In INLA, a PC-prior can be used for the temporal autoregressive parameter, i.e.,
 h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
 ```
 
-We will start by building identical meshes using both sdmTMB and INLA.
+We will start by building identical meshes using both \pkg{sdmTMB} and \pkg{INLA}.
 Here, X and Y are coordinates in UTM zone 9.
-These same functions are used internally in the sdmTMB `make_mesh()` function.
+These same functions are used internally in the \pkg{sdmTMB} `make_mesh()` function.
 
 ```{r sdm-mesh, echo = TRUE}
 sdmTMB_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
@@ -70,7 +70,7 @@ spde <- inla.spde2.pcmatern(
 )
 ```
 
-Here, the meshes should be the same.
+These meshes should be the same.
 
 ```{r plot-inla-mesh, fig.asp=0.9, out.height="2.5in",echo=FALSE, eval=FALSE}
 plot(sdmTMB_mesh)
@@ -82,7 +82,7 @@ title(main = "INLA mesh")
 ## INLA version
 
 Data preparation for \pkg{INLA} models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
-We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with TMB.
+We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with \pkg{TMB}.
 We use weak priors on the factor fixed effects (`mean = 0, prec = 1/(100*100)`), which amounts to a `Normal(0, 100^2)` prior.
 
 ```{r inla, echo=TRUE}
@@ -245,7 +245,7 @@ dplyr::bind_rows(mutate(sdmTMB_coefs, model = "sdmTMB"), inla_coefs, bru_coefs) 
   theme(axis.title.y = element_blank())
 ```
 
-With sdmTMB, we can extract simulated draws from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions.
+With \pkg{sdmTMB}, we can extract simulated draws from the joint precision matrix using the `spread_sims()` or `gather_sims()` functions.
 
 ```{r sdmTMB-sims, echo=FALSE}
 set.seed(1)
@@ -301,7 +301,7 @@ post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
 
 <!-- In this plot, the blue histograms are from \pkg{sdmTMB} and the density lines are from \pkg{INLA}: -->
 
-```{r compare-plot, out.width="6in", fig.cap="Blue histograms represent simulated draws from the joint precision matrix of the sdmTMB model compared with the marginal posterior densities from the INLA model.", fig.align='center'}
+```{r compare-plot, out.width="6in", fig.cap="Blue histograms represent simulated draws from the joint precision matrix of the \\pkg{sdmTMB} model compared with the marginal posterior densities from the \\pkg{INLA} model.", fig.align='center'}
 ggplot(post_inla2) +
   geom_histogram(
     data = post_sdmTMB, aes(.value, after_stat(density)), bins = 30,
@@ -314,7 +314,7 @@ ggplot(post_inla2) +
 ## Annual distribution maps
 
 We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the \pkg{sdmTMB} package to map occurrence probabilities in each year in space (Fig.\ \ref{fig:maps}).
-For \pkg{sdmTMB}, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`, equivalent to inverse logit here), to produce occurrence probabilities:
+For \pkg{sdmTMB}, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`---the inverse logit here), to produce occurrence probabilities:
 
 ```{r sdm-predictions}
 nd <- replicate_df(qcs_grid, time_name = "year", time_values = unique(d$year))
@@ -330,7 +330,7 @@ ggplot(pred) +
   coord_fixed()
 ```
 
-We can get similar predictions with \pkg{inlabru} using only a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation (Fig.\ \ref{fig:inlabru-pred}).
+We can get similar predictions with \pkg{inlabru} using a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation (Fig.\ \ref{fig:inlabru-pred}).
 
 ```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the inlabru model.", fig.align='center'}
 nd_bru <- nd
@@ -349,12 +349,12 @@ ggplot(as.data.frame(pred_bru)) +
 Equivalent predictions are more complicated to extract from \pkg{INLA}, but are easy to plot for the original sample locations.
 
 ```{r inla-pred, out.width="5.5in"}
-# idx <- inla.stack.index(sdat, "stdata")$data
-# d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
-# 
-# ggplot(d) +
-#   geom_point(aes(X, Y, colour = inla_pred), size = 2) +
-#   facet_wrap(~year) +
-#   scale_colour_viridis_c() +
-#   coord_fixed()
+idx <- inla.stack.index(sdat, "stdata")$data
+d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
+
+ggplot(d) +
+  geom_point(aes(X, Y, colour = inla_pred), size = 2) +
+  facet_wrap(~year) +
+  scale_colour_viridis_c() +
+  coord_fixed()
 ```

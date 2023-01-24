@@ -24,14 +24,14 @@ theme_set(theme_bw() + theme(
 
 ## Background
 
-This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using sdmTMB. 
+This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using \pkg{sdmTMB}. 
 We will use counts of Snowy Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc]. 
-Each survey is conducted between December 14 to January 5 in 24.14 kilometre diameter circle. 
+Each survey is conducted between December 14 to January 5 in a 24.14 kilometer (15 mile) diameter circle. 
 Circle locations are chosen by local volunteers and therefore reflect both locations of higher human densities and known bird watching locations.
 Each circle (given a unique ID) is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
 While these locations are not random, the consistent sampling through time still make them useful for exploring spatiotemporal processes. 
 
-Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
+Snowy Owls breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
 The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. 
 On average a positive NAO index results in colder and drier conditions in northern Canada and mild and wetter conditions in the eastern United States [@liu2021]. 
@@ -107,7 +107,7 @@ If years in sequence were strongly correlated with each other, we could use a ra
 <!-- But since its inclusion does not change our main result and it slows model fitting, we will rely on the spatial random effects to link observations in the same location for this example. -->
 <!-- Since these models will take a while to fit we will set `silent = FALSE` to monitor optimization progress.  -->
 
-We initially fit this model with NB1 and NB2 negative binomial observation error and Poisson error. According to AIC (`AIC()`), the `nbinom2()` (NB2) distribution has the most parsimonious fit. We will therefore proceed with that model.
+We initially fit this model with NB1 and NB2 [@hilbe2011] negative binomial observation error and Poisson error. According to AIC (`AIC()`), the `nbinom2()` family has the most parsimonious fit. We will therefore proceed with that model.
 
 ```{r fit-negb2, echo=TRUE, warning=FALSE, cache=TRUE, results='hide'}
 fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
@@ -150,13 +150,14 @@ sanity(fit_owl)
 #> ✓ Range parameter doesn't look unreasonably large
 ```
 
-We note that some log-likelihood gradients are slightly large for some fixed effects.
+We note that the magnitude of some log-likelihood gradients is slightly large for some fixed effects.
 
 ```{r}
 fit_owl$gradients
 ```
 
-We can run additional optimization steps with a Newton optimizer using the `run_extra_optimization()` function to further reduce these gradients.
+We can run additional optimization steps with a Newton optimizer using the\
+`run_extra_optimization()` function to further reduce these gradients.
 
 ```{r owl-newton, results='hide', cache=TRUE}
 fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
@@ -186,7 +187,7 @@ Print the model to inspect the fit:
 print(fit_owl2)
 ```
 
-View the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`:
+We can view the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`:
 
 ```{r tidy-owls}
 tidy(fit_owl2, conf.int = TRUE)
@@ -195,17 +196,21 @@ tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
 
 `sigma_O` is the spatial random field SD, `sigma_E` is the spatiotemporal random field SD, `sigma_Z` is the spatially varying coefficient random field SD, and `sigma_G` is the random intercept SD.
 
-We can then generate predictions and residuals for the original data locations:
+We can then generate predictions at the original data locations:
 
 ```{r predict-owls, message=FALSE, cache=TRUE}
 pred <- predict(fit_owl2)
-set.seed(19208)
-pred$resid <- residuals(fit_owl2)
+
 ```
 
 ## Checking residuals
 
 We can inspect randomized quantile residuals (Fig.\ \ref{fig:qqnorm-owls}), although this method has known issues when based on random effects derived with the Laplace approximation [@thygesen2017a]. 
+
+```{r owls-resids}
+set.seed(19208)
+pred$resid <- residuals(fit_owl2)
+```
 
 ```{r qqnorm-owls, out.width="60%", fig.cap="Randomized quantile residuals.", fig.pos='ht', fig.align='center', dpi=90, dev='png'}
 qqnorm(pred$resid)
@@ -213,10 +218,10 @@ qqline(pred$resid)
 ```
 
 More accurate residuals can be generated using MCMC and \pkg{tmbstan}, but this a slower process.
-These are randomized quantile residuals where the fixed effects are fixed at their MLE (maximum likelihoood estimate) values and the random effects are sampled with MCMC via \pkg{tmbstan}/\pkg{Stan}.
+The MCMC-based residuals are randomized quantile residuals where the fixed effects are fixed at their MLE (maximum likelihoood estimate) values and the random effects are sampled with MCMC via \pkg{tmbstan}/\pkg{Stan}.
 To calculate these, we have to use a version of our model fit without REML, which we can quickly obtain with the `update()` method.
 We would ideally sample with more MCMC samples than this and assess convergence by setting `print_stan_model = TRUE`.
-For the purposes of this building this appendix quickly, we will not run this code.
+For the purposes of building this appendix quickly, we will not run this code.
 
 ```{r stan-resids-owls, eval=FALSE}
 fit_ml <- update(fit_owl, reml = FALSE)
@@ -289,7 +294,7 @@ We can then compress the annual predictions into mean values for plotting the sp
 Most simply, we can extract the overall coefficient using the `b <- tidy(fit_owl2)` and add it to the spatially varying coefficients `zeta_s`.
 However, this method does not give us spatially explicit estimates of uncertainty.
 To do this, we can get the output from the joint precision matrix simulation draws by using the `predict()` function again, but this time indicating a number of simulation draws (e.g., `nsim = 200`) and what component we want estimated (`sims_var = "zeta_s"`). 
-We also extract the same number of draws for estimates of the main effect of NAO using the `spread_sims()` function (this time `nsim = 200`). 
+We also extract the same number of draws for estimates of the main effect of NAO using the `spread_sims()` function. 
 The simulation draws for both can then be combined before calculating the median and lower and upper quantiles from these draws (in this case we will use 80%) and adding these values to our prediction data frame.
 
 ```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
@@ -391,7 +396,7 @@ p2 <- ggplot(data = p_proj) +
 p1 + p2 + patchwork::plot_layout()
 ```
 
-If we recalculated these at 95% confidence intervals levels the range of minimum estimates would be from `r round(min(nao_effect_lwr95), 2)` to `r round(max(nao_effect_lwr95),2)` meaning that for the most conventional level of statistical confidence, we cannot conclude that the effect of NAO at an annual scale differs from 0. 
+If we recalculated these at 95% confidence intervals levels the range of minimum estimates would be from `r round(min(nao_effect_lwr95), 2)` to `r round(max(nao_effect_lwr95),2)` meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 0.
 However, the southeast to northwest gradient in the intensity illustrated in the maps above is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
 This result suggests that exploring the effects of NAO at finer temporal scales (possibly seasonally) and/or with lagged effects could prove fruitful. 
 

@@ -15,7 +15,7 @@ library("sdmTMB")
 theme_set(theme_minimal())
 ```
 
-We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purposes of index standardization. We will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound. The density units are kg/km^2^. Here, X and Y are UTM zone 9 coordinates in kilometres. If our spatial coordinates were not already in an equidistant projection, we would transform them [e.g., using `sf::st_transform()`, @pebesma2018] to ensure that distance remains constant throughout the study region or using the built-in `sdmTMB::add_utm_columns()` function.
+We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purposes of area-weighted biomass index standardization. We will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound. The density units are kg/km^2^. Here, X and Y are UTM zone 9 coordinates in kilometers. If our spatial coordinates were not already in an equidistant projection, we would transform them [e.g., using `sf::st_transform()`, @pebesma2018] to ensure that distance remains constant throughout the study region or using the built-in `sdmTMB::add_utm_columns()` function.
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with \pkg{INLA} (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
@@ -110,7 +110,6 @@ There are four kinds of predictions that we get out of the model. First we will 
 
 ```{r plot-all-effects, fig.cap="Model predictions based on all fixed effects and random effects.", fig.pos='ht', fig.align='center'}
 plot_map(pred_qcs, "exp(est)") +
-  # ggtitle("Prediction (fixed effects + all random effects)") +
   scale_fill_viridis_c(trans = "log10") 
 ```
 
@@ -118,15 +117,13 @@ We can also look at just the fixed effects, here `year` (Fig.\ \ref{fig:plot-fix
 
 ```{r plot-fix-defects, fig.cap="Predictions based on only the non-random field elements.", fig.pos='ht', fig.align='center'}
 plot_map(pred_qcs, "exp(est_non_rf)") +
-  # ggtitle("Prediction (fixed effects only)") +
   scale_fill_viridis_c(trans = "sqrt")
 ```
 
-We can look at the spatial random effects that represent consistent deviations in space through time that are not accounted for by our fixed effects (Fig.\ \ref{fig:plot-spatial-effects}). In other words, these deviations represent consistent biotic and abiotic factors that are affecting biomass density but are not accounted for in the model.
+We can look at the spatial random effects that represent consistent deviations in space through time that are not accounted for by our fixed effects (Fig.\ \ref{fig:plot-spatial-effects}). In other words, these deviations represent consistent biotic and abiotic factors that are affecting spatial correlation in biomass density but are not accounted for in the model.
 
 ```{r plot-spatial-effects, fig.cap="Spatial random effects only.", fig.pos='ht', fig.align='center'}
 plot_map(pred_qcs, "omega_s") +
-  # ggtitle("Spatial random effects only") +
   scale_fill_gradient2()
 ```
 
@@ -134,7 +131,6 @@ Finally, we can look at the spatiotemporal random effects that represent deviati
 
 ```{r plot-spatiotemporal-effects, fig.cap="Spatiotemporal random effects only.", fig.pos='ht', fig.align='center'}
 plot_map(pred_qcs, "epsilon_st") +
-  # ggtitle("Spatiotemporal random effects only") +
   scale_fill_gradient2()
 ```
 
@@ -173,4 +169,4 @@ ggplot(ind, aes(year, est / 1000)) +
   ylab("Biomass (t)")
 ```
 
-The above example uses `bias_correct = TRUE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more details can be found in @thorson2016bias. Leaving `bias_correct = FALSE` is fine for experimentation, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this, but takes more time and memory than skipping the bias correction.
+The above example uses `bias_correct = TRUE` in `get_index()`. The `bias_correct` argument is a feature of TMB for models with random effects, and more details can be found in @thorson2016bias. Leaving `bias_correct = FALSE` is fine for experimentation, but will be biased due to the nonlinear (`exp()`) transformation of the random effects. Setting `bias_correct = TRUE` implements a generic bias correction algorithm that should correct for this [@thorson2016bias], but takes more time and memory than skipping the bias correction.
