@@ -1,3 +1,5 @@
+setwd("doc/paper-jss/")
+
 knitr::purl("paper-jss.Rmd", documentation = 1L)
 
 # fix this:
