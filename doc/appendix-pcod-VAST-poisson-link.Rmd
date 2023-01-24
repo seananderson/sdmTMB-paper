@@ -49,7 +49,7 @@ Unlike in sdmTMB, the fitting and predicting steps are all accomplished with the
 
 ```{r settings, echo = TRUE}
 # get coordinates in geographic coordinates from UTM projection, after changing units to m
-qcs_grid_ll <- qcs_grid
+qcs_grid_ll <- replicate(qcs_grid, "year", unique(pcod$year))
 qcs_grid_ll$Y <- qcs_grid_ll$Y * 1000
 qcs_grid_ll$X <- qcs_grid_ll$X * 1000
 
@@ -221,9 +221,10 @@ if (file.exists(here("doc", "appendix-VAST-pg", "Index.png"))) {
 We can compare the index we would get using sdmTMB. 
 
 ```{r sdmTMB-index, cache=TRUE, echo=TRUE}
+survey_grid <- replicate_df(qcs_grid, "year", unique(pcod$year))
 tictoc::tic()
-p <- predict(fit_sdmTMB, newdata = qcs_grid, return_tmb_object = TRUE)
-ind <- get_index(p, bias_correct = FALSE, area = rep(4, nrow(qcs_grid)))
+p <- predict(fit_sdmTMB, newdata = survey_grid, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = FALSE, area = 4)
 tictoc::toc()
 ```
 

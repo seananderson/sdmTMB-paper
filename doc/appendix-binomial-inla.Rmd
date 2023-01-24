@@ -331,7 +331,7 @@ We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the sdmTM
 For sdmTMB, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`, equivalent to inverse logit here), to produce occurrence probabilities:
 
 ```{r sdm-predictions}
-nd <- filter(qcs_grid, year >= 2007)
+nd <- replicate_df(qcs_grid, "year", unique(d$year))
 pred <- predict(m, newdata = nd)
 ```
 

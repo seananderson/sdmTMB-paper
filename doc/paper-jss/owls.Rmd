@@ -109,12 +109,7 @@ If years in sequence were strongly correlated with each other, we could use a ra
 
 We initially fit this model with NB1 and NB2 negative binomial observation error and Poisson error. According to AIC (`AIC()`), the `nbinom2()` (NB2) distribution has the most parsimonious fit. We will therefore proceed with that model.
 
-```{r rds1, echo=FALSE, cache=FALSE}
-rds_saved <- file.exists(here::here("data/snow_w_main_effect_0_150km.rds"))
-rds_saved2 <- file.exists(here::here("data/snow_w_main_effect_0_150km2.rds"))
-```
-
-```{r fit-negb2, echo=TRUE, eval=!rds_saved, warning=FALSE}
+```{r fit-negb2, echo=TRUE, warning=FALSE}
 fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial_varying = ~ nao,
   time = "year",
@@ -126,14 +121,6 @@ fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   reml = TRUE,
   silent = FALSE
 )
-```
-
-```{r cache-negb2, echo=FALSE, eval=!rds_saved}
-saveRDS(fit_owl, here::here("data/snow_w_main_effect_0_150km.rds"))
-```
-
-```{r read-negb2, echo=FALSE, eval=rds_saved}
-fit_owl <- readRDS(here::here("data/snow_w_main_effect_0_150km.rds"))
 ```
 
 ## Model validation
@@ -171,16 +158,8 @@ fit_owl$gradients
 
 We can run additional optimization steps with a Newton optimizer using the `run_extra_optimization()` function to further reduce these gradients.
 
-```{r owl-newton, results='hide', eval=!rds_saved2}
+```{r owl-newton, results='hide'}
 fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
-```
-
-```{r cache-negb2-2, echo=FALSE, eval=!rds_saved2}
-saveRDS(fit_owl2, here::here("data/snow_w_main_effect_0_150km2.rds"))
-```
-
-```{r read-negb2-2, echo=FALSE, eval=rds_saved2}
-fit_owl2 <- readRDS(here::here("data/snow_w_main_effect_0_150km2.rds"))
 ```
 
 We can confirm that the gradients are smaller.

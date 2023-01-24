@@ -367,12 +367,6 @@ Simulation-based residuals [@dharma] (`dharma_residuals()`) are also possible.
 
 <!-- We could generate a standardized index from that fit on a 2x2 km grid by supplying the `area` per grid cell and telling `predict.sdmTMB()` to return a necessary TMB object (Fig. \@ref(fig:pcod-fig)E). `get_index()` sums the biomass across grid cells to derive an area-weighted index of biomass independent of sampling locations. -->
 
-```{r, eval=FALSE, echo=FALSE}
-p <- predict(fit_spatiotemporal, newdata = qcs_grid, area = 4, return_tmb_object = TRUE)
-ind <- get_index(p)
-```
-
-
 # Package comparisons
 
 There are many R packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].

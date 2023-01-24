@@ -83,10 +83,16 @@ qqnorm(r)
 qqline(r)
 ```
 
-Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the \pkg{sdmTMB} package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`.
+Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the \pkg{sdmTMB} package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`. We will replicate the internal spatial grid over all years (calling it `survey_grid`) and predict on it.
 
 ```{r predict-newdata}
-pred_qcs <- predict(fit, newdata = qcs_grid)
+survey_grid <- replicate_df(
+  qcs_grid, 
+  time_name = "year", 
+  time_values = unique(pcod$year)
+)
+
+pred_qcs <- predict(fit, newdata = survey_grid)
 ```
 
 Next we will make a small function to help plot maps.
@@ -135,15 +141,15 @@ plot_map(pred_qcs, "epsilon_st") +
 The fastest way to assess uncertainty on our spatial predictions is with simulation from the joint precision matrix.
 
 ```{r pcod-sims, cache=TRUE}
-pred_sims <- predict(fit, newdata = qcs_grid, nsim = 200)
+pred_sims <- predict(fit, newdata = survey_grid, nsim = 200)
 dim(pred_sims)
 ```
 
 This returns a matrix with a row for each row of the `newdata` data frame and a column for each replicate draw. We can use this matrix to calculate the standard deviation or coefficient of variation (Fig.\ \ref{fig:sims-cv-plot}).
 
 ```{r sims-cv-plot, cache=TRUE, fig.cap="Spatiotemporal coefficient of variation.", fig.pos='ht', fig.align='center'}
-qcs_grid$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
-ggplot(qcs_grid, aes(X, Y, fill = cv)) +
+survey_grid$cv <- apply(pred_sims, 1, function(x) sd(exp(x)) / mean(exp(x)))
+ggplot(survey_grid, aes(X, Y, fill = cv)) +
   geom_raster() +
   facet_wrap(~year) +
   coord_fixed() +
@@ -153,13 +159,13 @@ ggplot(qcs_grid, aes(X, Y, fill = cv)) +
 We can calculate a standardized population index by predicting on our survey domain grid and setting `return_tmb_object = TRUE` (Fig.\ \ref{fig:pcod-app-index}). This returns the \pkg{TMB} objective function, which is required to pass the output to `get_index()`.
 
 ```{r pcod-app-index, fig.asp=0.45, out.width="5in", cache=TRUE, fig.cap="Geostatistical population index.", fig.pos='ht', fig.align='center'}
-qcs_grid$area <- 4 # all 2 x 2km
+survey_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
   fit,
-  newdata = qcs_grid, 
+  newdata = survey_grid, 
   return_tmb_object = TRUE
 )
-ind <- get_index(pred2, area = qcs_grid$area, bias_correct = TRUE)
+ind <- get_index(pred2, area = survey_grid$area, bias_correct = TRUE)
 
 ggplot(ind, aes(year, est / 1000)) +
   geom_line() +

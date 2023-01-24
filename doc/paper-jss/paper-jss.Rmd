@@ -541,7 +541,7 @@ Users looking for calculation, with uncertainty, of derived variables such as ar
 <!-- Speed-wise, the TMB-based packages \pkg{sdmTMB} and \pkg{VAST} were fastest up to at least 1000 mesh nodes, which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2022]. -->
 
 
-Speed-wise, \pkg{sdmTMB} (and due to the same \pkg{TMB} backend, \pkg{VAST}) were fastest up to at least 1000 mesh nodes at approximately 4--16 times faster than \proglang{R}-\pkg{INLA}/\pkg{inlabru} across the range of mesh complexities considered here.
+With respect to computational speed, \pkg{sdmTMB} (and due to having the same \pkg{TMB} backend, \pkg{VAST}) were fastest up to at least 1000 mesh nodes at approximately 4--16 times faster than \proglang{R}-\pkg{INLA}/\pkg{inlabru} across the range of mesh complexities considered here.
 These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 However, for users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \proglang{R}-\pkg{INLA}/\pkg{inlabru} is likely to be considerably faster than passing the same model from \pkg{sdmTMB}/\pkg{VAST} to \pkg{tmbstan} for full Bayesian inference.
 <!-- Furthermore, although both \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{sdmTMB} can use parallel processing, the PARDISO library [@pardiso-7.2c] within \proglang{R}-\pkg{INLA}/\pkg{inlabru} allows memory to be shared across cores. -->
@@ -573,18 +573,8 @@ Despite these \pkg{sdmTMB} advantages for the models discussed here, \pkg{mgcv} 
 <!-- 3d models, continuous time, -->
 
 Additional functionality in \pkg{sdmTMB} not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model of @bakka2019, time-varying spatiotemporal covariance parameters, and simulation from the parameter joint precision matrix.
-Future development may include additional zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous time models [e.g., @blangiardo2015book], multivariate responses, and non-Gaussian random fields [e.g., @anderson2019].
-The included \pkg{TMB} `.cpp` file also provides a high-quality and tested model template that can be modified to add additional features.
-<!-- Not sure what kind of refs you want here?  \proglang{R}-\pkg{INLA}'s non-gaussian random fields are mentioned here @bakka2018review-->
-<!-- \pkg{sdmTMB} does not currently include  -->
-<!-- We may introduce explicit delta models, but many such models can already be fit with \pkg{sdmTMB} by modelling the two components separately. -->
-<!-- We may introduce capability for multivariate response data, but \pkg{VAST} already focuses on such models with a \pkg{TMB} backend. -->
-<!-- Furthermore, we would only add this functionality if we could maintain a straightforward interface for univariate data. -->
-<!-- Line 275: I would suggest adding a MAJOR benefit of \pkg{sdmTMB} for advanced users: a tool for quickly building high-quality, bug-free, and tested model templates! This is by far my favourite feature of the brms package, as it allows me to build a pretty complex ‘base-model’ in c++/stan code before adding my own custom functionality on top of it. It saves me a bunch of time. If you don’t currently have a ‘return_TMB_code=TRUE’ option, then I would highly recommend it. -->
-
-<!-- Spatially and spatiotemporally explicit data are increasingly collected and have the power to reveal new ecological processes [e.g., @dinnage2020; @english2022] and improve ecological management [@sofaer2019]. -->
-<!-- These data present statistical challenges to modelling them effectively and efficiently since appropriate models such as GLMMs with random fields are often computationally intensive and challenging to implement, interpret, and evaluate. -->
-<!-- We hope the development of user-friendly interfaces such as \pkg{sdmTMB} opens this useful class of models to a wider audience of users. -->
+Future development may include additional zero-inflated models, improvements to Bayesian sampling efficiency [e.g., @monnahan2021], continuous-time models [e.g., @blangiardo2015book], multivariate responses, and non-Gaussian random fields [e.g., @anderson2019].
+The included \pkg{TMB} `.cpp` file provides a high-quality and tested model template that can be modified to add additional features.
 
 # Acknowledgements
 
@@ -592,7 +582,7 @@ The included \pkg{TMB} `.cpp` file also provides a high-quality and tested model
 \pkg{sdmTMB} is heavily inspired by and in some places code has been adapted from both the \pkg{VAST} [@thorson2019] and \pkg{glmmTMB} [@brooks2017] \proglang{R} packages.
 Smoother support was possible thanks to \pkg{mgcv} [@wood2017a].
 We thank the authors of all these packages.
-We thank S. Kotwicki, M. Lindmark, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
+We thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.
 
 \clearpage
 

@@ -63,7 +63,7 @@ fit <- sdmTMB(
   spatial = "on", silent = FALSE
 )
 print(fit)
-p <- predict(fit, newdata = subset(qcs_grid, year == 2003))
+p <- predict(fit, newdata = qcs_grid)
 
 nd <- data.frame(
   depth =
@@ -77,8 +77,9 @@ fit_spatiotemporal <- sdmTMB(
   family = tweedie(link = "log"), data = pcod, mesh = mesh,
   time = "year", spatial = "on", spatiotemporal = "iid", silent = FALSE
 )
+survey_grid <- replicate_df(qcs_grid, "year", unique(pcod$year))
 p_tv <- predict(fit_spatiotemporal,
-  newdata = qcs_grid, return_tmb_object = TRUE
+  newdata = survey_grid, return_tmb_object = TRUE
 )
 ind <- get_index(p_tv, area = 4, bias_correct = TRUE)
 cog <- get_cog(p_tv, format = "wide", area = 4)

@@ -75,7 +75,7 @@ cowplot::plot_grid(plotlist = g, ncol = 2)
 ## Illustration of simulating data
 
 ```{r sim-timing, echo=TRUE}
-set.seed(1)
+set.seed(123)
 n_obs <- 1000
 predictor_dat <- data.frame(
   X = runif(n_obs), Y = runif(n_obs),
@@ -163,7 +163,7 @@ fit_bru <- bru(
 
 ## Example mgcv model fit
 
-```{r mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE, cache=TRUE}
+```{r mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE}
 # -------------------------------------------------------------------------
 # Code in this chunk is from:
 #
@@ -231,7 +231,7 @@ Predict.matrix.spde.smooth <- function(object, data) {
 # -------------------------------------------------------------------------
 ```
 
-```{r mgcvfit-timing, echo=TRUE, eval=FALSE}
+```{r mgcvfit-timing, echo=TRUE, eval=TRUE}
 # define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth()
 # from supplement of:
 # Miller, D.L., Glennie, R. & Seaton, A.E. (2019). Understanding the Stochastic
