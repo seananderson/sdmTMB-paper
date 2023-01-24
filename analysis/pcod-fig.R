@@ -215,3 +215,5 @@ g <- wrap_plots(g_mesh, g_omega, g_pred, g3) + plot_layout(design = layout) +
 
 print(g)
 ggsave("figs/pcod-fig.pdf", width = 9, height = 7)
+
+sessionInfo()
