@@ -294,15 +294,17 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 to_run <- expand.grid(
   n_obs = c(1000L),
   max.edge = c(0.06, 0.1, 0.2),
-  iter = seq_len(1L)
+  iter = seq_len(3L)
 )
 
-# full run:
-# to_run <- expand.grid(
-#   n_obs = c(1000L),
-#   max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
-#   iter = seq_len(50L)
-# )
+# full (slow) run to match paper:
+if (FALSE) {
+  to_run <- expand.grid(
+    n_obs = c(1000L),
+    max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
+    iter = seq_len(50L)
+  )
+}
 
 to_run$seed <- to_run$iter * 29212
 nrow(to_run)
@@ -315,8 +317,8 @@ system.time({
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
-out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-2023-01-24.rds")
+out <- readRDS("analysis/timing-cache-parallel-2023-01-24.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
@@ -357,15 +359,46 @@ leg <- tribble(
   "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
 )
 
+# log-space version:
+
+# g <- out_long_sum %>%
+#   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
+#   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
+#     alpha = 0.2,
+#     colour = NA
+#   ) +
+#   geom_line(lwd = 0.7) +
+#   # scale_y_log10() +
+#   scale_x_log10(breaks = c(250, 500, 1000)) +
+#   ggsidekick::theme_sleek() +
+#   theme(panel.grid.major = element_line(colour = "grey90")) +
+#   theme(legend.position = c(0.4, 0.85)) +
+#   geom_text(aes(label = model_clean), data = leg, hjust = 0) +
+#   scale_fill_manual(values = colour_vect) +
+#   scale_colour_manual(values = colour_vect) +
+#   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
+#   coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
+#   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
+# print(g)
+#
+# .width <- 5
+# ggsave("figs/timing-spatial-2023-01-24.pdf", width = .width, height = .width / 1.3)
+
+leg <- tribble(
+  ~model_clean, ~mean_mesh_n, ~time,
+  "sdmTMB", 290, 0.40,
+  "inlabru EB", 155, 3.8,
+  "spaMM", 442, 1.95,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 155, 5
+)
+
 g <- out_long_sum %>%
-  filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
     alpha = 0.2,
     colour = NA
   ) +
   geom_line(lwd = 0.7) +
-  scale_y_log10() +
   scale_x_log10(breaks = c(250, 500, 1000)) +
   ggsidekick::theme_sleek() +
   theme(panel.grid.major = element_line(colour = "grey90")) +
@@ -374,12 +407,12 @@ g <- out_long_sum %>%
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 5.9)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
-g
+print(g)
 
 .width <- 5
-ggsave("figs/timing-spatial.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial-2023-01-24-xkcd.pdf", width = .width, height = .width / 1.3)
 
 cat("inlabru to sdmTMB timing ratios\n")
 x <- filter(
