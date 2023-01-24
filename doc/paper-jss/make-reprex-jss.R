@@ -31,4 +31,27 @@ snow <- readRDS(here::here("data/SNOW_data.rds"))
 
 # look for all here::here
 
-# add timing onto bottom
+
+
+knitr::spin("pcod-fig.R")
+knitr::spin("timing.R")
+
+
+
+
+# add timing script onto bottom
+
+# go change:
+saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
+out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
+
+# at bottom of added timing
+
+# add sessionInfo()  at end!
+
+# remove all child chunks
+# remove knitr::opts lines except first?
+# remove   optipng = "-strip all"
+# remove knitr::knit_hooks$set(optipng = knitr::hook_optipng)
+
+# add pcod-fig.R stuff to bottom
