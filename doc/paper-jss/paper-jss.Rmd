@@ -163,12 +163,18 @@ Note that \texttt{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \t
 
 # Introductory example using fish survey data
 
+\pkg{sdmTMB} can be installed from the Comprehensive \proglang{R} Archive Network (CRAN) at <https://CRAN.R-project.org/package=sdmTMB>:
+
+```{r sdmTMB-install, eval=FALSE, echo=TRUE}
+install.packages("sdmTMB", dependencies = TRUE)
+```
+
 Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial longitude and latitude `lon` and `lat`.
 
 ```{r sdmTMB-lib0, eval=TRUE, echo=FALSE}
-library(sdmTMB)
+library("sdmTMB")
 # simplify for paper:
 pcod_original <- pcod # save it for later
 pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |>
@@ -176,7 +182,7 @@ pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |>
 ```
 
 ```{r sdmTMB-lib, eval=TRUE, echo=TRUE}
-library(sdmTMB)
+library("sdmTMB")
 head(pcod, n = 3)
 ```
 
@@ -591,14 +597,14 @@ We thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J.T. 
 ```{r child="model-description.Rmd", eval=FALSE}
 ```
 
-```{r child="pcod.Rmd", eval=TRUE}
+```{r child="pcod.Rmd", eval=TRUE, cache=TRUE}
 ```
 
-```{r child="owls.Rmd", eval=TRUE}
+```{r child="owls.Rmd", eval=TRUE, cache=TRUE}
 ```
 
-```{r child="inla-comparison.Rmd", eval=TRUE}
+```{r child="inla-comparison.Rmd", eval=TRUE, cache=TRUE}
 ```
 
-```{r child="timing.Rmd", eval=TRUE}
+```{r child="timing.Rmd", eval=TRUE, cache=TRUE}
 ```

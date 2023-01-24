@@ -109,7 +109,7 @@ If years in sequence were strongly correlated with each other, we could use a ra
 
 We initially fit this model with NB1 and NB2 negative binomial observation error and Poisson error. According to AIC (`AIC()`), the `nbinom2()` (NB2) distribution has the most parsimonious fit. We will therefore proceed with that model.
 
-```{r fit-negb2, echo=TRUE, warning=FALSE}
+```{r fit-negb2, echo=TRUE, warning=FALSE, cache=TRUE, results='hide'}
 fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial_varying = ~ nao,
   time = "year",
@@ -158,7 +158,7 @@ fit_owl$gradients
 
 We can run additional optimization steps with a Newton optimizer using the `run_extra_optimization()` function to further reduce these gradients.
 
-```{r owl-newton, results='hide'}
+```{r owl-newton, results='hide', cache=TRUE}
 fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
 ```
 
@@ -197,7 +197,7 @@ tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
 
 We can then generate predictions and residuals for the original data locations:
 
-```{r predict-owls, message=FALSE}
+```{r predict-owls, message=FALSE, cache=TRUE}
 pred <- predict(fit_owl2)
 set.seed(19208)
 pred$resid <- residuals(fit_owl2)
