@@ -1,4 +1,4 @@
-RUN_SPIN <- FALSE
+RUN_SPIN <- TRUE
 
 setwd(here::here())
 setwd("doc/paper-jss/")
@@ -80,28 +80,21 @@ d <- c(d[seq(1, i-1)], "\n# Pacific Cod appendix -------------------------------
 i <- grep("## ----inla-knitr-setup", d)
 d <- c(d[seq(1, i-1)], "\n# INLA comparison appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
-writeLines(d, "reprex/paper-code.R")
+writeLines(d, "reprex/replication-code-main.R")
 
 system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-jss/reprex/snow-data.rds")
 
 system("rm reprex/paper-jss.R")
 
 setwd("reprex")
-if (RUN_SPIN) system("R -e 'knitr::spin(\"paper-code.R\")'")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-main.R\")'")
 
 d <- readLines(here::here("analysis/timing.R"))
-writeLines(d, "timing.R")
-if (RUN_SPIN) system("R -e 'knitr::spin(\"timing.R\")'")
+writeLines(d, "replication-code-timing.R")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
 
 d <- readLines(here::here("analysis/pcod-fig.R"))
-writeLines(d, "pcod-fig.R")
-if (RUN_SPIN) system("R -e 'knitr::spin(\"pcod-fig.R\")'")
+writeLines(d, "replication-code-pcod.R")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-pcod.R\")'")
 
 setwd(here::here())
-
-# # go change:
-# saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
-# out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
-#
-#
-# # add pcod-fig.R stuff to bottom
