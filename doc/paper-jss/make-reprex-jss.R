@@ -1,3 +1,5 @@
+RUN_SPIN <- FALSE
+
 setwd(here::here())
 setwd("doc/paper-jss/")
 
@@ -85,15 +87,15 @@ system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-js
 system("rm reprex/paper-jss.R")
 
 setwd("reprex")
-system("R -e 'knitr::spin(\"paper-code.R\")'")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"paper-code.R\")'")
 
 d <- readLines(here::here("analysis/timing.R"))
 writeLines(d, "timing.R")
-system("R -e 'knitr::spin(\"timing.R\")'")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"timing.R\")'")
 
 d <- readLines(here::here("analysis/pcod-fig.R"))
 writeLines(d, "pcod-fig.R")
-system("R -e 'knitr::spin(\"pcod-fig.R\")'")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"pcod-fig.R\")'")
 
 setwd(here::here())
 

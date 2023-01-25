@@ -447,7 +447,7 @@ if (!file.exists("ne_10m_lakes")) {
 ## ----shapes-read, echo=TRUE-------------------------------------------------------------------------------
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
-lakes <- sf::st_read("ne_10m_lakes.rds", quiet = TRUE)
+lakes <- sf::st_read("ne_10m_lakes", quiet = TRUE)
 lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
 
 
