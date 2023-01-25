@@ -436,11 +436,11 @@ p_proj <- p %>% mutate(x = X, y = Y) %>%
 
 
 ## ----shapes, echo=FALSE-----------------------------------------------------------------------------------
-if (!file.exists("ne_10m_lakes.rds")) {
+if (!file.exists("ne_10m_lakes")) {
   zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
     "download/10m/physical/ne_10m_lakes.zip")
   download.file(zip_file, destfile = "ne_10m_lakes.zip")
-  unzip("ne_10m_lakes.zip", exdir = "ne_10m_lakes.rds")
+  unzip("ne_10m_lakes.zip", exdir = "ne_10m_lakes")
 }
 
 

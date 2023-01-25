@@ -55,14 +55,14 @@ d[grep("data/ne_10m_lakes", d)]
 d <- gsub("data/ne_10m_lakes", "ne_10m_lakes", d)
 
 d[grep("lakes <- sf::st_read", d)]
-d <- do_replace("lakes <- sf::st_read", "lakes <- sf::st_read(\"ne_10m_lakes.rds\", quiet = TRUE)")
+d <- do_replace("lakes <- sf::st_read", "lakes <- sf::st_read(\"ne_10m_lakes\", quiet = TRUE)")
 
-d[grep("file.exists\\(here::here\\(\"ne_10m_lakes\\.rds\"", d)]
-d <- do_replace("file.exists\\(here::here\\(\"ne_10m_lakes\\.rds\"", "if (!file.exists(\"ne_10m_lakes.rds\")) {")
+d[grep("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", d)]
+d <- do_replace("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", "if (!file.exists(\"ne_10m_lakes\")) {")
 
 d[grep("here::here\\(\"ne_10m_lakes.zip\"\\)", d)]
 d <- gsub("here::here\\(\"ne_10m_lakes.zip\"\\)", "\"ne_10m_lakes.zip\"", d)
-d <- gsub("here::here\\(\"ne_10m_lakes.rds\"\\)", "\"ne_10m_lakes.rds\"", d)
+d <- gsub("here::here\\(\"ne_10m_lakes\"\\)", "\"ne_10m_lakes\"", d)
 
 d <- c(d, "sessionInfo()")
 
@@ -85,13 +85,15 @@ system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-js
 system("rm reprex/paper-jss.R")
 
 setwd("reprex")
-knitr::spin("paper-code.R")
+system("R -e 'knitr::spin(\"paper-code.R\")'")
 
 d <- readLines(here::here("analysis/timing.R"))
 writeLines(d, "timing.R")
+system("R -e 'knitr::spin(\"timing.R\")'")
 
 d <- readLines(here::here("analysis/pcod-fig.R"))
 writeLines(d, "pcod-fig.R")
+system("R -e 'knitr::spin(\"pcod-fig.R\")'")
 
 setwd(here::here())
 
