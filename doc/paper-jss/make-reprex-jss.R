@@ -1,59 +1,103 @@
+setwd(here::here())
 setwd("doc/paper-jss/")
 
 knitr::purl("paper-jss.Rmd", documentation = 1L)
 
-# fix this:
+system("mv paper-jss.R reprex/paper-jss.R")
+
+d <- readLines("reprex/paper-jss.R")
+d[grepl("## ----child=", d)]
+d <- d[!grepl("## ----child=", d)]
 
 
-if (!file.exists(here::here("data/ne_10m_lakes"))) {
-  zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
-    "download/10m/physical/ne_10m_lakes.zip")
-  download.file(zip_file, destfile = here::here("data/ne_10m_lakes.zip"))
-  unzip(here::here("data/ne_10m_lakes.zip"), exdir = here::here("data/ne_10m_lakes"))
+do_replace <- function(find, replacement) {
+  cat("found:\n")
+  i <- grep(find, d)
+  print(d[i])
+  d[grepl(find, d)] <- replacement
+  cat("after replacement:\n")
+  print(d[i])
+  d
 }
 
+d[grep("dpi = 140", d)]
+d <- do_replace("dpi = 140", "  dpi = 140")
 
-## ----shapes-read, echo=TRUE-------------------------------------------------------------------------------------------------
-coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
-  sf::st_transform(crs = Albers)
-lakes <- sf::st_read(here::here("data/ne_10m_lakes"), quiet = TRUE)
-lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
+d[grep(" cache = TRUE,", d)]
+d <- do_replace(" cache = TRUE,", " # cache = TRUE,")
+d <- do_replace(" autodep = TRUE,", " # autodep = TRUE,")
 
+d[grep("-strip all", d)]
+d <- do_replace("-strip all", "  # optipng = \"-strip all\"")
 
+d[grep("optipng = knitr", d)]
+d <- do_replace("optipng = knitr", "# knitr::knit_hooks$set(optipng = knitr::hook_optipng)")
 
-# trash this:
+i <- grep("## ----compare-table", d)
+j <- grep("## ----setup-pcod", d)
+d <- d[-seq(i, j-2)]
 
-## ----compare-table, results='asis', eval=FALS
-# ....
-
-# put this in root folder:
-
-snow <- readRDS(here::here("data/SNOW_data.rds"))
-
-
-# look for all here::here
-
-
-
-knitr::spin("pcod-fig.R")
-knitr::spin("timing.R")
+i <- grep("owl-knitr-setup", d)
+j <- grep("setup-owls", d)
+d <- d[-seq(i, j-1)]
 
 
+d[grep("snow <- read", d)]
+d <- do_replace("snow <- read", "snow <- readRDS(\"snow-data.rds\")")
+
+d[grep("owl <- here::", d)]
+d <- do_replace("owl <- here::", "# owl <- here::here(\"figs\", \"owl-nao-effect.png\")")
+
+d[grep("knitr::include_graphics\\(owl", d)]
+d <- do_replace("knitr::include_graphics\\(owl", "# knitr::include_graphics(owl)")
+
+d[grep("data/ne_10m_lakes", d)]
+d <- gsub("data/ne_10m_lakes", "ne_10m_lakes", d)
+
+d[grep("lakes <- sf::st_read", d)]
+d <- do_replace("lakes <- sf::st_read", "lakes <- sf::st_read(\"ne_10m_lakes.rds\", quiet = TRUE)")
+
+d[grep("file.exists\\(here::here\\(\"ne_10m_lakes\\.rds\"", d)]
+d <- do_replace("file.exists\\(here::here\\(\"ne_10m_lakes\\.rds\"", "if (!file.exists(\"ne_10m_lakes.rds\")) {")
+
+d[grep("here::here\\(\"ne_10m_lakes.zip\"\\)", d)]
+d <- gsub("here::here\\(\"ne_10m_lakes.zip\"\\)", "\"ne_10m_lakes.zip\"", d)
+d <- gsub("here::here\\(\"ne_10m_lakes.rds\"\\)", "\"ne_10m_lakes.rds\"", d)
+
+d <- c(d, "sessionInfo()")
+
+d[grepl("here::", d)]
 
 
-# add timing script onto bottom
+i <- grep("## ----setup-owls", d)
+d <- c(d[seq(1, i-1)], "\n# Snowy Owl appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
-# go change:
-saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
-out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
+i <- grep("## ----setup-pcod", d)
+d <- c(d[seq(1, i-1)], "\n# Pacific Cod appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
-# at bottom of added timing
+i <- grep("## ----inla-knitr-setup", d)
+d <- c(d[seq(1, i-1)], "\n# INLA comparison appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
-# add sessionInfo()  at end!
+writeLines(d, "reprex/paper-code.R")
 
-# remove all child chunks
-# remove knitr::opts lines except first?
-# remove   optipng = "-strip all"
-# remove knitr::knit_hooks$set(optipng = knitr::hook_optipng)
+system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-jss/reprex/snow-data.rds")
 
-# add pcod-fig.R stuff to bottom
+system("rm reprex/paper-jss.R")
+
+setwd("reprex")
+knitr::spin("paper-code.R")
+
+d <- readLines(here::here("analysis/timing.R"))
+writeLines(d, "timing.R")
+
+d <- readLines(here::here("analysis/pcod-fig.R"))
+writeLines(d, "pcod-fig.R")
+
+setwd(here::here())
+
+# # go change:
+# saveRDS(out, file = "analysis/timing-cache-parallel-2022-11-01.rds")
+# out <- readRDS("analysis/timing-cache-parallel-2022-11-01.rds")
+#
+#
+# # add pcod-fig.R stuff to bottom
