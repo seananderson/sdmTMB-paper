@@ -80,6 +80,13 @@ d <- c(d[seq(1, i-1)], "\n# Pacific Cod appendix -------------------------------
 i <- grep("## ----inla-knitr-setup", d)
 d <- c(d[seq(1, i-1)], "\n# INLA comparison appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
+# these make figs not show up in html:
+d <- gsub('dev = \\"pdf\\"', 'dev = \\"png\\"', d)
+d <- gsub('out.width=\\"[0-9]+in\\", ', "", d)
+
+# check:
+d[grepl("out.width=\\'[0-9]+in\\'", d)]
+
 writeLines(d, "reprex/replication-code-main.R")
 
 system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-jss/reprex/snow-data.rds")
