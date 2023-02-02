@@ -397,7 +397,7 @@ We provide several approaches to assist this process:
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
 A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue is recommended but slower (`?residuals.sdmTMB`).
-Simulation-based residuals [@dharma] (`dharma_residuals()`) are also possible.
+Simulation-based residuals [@dharma] are also possible.
 (5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model. 
 Models can be fit to these simulated data to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 

@@ -60,22 +60,19 @@ We can predict on the original data locations:
 pred <- predict(fit)
 ```
 
-We can inspect simulated residuals from the DHARMa package (Fig.\ \ref{fig:sim-resids}).
+We can inspect randomized quantile residuals calculated with predictions that used the Laplace approximation:
 
-```{r sim-resids, out.width="4in", warning=FALSE, results='hide', cache=TRUE, echo=TRUE, fig.cap="Simulated residuals from the DHARMa package.", fig.pos='ht', fig.align='center'}
+```{r}
 set.seed(123)
-simulate(fit, nsim = 500) %>%
-  dharma_residuals(fit)
+r <- residuals(fit)
 ```
 
 Or perhaps better, use MCMC residuals (Fig.\ \ref{fig:mcmc-resids-vis}).
 
 ```{r mcmc-resids, warning=FALSE, results='hide', cache=TRUE}
 set.seed(123)
-r <- residuals(fit,
-  type = "mle-mcmc", 
-  mcmc_iter = 200, mcmc_warmup = 100
-)
+post <- sdmTMBextra::predict_mle_mcmc(fit, mcmc_iter = 200, mcmc_warmup = 100)
+r <- residuals(fit, mcmc_samples = post, type = "mle-mcmc")
 ```
 
 ```{r mcmc-resids-vis, out.width="4in", fig.cap="MCMC residuals.", fig.pos='ht', fig.align='center'}
