@@ -101,6 +101,7 @@ writeLines(d, "replication-code-timing.R")
 if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
 
 d <- readLines(here::here("analysis/pcod-fig.R"))
+# d <- gsub('silent = TRUE', 'silent = FALSE', d)
 writeLines(d, "replication-code-pcod.R")
 if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-pcod.R\")'")
 

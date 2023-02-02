@@ -1,4 +1,4 @@
-## ----main-setup, include=FALSE-----------------------------------------------------------------
+## ----main-setup, include=FALSE-----------------------------------------
 options(prompt = 'R> ', continue = '+ ')
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
   fig.asp = 0.618,
   fig.pos = "ht",
   cache.comments = TRUE,
-  dev = "pdf",
+  dev = "png",
   dpi = 140
   # optipng = "-strip all"
   # R.options = list(prompt = "R> ", continue = "> ")
@@ -21,11 +21,11 @@ knitr::opts_chunk$set(
 # knitr::knit_hooks$set(optipng = knitr::hook_optipng)
 
 
-## ----sdmTMB-install, eval=FALSE, echo=TRUE-----------------------------------------------------
+## ----sdmTMB-install, eval=FALSE, echo=TRUE-----------------------------
 ## install.packages("sdmTMB", dependencies = TRUE)
 
 
-## ----sdmTMB-lib0, eval=TRUE, echo=FALSE--------------------------------------------------------
+## ----sdmTMB-lib0, eval=TRUE, echo=FALSE--------------------------------
 library("sdmTMB")
 # simplify for paper:
 pcod_original <- pcod # save it for later
@@ -33,30 +33,30 @@ pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |>
   tibble::as_tibble()
 
 
-## ----sdmTMB-lib, eval=TRUE, echo=TRUE----------------------------------------------------------
+## ----sdmTMB-lib, eval=TRUE, echo=TRUE----------------------------------
 library("sdmTMB")
 head(pcod, n = 3)
 
 
-## ----pcod-utms-eval, echo=FALSE, eval=TRUE-----------------------------------------------------
+## ----pcod-utms-eval, echo=FALSE, eval=TRUE-----------------------------
 pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 
 
-## ----pcod-utms-echo, echo=TRUE, eval=FALSE-----------------------------------------------------
+## ----pcod-utms-echo, echo=TRUE, eval=FALSE-----------------------------
 ## pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 ## #> Detected UTM zone 9N; CRS = 32609.
 ## #> Visit https://epsg.io/32609 to verify.
 
 
-## ----pcod-head2, echo=TRUE---------------------------------------------------------------------
+## ----pcod-head2, echo=TRUE---------------------------------------------
 head(pcod, n = 3)
 
 
-## ---- echo=TRUE, eval=TRUE, cache=TRUE---------------------------------------------------------
+## ---- echo=TRUE, eval=TRUE, cache=TRUE---------------------------------
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 
 
-## ----pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE--------------
+## ----pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE----
 fit <- sdmTMB(
   density ~ s(depth),
   data = pcod,
@@ -66,49 +66,49 @@ fit <- sdmTMB(
 )
 
 
-## ----pcod-eg1-summary,eval=TRUE, echo=TRUE-----------------------------------------------------
+## ----pcod-eg1-summary,eval=TRUE, echo=TRUE-----------------------------
 fit
 
 
-## ----pcod-eg1-tidy-fe, eval=TRUE, echo=TRUE----------------------------------------------------
+## ----pcod-eg1-tidy-fe, eval=TRUE, echo=TRUE----------------------------
 tidy(fit, conf.int = TRUE)
 
 
-## ----pcod-eg1-tidy-re, eval=TRUE, echo=TRUE----------------------------------------------------
+## ----pcod-eg1-tidy-re, eval=TRUE, echo=TRUE----------------------------
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 
 
-## ----pcod-eg1-sanity, eval=TRUE, echo=TRUE-----------------------------------------------------
+## ----pcod-eg1-sanity, eval=TRUE, echo=TRUE-----------------------------
 sanity(fit)
 
 
-## ----pcod-eg1-suppress-depth2, eval=TRUE, echo=FALSE-------------------------------------------
+## ----pcod-eg1-suppress-depth2, eval=TRUE, echo=FALSE-------------------
 qcs_grid_original <- qcs_grid
 qcs_grid$depth_scaled <- NULL # for simplicity in paper
 qcs_grid$depth_scaled2 <- NULL # for simplicity in paper
 
 
-## ----qcs-head, echo=TRUE-----------------------------------------------------------------------
+## ----qcs-head, echo=TRUE-----------------------------------------------
 head(qcs_grid, n = 3)
 
 
-## ----pcod-eg1-predict, echo=TRUE, eval=TRUE, cache=TRUE----------------------------------------
+## ----pcod-eg1-predict, echo=TRUE, eval=TRUE, cache=TRUE----------------
 p <- predict(fit, newdata = qcs_grid)
 
 
-## ----pcod-p-tibble-----------------------------------------------------------------------------
+## ----pcod-p-tibble-----------------------------------------------------
 p <- tibble::as_tibble(p)
 
 
-## ----pcod-head-predict, echo=TRUE--------------------------------------------------------------
+## ----pcod-head-predict, echo=TRUE--------------------------------------
 head(p, n = 3)
 
 
-## ----time1, cache=TRUE-------------------------------------------------------------------------
+## ----time1, cache=TRUE-------------------------------------------------
 t1 <- Sys.time()
 
 
-## ----fit-tv, eval=TRUE, echo=TRUE, cache=TRUE, results='hide'----------------------------------
+## ----fit-tv, eval=TRUE, echo=TRUE, cache=TRUE, results='hide'----------
 fit_spatiotemporal <- sdmTMB(
   density ~ 0 + s(depth, k = 5),
   time_varying = ~ 1,
@@ -124,20 +124,20 @@ fit_spatiotemporal <- sdmTMB(
 )
 
 
-## ----time2, cache=TRUE-------------------------------------------------------------------------
+## ----time2, cache=TRUE-------------------------------------------------
 t2 <- Sys.time()
 
 
-## ----fit-tv-print, eval=TRUE, echo=TRUE--------------------------------------------------------
+## ----fit-tv-print, eval=TRUE, echo=TRUE--------------------------------
 fit_spatiotemporal
 
 
-## ----pcod-restore, echo=FALSE------------------------------------------------------------------
+## ----pcod-restore, echo=FALSE------------------------------------------
 pcod <- pcod_original
 qcs_grid <- qcs_grid_original
 
 
-## ----owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE------------------
+## ----owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE----
 ## mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 ## fit_owls <- sdmTMB(
 ##   count ~ nao + (1 | year_factor),
@@ -160,25 +160,25 @@ qcs_grid <- qcs_grid_original
 
 # Pacific Cod appendix -----------------------------------------------------------------------
 
-## ----setup-pcod, include = FALSE, cache=FALSE--------------------------------------------------
+## ----setup-pcod, include = FALSE, cache=FALSE--------------------------
 knitr::opts_chunk$set(
   echo = TRUE
 )
 
 
-## ----packages, message=FALSE, warning=FALSE, cache=FALSE---------------------------------------
+## ----packages, message=FALSE, warning=FALSE, cache=FALSE---------------
 library("ggplot2")
 library("dplyr")
 library("sdmTMB")
 theme_set(theme_minimal())
 
 
-## ----plot-mesh, fig.align='center', fig.asp=1, out.width="3in", echo=TRUE, fig.cap="Delaunay triangulation mesh.", fig.pos='ht', fig.align='center'----
+## ----plot-mesh, fig.align='center', fig.asp=1, echo=TRUE, fig.cap="Delaunay triangulation mesh.", fig.pos='ht', fig.align='center'----
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 plot(mesh)
 
 
-## ----fit-pcod, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, results='hide'-------------
+## ----fit-pcod, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, results='hide'----
 fit <- sdmTMB(
   density ~ 0 + as.factor(year),
   data = pcod,
@@ -189,39 +189,36 @@ fit <- sdmTMB(
 )
 
 
-## ----print-fit, echo=TRUE----------------------------------------------------------------------
+## ----print-fit, echo=TRUE----------------------------------------------
 fit
 
 
-## ----pcod-tidy, echo=TRUE----------------------------------------------------------------------
+## ----pcod-tidy, echo=TRUE----------------------------------------------
 tidy(fit, conf.int = TRUE)
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 
 
-## ----pcod-predict, cache=TRUE, echo=TRUE-------------------------------------------------------
+## ----pcod-predict, cache=TRUE, echo=TRUE-------------------------------
 pred <- predict(fit)
 
 
-## ----sim-resids, out.width="4in", warning=FALSE, results='hide', cache=TRUE, echo=TRUE, fig.cap="Simulated residuals from the DHARMa package.", fig.pos='ht', fig.align='center'----
+## ----------------------------------------------------------------------
 set.seed(123)
-simulate(fit, nsim = 500) %>%
-  dharma_residuals(fit)
+r <- residuals(fit)
 
 
-## ----mcmc-resids, warning=FALSE, results='hide', cache=TRUE------------------------------------
+## ----mcmc-resids, warning=FALSE, results='hide', cache=TRUE------------
 set.seed(123)
-r <- residuals(fit,
-  type = "mle-mcmc", 
-  mcmc_iter = 200, mcmc_warmup = 100
-)
+post <- sdmTMBextra::predict_mle_mcmc(fit, mcmc_iter = 200, mcmc_warmup = 100)
+r <- residuals(fit, mcmc_samples = post, type = "mle-mcmc")
 
 
-## ----mcmc-resids-vis, out.width="4in", fig.cap="MCMC residuals.", fig.pos='ht', fig.align='center'----
+## ----mcmc-resids-vis, fig.cap="MCMC residuals.", fig.pos='ht', fig.align='center'----
 qqnorm(r)
 qqline(r)
 
 
-## ----predict-newdata---------------------------------------------------------------------------
+## ----predict-newdata---------------------------------------------------
 survey_grid <- replicate_df(
   qcs_grid, 
   time_name = "year", 
@@ -231,7 +228,7 @@ survey_grid <- replicate_df(
 pred_qcs <- predict(fit, newdata = survey_grid)
 
 
-## ----plot-map----------------------------------------------------------------------------------
+## ----plot-map----------------------------------------------------------
 plot_map <- function(dat, column) {
   ggplot(dat, aes_string("X", "Y", fill = column)) +
     geom_raster() +
@@ -260,7 +257,7 @@ plot_map(pred_qcs, "epsilon_st") +
   scale_fill_gradient2()
 
 
-## ----pcod-sims, cache=TRUE---------------------------------------------------------------------
+## ----pcod-sims, cache=TRUE---------------------------------------------
 pred_sims <- predict(fit, newdata = survey_grid, nsim = 200)
 dim(pred_sims)
 
@@ -274,7 +271,7 @@ ggplot(survey_grid, aes(X, Y, fill = cv)) +
   scale_fill_viridis_c(trans = "log10", option = "D")
 
 
-## ----pcod-app-index, fig.asp=0.45, out.width="5in", cache=TRUE, fig.cap="Geostatistical population index.", fig.pos='ht', fig.align='center'----
+## ----pcod-app-index, fig.asp=0.45, cache=TRUE, fig.cap="Geostatistical population index.", fig.pos='ht', fig.align='center'----
 survey_grid$area <- 4 # all 2 x 2km
 pred2 <- predict(
   fit,
@@ -294,7 +291,7 @@ ggplot(ind, aes(year, est / 1000)) +
 
 # Snowy Owl appendix -----------------------------------------------------------------------
 
-## ----setup-owls, include = FALSE, cache=FALSE--------------------------------------------------
+## ----setup-owls, include = FALSE, cache=FALSE--------------------------
 theme_set(theme_bw() + theme(
   plot.title = element_text(size = 12),
   legend.position = "top", legend.justification = c(0, 0), # move legend to top left
@@ -305,7 +302,7 @@ theme_set(theme_bw() + theme(
 )) 
 
 
-## ----packages-owls, message=FALSE, warning=FALSE, cache=FALSE----------------------------------
+## ----packages-owls, message=FALSE, warning=FALSE, cache=FALSE----------
 library("ggplot2")
 library("patchwork")
 library("dplyr")
@@ -313,7 +310,7 @@ library("sf")
 library("sdmTMB")
 
 
-## ----rnaturalearthdata, echo=FALSE-------------------------------------------------------------
+## ----rnaturalearthdata, echo=FALSE-------------------------------------
 if (!require("rnaturalearthdata", quietly = TRUE)) {
   stop(
     "Please install 'rnaturalearthdata'.\n",
@@ -322,20 +319,20 @@ if (!require("rnaturalearthdata", quietly = TRUE)) {
 }
 
 
-## ----load-data, cache=FALSE--------------------------------------------------------------------
+## ----load-data, cache=FALSE--------------------------------------------
 snow <- readRDS("snow-data.rds")
 
 
-## ----head-snow, echo=TRUE----------------------------------------------------------------------
+## ----head-snow, echo=TRUE----------------------------------------------
 head(snow, n = 3)
 
 
-## ----proj, echo=TRUE---------------------------------------------------------------------------
+## ----proj, echo=TRUE---------------------------------------------------
 Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 +datum=NAD83 +units=m +no_defs"
 
 
-## ----mesh-owls, echo=TRUE, out.width="4in", fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='ht', fig.align='center', dev='png', dpi=100----
+## ----mesh-owls, echo=TRUE, fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='ht', fig.align='center', dev='png', dpi=100----
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 
 # built-in plot() method:
@@ -347,7 +344,7 @@ ggplot() + inlabru::gg(mesh$mesh) +
   theme_light()
 
 
-## ----fit-negb2, echo=TRUE, warning=FALSE, cache=TRUE, results='hide'---------------------------
+## ----fit-negb2, echo=TRUE, warning=FALSE, cache=TRUE, results='hide'----
 fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
   spatial_varying = ~ nao,
   time = "year",
@@ -361,37 +358,37 @@ fit_owl <- sdmTMB(count ~ 1 + nao + (1 | year_f),
 )
 
 
-## ----sanity, echo=TRUE-------------------------------------------------------------------------
+## ----sanity, echo=TRUE-------------------------------------------------
 sanity(fit_owl)
 
 
-## ----------------------------------------------------------------------------------------------
+## ----------------------------------------------------------------------
 fit_owl$gradients
 
 
-## ----owl-newton, results='hide', cache=TRUE----------------------------------------------------
+## ----owl-newton, results='hide', cache=TRUE----------------------------
 fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
 
 
-## ----sanity2, echo=TRUE------------------------------------------------------------------------
+## ----sanity2, echo=TRUE------------------------------------------------
 sanity(fit_owl2)
 
 
-## ----print-fit-owls, warning=FALSE, echo=TRUE, message=FALSE-----------------------------------
+## ----print-fit-owls, warning=FALSE, echo=TRUE, message=FALSE-----------
 print(fit_owl2)
 
 
-## ----tidy-owls---------------------------------------------------------------------------------
+## ----tidy-owls---------------------------------------------------------
 tidy(fit_owl2, conf.int = TRUE)
 tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
 
 
-## ----predict-owls, message=FALSE, cache=TRUE---------------------------------------------------
+## ----predict-owls, message=FALSE, cache=TRUE---------------------------
 pred <- predict(fit_owl2)
 
 
 
-## ----owls-resids-------------------------------------------------------------------------------
+## ----owls-resids-------------------------------------------------------
 set.seed(19208)
 pred$resid <- residuals(fit_owl2)
 
@@ -401,7 +398,7 @@ qqnorm(pred$resid)
 qqline(pred$resid)
 
 
-## ----stan-resids-owls, eval=FALSE--------------------------------------------------------------
+## ----stan-resids-owls, eval=FALSE--------------------------------------
 ## fit_ml <- update(fit_owl, reml = FALSE)
 ## mcmc_resids <- residuals(fit_owl,
 ##   type = "mle-mcmc",
@@ -410,16 +407,16 @@ qqline(pred$resid)
 ## )
 
 
-## ----zero-test-owls, echo=TRUE, message=FALSE--------------------------------------------------
+## ----zero-test-owls, echo=TRUE, message=FALSE--------------------------
 s_nb2 <- simulate(fit_owl2, nsim = 400)
 
 
-## ----zero-test-owls2, echo=TRUE----------------------------------------------------------------
+## ----zero-test-owls2, echo=TRUE----------------------------------------
 mean(s_nb2 == 0)
 mean(snow$count == 0)
 
 
-## ----zero-test-owls3, echo=TRUE----------------------------------------------------------------
+## ----zero-test-owls3, echo=TRUE----------------------------------------
 pred_fixed <- fit_owl2$family$linkinv(pred$est_non_rf)
 r_nb2 <- DHARMa::createDHARMa(
   simulatedResponse = s_nb2,
@@ -429,13 +426,13 @@ r_nb2 <- DHARMa::createDHARMa(
 DHARMa::testZeroInflation(r_nb2, plot = FALSE)
 
 
-## ----proj-p------------------------------------------------------------------------------------
+## ----proj-p------------------------------------------------------------
 p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
 p_proj <- p %>% mutate(x = X, y = Y) %>%
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 
 
-## ----shapes, echo=FALSE------------------------------------------------------------------------
+## ----shapes, echo=FALSE------------------------------------------------
 if (!file.exists("ne_10m_lakes")) {
   zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
     "download/10m/physical/ne_10m_lakes.zip")
@@ -444,14 +441,14 @@ if (!file.exists("ne_10m_lakes")) {
 }
 
 
-## ----shapes-read, echo=TRUE--------------------------------------------------------------------
+## ----shapes-read, echo=TRUE--------------------------------------------
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
 lakes <- sf::st_read("ne_10m_lakes", quiet = TRUE)
 lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
 
 
-## ----p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE-----------------------------------
+## ----p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE-----------
 b <- tidy(fit_owl2, conf.int = TRUE)
 
 nsim <- 200
@@ -477,11 +474,11 @@ p_mean <- p %>%
   )
 
 
-## ---- echo=FALSE-------------------------------------------------------------------------------
+## ---- echo=FALSE-------------------------------------------------------
 nao_effect_lwr95 <- as.numeric(apply(combined, 2, quantile, probs = 0.025))
 
 
-## ----plot-map-owls, echo=FALSE, eval=TRUE, out.width="65%", dpi=140, dev="png"-----------------
+## ----plot-map-owls, echo=FALSE, eval=TRUE, out.width="65%", dpi=140, dev="png"----
 ggplot(data = p_proj) +
   geom_point(
     data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
@@ -566,7 +563,7 @@ ggplot(data = p_proj) +
   facet_wrap(~year_f)
 
 
-## ----plot-spatial-effects-owls, echo=FALSE, eval=TRUE, out.width="3in", dpi=130, fig.cap="Spatial random effects that apply across all years.", fig.pos='ht', fig.align='center', dev = "png"----
+## ----plot-spatial-effects-owls, echo=FALSE, eval=TRUE, dpi=130, fig.cap="Spatial random effects that apply across all years.", fig.pos='ht', fig.align='center', dev = "png"----
 ggplot(data = p_proj) +
   geom_point(data = p, aes(X, Y, colour = omega_s), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
@@ -623,13 +620,13 @@ ggplot(data = filter(p_proj, year > 1978)) +
 
 # INLA comparison appendix -----------------------------------------------------------------------
 
-## ----inla-knitr-setup, include=FALSE-----------------------------------------------------------
+## ----inla-knitr-setup, include=FALSE-----------------------------------
 knitr::opts_chunk$set(
-  dev = "pdf"
+  dev = "png"
 )
 
 
-## ----packages-inla-comparison, message=FALSE, warning=FALSE, cache=FALSE, echo=TRUE------------
+## ----packages-inla-comparison, message=FALSE, warning=FALSE, cache=FALSE, echo=TRUE----
 library("ggplot2")
 library("dplyr")
 library("sdmTMB")
@@ -638,31 +635,31 @@ library("inlabru")
 theme_set(theme_light())
 
 
-## ----inla-threads, echo=TRUE-------------------------------------------------------------------
+## ----inla-threads, echo=TRUE-------------------------------------------
 INLA::inla.setOption(num.threads = "1:1")
 
 
-## ----pcod-inla-comparison-data, echo=TRUE------------------------------------------------------
+## ----pcod-inla-comparison-data, echo=TRUE------------------------------
 d <- pcod %>% filter(year >= 2007)
 yr_lu <- data.frame(year = unique(d$year), i_year = seq_along(unique(d$year)))
 d <- dplyr::left_join(d, yr_lu, by = "year")
 
 
-## ----set-priors, echo = TRUE-------------------------------------------------------------------
+## ----set-priors, echo = TRUE-------------------------------------------
 range_min <- 5
 sigma_max <- 5
 prior_prob <- 0.05
 
 
-## ---- echo=TRUE--------------------------------------------------------------------------------
+## ---- echo=TRUE--------------------------------------------------------
 h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
 
 
-## ----sdm-mesh, echo = TRUE---------------------------------------------------------------------
+## ----sdm-mesh, echo = TRUE---------------------------------------------
 sdmTMB_mesh <- make_mesh(d, xy_cols = c("X", "Y"), cutoff = 10)
 
 
-## ----inla-mesh, echo = TRUE--------------------------------------------------------------------
+## ----inla-mesh, echo = TRUE--------------------------------------------
 loc_xy <- as.matrix(d[, c("X", "Y"), drop = FALSE])
 inla_mesh <- INLA::inla.mesh.create(loc_xy, refine = TRUE, cutoff = 10)
 spde <- inla.spde2.pcmatern(
@@ -672,14 +669,14 @@ spde <- inla.spde2.pcmatern(
 )
 
 
-## ----plot-inla-mesh, fig.asp=0.9, out.height="2.5in",echo=FALSE, eval=FALSE--------------------
+## ----plot-inla-mesh, fig.asp=0.9, out.height="2.5in",echo=FALSE, eval=FALSE----
 ## plot(sdmTMB_mesh)
 ## title(main = "sdmTMB mesh")
 ## plot(spde$mesh, main = "", asp = 1)
 ## title(main = "INLA mesh")
 
 
-## ----inla, echo=TRUE---------------------------------------------------------------------------
+## ----inla, echo=TRUE---------------------------------------------------
 tictoc::tic("INLA") # start timing
 nyear <- length(unique(d$year))
 iset <- inla.spde.make.index("i", n.spde = spde$n.spde, n.group = nyear)
@@ -710,17 +707,17 @@ m_inla <- inla(formula,
 tictoc::toc() # stop timing
 
 
-## ---- echo=FALSE, eval=FALSE-------------------------------------------------------------------
+## ---- echo=FALSE, eval=FALSE-------------------------------------------
 ## summary(m_inla)
 
 
-## ---- echo=TRUE--------------------------------------------------------------------------------
+## ---- echo=TRUE--------------------------------------------------------
 dat <- as.data.frame(d)
 sp::coordinates(dat) <- c("X", "Y")
 dat <- as(dat, "SpatialPointsDataFrame")
 
 
-## ---- echo=TRUE--------------------------------------------------------------------------------
+## ---- echo=TRUE--------------------------------------------------------
 tictoc::tic("bru")
 components <- present ~ 0 +
   f(
@@ -747,15 +744,15 @@ m_bru <- bru(
 tictoc::toc()
 
 
-## ---- echo=TRUE, eval=FALSE--------------------------------------------------------------------
+## ---- echo=TRUE, eval=FALSE--------------------------------------------
 ## summary(m_bru)
 
 
-## ---- echo=TRUE--------------------------------------------------------------------------------
+## ---- echo=TRUE--------------------------------------------------------
 m_bru$summary.random$fac[, c("ID", "mean", "sd", "0.025quant", "0.975quant")]
 
 
-## ----sdmtmb, warning=FALSE, message=FALSE, echo=TRUE-------------------------------------------
+## ----sdmtmb, warning=FALSE, message=FALSE, echo=TRUE-------------------
 tictoc::tic("sdmTMB")
 m <- sdmTMB(present ~ 0 + as.factor(year),
   data = d,
@@ -777,16 +774,16 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
 tictoc::toc()
 
 
-## ----sdmtmb-m, echo=TRUE-----------------------------------------------------------------------
+## ----sdmtmb-m, echo=TRUE-----------------------------------------------
 print(m)
 
 
-## ----sdmtmb-coefs, echo=TRUE-------------------------------------------------------------------
+## ----sdmtmb-coefs, echo=TRUE-------------------------------------------
 sdmTMB_coefs <- tidy(m, effects = "fixed", conf.int = TRUE)
 sdmTMB_coefs
 
 
-## ----comparison, echo=TRUE---------------------------------------------------------------------
+## ----comparison, echo=TRUE---------------------------------------------
 # INLA
 m_inla$summary.hyperpar[, c("mean", "sd", "0.025quant", "0.975quant")]
 
@@ -812,7 +809,7 @@ dplyr::bind_rows(mutate(sdmTMB_coefs, model = "sdmTMB"), inla_coefs, bru_coefs) 
   theme(axis.title.y = element_blank())
 
 
-## ----sdmTMB-sims, echo=FALSE-------------------------------------------------------------------
+## ----sdmTMB-sims, echo=FALSE-------------------------------------------
 set.seed(1)
 post_sdmTMB <- gather_sims(m, nsim = 2000)
 post_sdmTMB <- post_sdmTMB %>%
@@ -825,7 +822,7 @@ post_sdmTMB <- post_sdmTMB %>%
   )
 
 
-## ----inla-densities, echo=FALSE----------------------------------------------------------------
+## ----inla-densities, echo=FALSE----------------------------------------
 old_inla <- any(grepl(
   "year_factoryear_factor",
   names(m_inla$marginals.fixed)
@@ -858,7 +855,7 @@ post_inla2 <- post_inla1 %>% mutate(variable = factor(variable,
 ))
 
 
-## ----compare-plot, out.width="6in", fig.cap="Blue histograms represent simulated draws from the joint precision matrix of the \\pkg{sdmTMB} model compared with the marginal posterior densities from the \\pkg{INLA} model.", fig.align='center'----
+## ----compare-plot, fig.cap="Blue histograms represent simulated draws from the joint precision matrix of the \\pkg{sdmTMB} model compared with the marginal posterior densities from the \\pkg{INLA} model.", fig.align='center'----
 ggplot(post_inla2) +
   geom_histogram(
     data = post_sdmTMB, aes(.value, after_stat(density)), bins = 30,
@@ -868,7 +865,7 @@ ggplot(post_inla2) +
   facet_wrap(~variable, scales = "free")
 
 
-## ----sdm-predictions---------------------------------------------------------------------------
+## ----sdm-predictions---------------------------------------------------
 nd <- replicate_df(qcs_grid, time_name = "year", time_values = unique(d$year))
 pred <- predict(m, newdata = nd)
 
@@ -896,7 +893,7 @@ ggplot(as.data.frame(pred_bru)) +
   coord_fixed()
 
 
-## ----inla-pred, out.width="5.5in"--------------------------------------------------------------
+## ----inla-pred, out.width="5.5in"--------------------------------------
 idx <- inla.stack.index(sdat, "stdata")$data
 d$inla_pred <- m_inla$summary.fitted.values[idx, "mean"]
 
@@ -909,7 +906,7 @@ ggplot(d) +
 
 
 
-## ----pkg-versions, echo=TRUE-------------------------------------------------------------------
+## ----pkg-versions, echo=TRUE-------------------------------------------
 packageVersion("INLA")
 packageVersion("inlabru")
 packageVersion("mgcv")
@@ -917,7 +914,7 @@ packageVersion("spaMM")
 packageVersion("sdmTMB")
 
 
-## ----pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE-------------------------------
+## ----pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE-------
 library("INLA")
 library("inlabru")
 library("ggplot2")
@@ -926,7 +923,7 @@ library("mgcv")
 library("spaMM")
 
 
-## ----mesh-timing, echo=TRUE--------------------------------------------------------------------
+## ----mesh-timing, echo=TRUE--------------------------------------------
 max_edge <- 0.06
 loc_bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
 segm_bnd <- INLA::inla.mesh.segment(loc_bnd)
@@ -955,7 +952,7 @@ for (i in seq_along(max_edge_vec)) {
 cowplot::plot_grid(plotlist = g, ncol = 2)
 
 
-## ----sim-timing, echo=TRUE---------------------------------------------------------------------
+## ----sim-timing, echo=TRUE---------------------------------------------
 set.seed(123)
 n_obs <- 1000
 predictor_dat <- data.frame(
@@ -976,7 +973,7 @@ sim_dat <- sdmTMB_simulate(
 )
 
 
-## ----sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'----
+## ----sim-dat-plot-timing, echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'----
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +
@@ -984,7 +981,7 @@ ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   theme_light()
 
 
-## ----sdmTMBfit-timing, echo=TRUE---------------------------------------------------------------
+## ----sdmTMBfit-timing, echo=TRUE---------------------------------------
 fit_sdmTMB <- sdmTMB(
   observed ~ a1,
   data = sim_dat, 
@@ -996,7 +993,7 @@ fit_sdmTMB <- sdmTMB(
 )
 
 
-## ----spaMMfit-timing, echo=TRUE, cache=TRUE----------------------------------------------------
+## ----spaMMfit-timing, echo=TRUE, cache=TRUE----------------------------
 spde <- INLA::inla.spde2.pcmatern(
   mesh = mesh,
   prior.range = c(0.05, 0.05),
@@ -1010,7 +1007,7 @@ fit_spaMM <- fitme(
 )
 
 
-## ----inlabrufit-timing, echo=TRUE, cache=TRUE--------------------------------------------------
+## ----inlabrufit-timing, echo=TRUE, cache=TRUE--------------------------
 # convert to sp SpatialPointsDataFrame first:
 dat_sp <- sp::SpatialPointsDataFrame(
   cbind(sim_dat$X, sim_dat$Y),
@@ -1034,7 +1031,7 @@ fit_bru <- bru(
 )
 
 
-## ----mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE---------------------------------------------
+## ----mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE---------------------
 # -------------------------------------------------------------------------
 # Code in this chunk is from:
 #
@@ -1102,7 +1099,7 @@ Predict.matrix.spde.smooth <- function(object, data) {
 # -------------------------------------------------------------------------
 
 
-## ----mgcvfit-timing, echo=TRUE, eval=TRUE------------------------------------------------------
+## ----mgcvfit-timing, echo=TRUE, eval=TRUE------------------------------
 # define smooth.construct.spde.smooth.spec() and Predict.matrix.spde.smooth()
 # from supplement of:
 # Miller, D.L., Glennie, R. & Seaton, A.E. (2019). Understanding the Stochastic

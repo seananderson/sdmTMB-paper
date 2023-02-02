@@ -294,7 +294,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 to_run <- expand.grid(
   n_obs = c(1000L),
   max.edge = c(0.06, 0.1, 0.2),
-  iter = seq_len(1L)
+  iter = seq_len(2L)
 )
 
 # full (slow) run to match paper:
