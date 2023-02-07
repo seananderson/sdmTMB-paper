@@ -25,7 +25,10 @@ theme_set(theme_bw() + theme(
 ## Background
 
 This appendix illustrates the fitting of a model with a spatially varying coefficient for the effect a regional climate index on species count data using \pkg{sdmTMB}. 
-We will use counts of Snowy Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc]. 
+We will use counts of Snowy Owls (*Bubo scandiacus*) observed in North America during annual Christmas Bird Counts [CBCs, @cbc].
+
+All requests for use of Christmas Bird Count data must be [submitted to Audubon](https://survey123.arcgis.com/share/7dc33b4fff77468a8bba855291f86527) and must adhere to the [Audubon Policy Regarding use of Christmas Bird Count Data](https://www.audubon.org/content/policy-regarding-use-christmas-bird-count-data). Questions can be directed to `cbcadmin@audubon.org`.
+
 Each survey is conducted between December 14 to January 5 in a 24.14 kilometer (15 mile) diameter circle. 
 Circle locations are chosen by local volunteers and therefore reflect both locations of higher human densities and known bird watching locations.
 Each circle (given a unique ID) is generally surveyed annually by at least 10 volunteers, or deemed inactive. 
