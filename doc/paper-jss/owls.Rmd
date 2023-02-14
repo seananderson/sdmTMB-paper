@@ -222,18 +222,13 @@ qqline(pred$resid)
 
 More accurate residuals can be generated using MCMC and \pkg{tmbstan}, but this a slower process.
 The MCMC-based residuals are randomized quantile residuals where the fixed effects are fixed at their MLE (maximum likelihoood estimate) values and the random effects are sampled with MCMC via \pkg{tmbstan}/\pkg{Stan}.
-To calculate these, we have to use a version of our model fit without REML, which we can quickly obtain with the `update()` method.
-We would ideally sample with more MCMC samples than this and assess convergence by setting `print_stan_model = TRUE`.
-For the purposes of building this appendix quickly, we will not run this code.
+To calculate these, we would have to use a version of our model fit without REML, which we can quickly obtain with the `update()` method.
 
 ```{r stan-resids-owls, eval=FALSE}
 fit_ml <- update(fit_owl, reml = FALSE)
-mcmc_resids <- residuals(fit_owl,
-  type = "mle-mcmc",
-  mcmc_iter = 101,
-  mcmc_warmup = 100
-)
 ```
+
+Then, see the [residuals vignette](https://pbs-assess.github.io/sdmTMB/articles/) for examples of how MCMC residuals can be estimated with the \pkg{sdmTMBextra} package.
 
 We can test for zero-inflation using the `simulate.sdmTMB()` function.
 If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead (e.g., `delta_truncated_nbinom2()` or possibly even `delta_gamma()` if we were willing to treat the counts as continuous. 

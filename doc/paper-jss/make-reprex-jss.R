@@ -2,6 +2,7 @@ RUN_SPIN <- TRUE
 
 setwd(here::here())
 setwd("doc/paper-jss/")
+dir.create("reprex", showWarnings = FALSE)
 
 knitr::purl("paper-jss.Rmd", documentation = 1L)
 
@@ -69,7 +70,6 @@ d <- gsub("here::here\\(\"ne_10m_lakes\"\\)", "\"ne_10m_lakes\"", d)
 d <- c(d, "sessionInfo()")
 
 d[grepl("here::", d)]
-
 
 i <- grep("## ----setup-owls", d)
 d <- c(d[seq(1, i-1)], "\n# Snowy Owl appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])

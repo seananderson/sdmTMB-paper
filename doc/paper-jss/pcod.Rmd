@@ -60,25 +60,16 @@ We can predict on the original data locations:
 pred <- predict(fit)
 ```
 
-We can inspect randomized quantile residuals calculated with predictions that used the Laplace approximation:
+We can inspect randomized quantile residuals calculated with predictions that used the Laplace approximation (Fig.\ \ref{fig:laplace-resids-vis}):
 
-```{r}
+```{r laplace-resids-vis}
 set.seed(123)
 r <- residuals(fit)
-```
-
-Or perhaps better, use MCMC residuals (Fig.\ \ref{fig:mcmc-resids-vis}).
-
-```{r mcmc-resids, warning=FALSE, results='hide', cache=TRUE}
-set.seed(123)
-post <- sdmTMBextra::predict_mle_mcmc(fit, mcmc_iter = 200, mcmc_warmup = 100)
-r <- residuals(fit, mcmc_samples = post, type = "mle-mcmc")
-```
-
-```{r mcmc-resids-vis, out.width="4in", fig.cap="MCMC residuals.", fig.pos='ht', fig.align='center'}
 qqnorm(r)
 qqline(r)
 ```
+
+These residuals can suggest model fit issues even with properly specified models due to the Laplace approximation [@thygesen2017a]. We could instead use MCMC residuals, which more accurate but slower. These are currently available in the \pkg{sdmTMBextra} package at <https://github.com/pbs-assess/sdmTMBextra> and are demonstrated in the [residuals vignette](https://pbs-assess.github.io/sdmTMB/articles/).
 
 Next, we want to predict on a fine-scale grid over the entire survey domain so we can sum up the expected biomass across the entire region each year. There is a grid built into the \pkg{sdmTMB} package for Queen Charlotte Sound (named `qcs_grid`). Our prediction grid also needs to have all the covariates that we used in the model above. In this case, that is a `year` column as well as `X` and `Y`. We will replicate the internal spatial grid over all years (calling it `survey_grid`) and predict on it.
 

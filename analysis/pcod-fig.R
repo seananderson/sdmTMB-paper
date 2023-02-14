@@ -6,10 +6,13 @@ library("patchwork")
 dir.create("figs", showWarnings = FALSE)
 
 if (!require("rnaturalearthhires", quietly = TRUE)) {
-  stop(
-    "Please install 'rnaturalearthhires'.\n",
+  message(
+    "Please install 'rnaturalearthhires' to use a high-resolution map.\n",
     "`remotes::install_github('ropensci/rnaturalearthhires')`"
   )
+  rnaturalearthhires_installed <- FALSE
+} else {
+  rnaturalearthhires_installed <- TRUE
 }
 
 # from remotes::install_github('seananderson/ggsidekick')
@@ -28,7 +31,7 @@ theme_sleek <- function(base_size = 11, base_family = "") {
         size = rel(0.9)
       ), panel.border = element_rect(
         fill = NA,
-        colour = "grey70", size = 1
+        colour = "grey70", linewidth = 1
       ), legend.key.size = grid::unit(
         0.9,
         "lines"
@@ -95,8 +98,9 @@ lims_x <- c(230957.7 + 105000, 1157991 - 570000) + c(-10000, 10000)
 lims_y <- c(5366427 + 270000, 6353456 - 513000) + c(-10000, 10000)
 land <- "grey86"
 land_border <- "grey86"
+
 map_data <- rnaturalearth::ne_countries(
-  scale = "large",
+  scale = if (rnaturalearthhires_installed) "large" else "medium",
   returnclass = "sf", country = "canada"
 )
 
