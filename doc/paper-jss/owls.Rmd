@@ -138,44 +138,6 @@ sanity(fit_owl)
 #> ✓ Non-linear minimizer suggests successful convergence
 #> ✓ Hessian matrix is positive definite
 #> ✓ No extreme or very small eigenvalues detected
-#> ✗ `ln_tau_E` gradient > 0.001
-#>   See `?run_extra_optimization()`
-#>   Or refit with `control = sdmTMBcontrol(newton_loops = 1)`
-#> 
-#> ✗ `ln_phi` gradient > 0.001
-#>   See `?run_extra_optimization()`
-#>   Or refit with `control = sdmTMBcontrol(newton_loops = 1)`
-#> 
-#> ✓ No fixed-effect standard errors are NA
-#> ✓ No fixed-effect standard errors look unreasonably large
-#> ✓ No sigma parameters are < 0.01
-#> ✓ No sigma parameters are > 100
-#> ✓ Range parameter doesn't look unreasonably large
-```
-
-We note that the magnitude of some log-likelihood gradients is slightly large for some fixed effects.
-
-```{r}
-fit_owl$gradients
-```
-
-We can run additional optimization steps with a Newton optimizer using the\
-`run_extra_optimization()` function to further reduce these gradients.
-
-```{r owl-newton, results='hide', cache=TRUE}
-fit_owl2 <- run_extra_optimization(fit_owl, newton_loops = 1)
-```
-
-We can confirm that the gradients are smaller.
-
-```{r sanity2, echo=TRUE}
-sanity(fit_owl2)
-```
-
-```
-#> ✓ Non-linear minimizer suggests successful convergence
-#> ✓ Hessian matrix is positive definite
-#> ✓ No extreme or very small eigenvalues detected
 #> ✓ No gradients with respect to fixed effects are >= 0.001
 #> ✓ No fixed-effect standard errors are NA
 #> ✓ No fixed-effect standard errors look unreasonably large
@@ -187,14 +149,14 @@ sanity(fit_owl2)
 Print the model to inspect the fit:
 
 ```{r print-fit-owls, warning=FALSE, echo=TRUE, message=FALSE}
-print(fit_owl2)
+print(fit_owl)
 ```
 
 We can view the confidence intervals on both fixed and random (and variance) parameter estimates using `tidy()`:
 
 ```{r tidy-owls}
-tidy(fit_owl2, conf.int = TRUE)
-tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
+tidy(fit_owl, conf.int = TRUE)
+tidy(fit_owl, effects = "ran_pars", conf.int = TRUE)
 ```
 
 `sigma_O` is the spatial random field SD, `sigma_E` is the spatiotemporal random field SD, `sigma_Z` is the spatially varying coefficient random field SD, and `sigma_G` is the random intercept SD.
@@ -202,7 +164,7 @@ tidy(fit_owl2, effects = "ran_pars", conf.int = TRUE)
 We can then generate predictions at the original data locations:
 
 ```{r predict-owls, message=FALSE, cache=TRUE}
-pred <- predict(fit_owl2)
+pred <- predict(fit_owl)
 
 ```
 
@@ -212,7 +174,7 @@ We can inspect randomized quantile residuals (Fig.\ \ref{fig:qqnorm-owls}), alth
 
 ```{r owls-resids}
 set.seed(19208)
-pred$resid <- residuals(fit_owl2)
+pred$resid <- residuals(fit_owl)
 ```
 
 ```{r qqnorm-owls, out.width="60%", fig.cap="Randomized quantile residuals.", fig.pos='ht', fig.align='center', dpi=90, dev='png'}
@@ -234,7 +196,7 @@ We can test for zero-inflation using the `simulate.sdmTMB()` function.
 If our data were zero-inflated or overdispersed, we might have needed to use a delta ("hurdle") model instead (e.g., `delta_truncated_nbinom2()` or possibly even `delta_gamma()` if we were willing to treat the counts as continuous. 
 
 ```{r zero-test-owls, echo=TRUE, message=FALSE}
-s_nb2 <- simulate(fit_owl2, nsim = 400)
+s_nb2 <- simulate(fit_owl, nsim = 400)
 ```
 
 The proportion of zeros looks approximately the same in the simulated and real data.
@@ -247,10 +209,10 @@ mean(snow$count == 0)
 We can more formally test this with functions from the \pkg{DHARMa} package.
  
 ```{r zero-test-owls3, echo=TRUE}
-pred_fixed <- fit_owl2$family$linkinv(pred$est_non_rf)
+pred_fixed <- fit_owl$family$linkinv(pred$est_non_rf)
 r_nb2 <- DHARMa::createDHARMa(
   simulatedResponse = s_nb2,
-  observedResponse = fit_owl2$data$count,
+  observedResponse = fit_owl$data$count,
   fittedPredictedResponse = pred_fixed
 )
 DHARMa::testZeroInflation(r_nb2, plot = FALSE)
@@ -289,18 +251,18 @@ lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
 ## Spatially varying effect
 
 We can then compress the annual predictions into mean values for plotting the spatially varying effect of NAO.
-Most simply, we can extract the overall coefficient using the `b <- tidy(fit_owl2)` and add it to the spatially varying coefficients `zeta_s`.
+Most simply, we can extract the overall coefficient using the `b <- tidy(fit_owl)` and add it to the spatially varying coefficients `zeta_s`.
 However, this method does not give us spatially explicit estimates of uncertainty.
 To do this, we can get the output from the joint precision matrix simulation draws by using the `predict()` function again, but this time indicating a number of simulation draws (e.g., `nsim = 200`) and what component we want estimated (`sims_var = "zeta_s"`). 
 We also extract the same number of draws for estimates of the main effect of NAO using the `spread_sims()` function. 
 The simulation draws for both can then be combined before calculating the median and lower and upper quantiles from these draws (in this case we will use 80%) and adding these values to our prediction data frame.
 
 ```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
-b <- tidy(fit_owl2, conf.int = TRUE)
+b <- tidy(fit_owl, conf.int = TRUE)
 
 nsim <- 200
-zeta_s <- predict(fit_owl2, nsim = nsim, sims_var = "zeta_s")
-sims <- spread_sims(fit_owl2, nsim = nsim)
+zeta_s <- predict(fit_owl, nsim = nsim, sims_var = "zeta_s")
+sims <- spread_sims(fit_owl, nsim = nsim)
 beta <- sims$nao
 combined <- beta + t(zeta_s)
 
