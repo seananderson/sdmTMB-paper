@@ -62,7 +62,7 @@ pred <- predict(fit)
 
 We can inspect randomized quantile residuals calculated with predictions that used the Laplace approximation (Fig.\ \ref{fig:laplace-resids-vis}):
 
-```{r laplace-resids-vis}
+```{r laplace-resids-vis, fig.cap="Randomized quantile residuals."}
 set.seed(123)
 r <- residuals(fit)
 qqnorm(r)
