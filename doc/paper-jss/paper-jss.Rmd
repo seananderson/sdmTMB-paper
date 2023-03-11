@@ -94,7 +94,7 @@ Such models quickly become computationally limiting due to the need to invert la
 Many solutions have been proposed, such as predictive processes [@banerjee2008; @latimer2009], the stochastic partial differential equation (SPDE) approximation to GRFs [@lindgren2011], and nearest-neighbour Gaussian processes [@datta2016; @finley2022].
 These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian [@gelfand2017] or maximum likelihood methods.
 This can greatly improve computational efficiency [e.g., @heaton2019].
-The SPDE approach is a solution popularized via the \proglang{R}-\pkg{INLA} \proglang{R} package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in \pkg{TMB} [Template Model Builder, @kristensen2016] that relies on \proglang{R}-\pkg{INLA} to create input matrices [e.g., @thorson2019; @osgood-zimmerman2021].
+The SPDE approach is a solution popularized via the \proglang{R}-\pkg{INLA} package [@rue2009; @lindgren2011; @lindgren2015] and an implementation in \pkg{TMB} [Template Model Builder, @kristensen2016] that relies on \proglang{R}-\pkg{INLA} to create input matrices [e.g., @thorson2019; @osgood-zimmerman2021].
 Details are beyond the scope of this paper and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this 'trick' enables one to efficiently fit approximations to GRFs to large spatial datasets [@lindgren2011].
 
 Systems for specifying statistical models that can include the SPDE, such as \proglang{R}-\pkg{INLA} and \pkg{TMB}, are flexible and powerful but are challenging to use for many applied researchers.
@@ -613,9 +613,6 @@ Christmas Bird Count data were provided by National Audubon Society and through 
 \clearpage
 
 \appendix
-
-```{r child="model-description.Rmd", eval=FALSE}
-```
 
 ```{r child="pcod.Rmd", eval=TRUE, cache=TRUE}
 ```

@@ -25,7 +25,7 @@ packageVersion("spaMM")
 packageVersion("sdmTMB")
 ```
 
-## Illustration of generating the INLA mesh
+## Illustration of generating the \textbf{INLA} mesh
 
 ```{r pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE}
 library("INLA")
@@ -104,7 +104,7 @@ ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   theme_light()
 ```
 
-## Example sdmTMB model fit
+\subsection[Example sdmTMB model fit]{Example \pkg{sdmTMB} model fit}
 
 ```{r sdmTMBfit-timing, echo=TRUE}
 fit_sdmTMB <- sdmTMB(
@@ -118,7 +118,7 @@ fit_sdmTMB <- sdmTMB(
 )
 ```
 
-## Example spaMM model fit
+\subsection[Example spaMM model fit]{Example \pkg{spaMM} model fit}
 
 ```{r spaMMfit-timing, echo=TRUE, cache=TRUE}
 spde <- INLA::inla.spde2.pcmatern(
@@ -134,7 +134,7 @@ fit_spaMM <- fitme(
 )
 ```
 
-## Example inlabru model fit
+\subsection[Example inlabru model fit]{Example \pkg{inlabru} model fit}
 
 ```{r inlabrufit-timing, echo=TRUE, cache=TRUE}
 # convert to sp SpatialPointsDataFrame first:
@@ -160,7 +160,7 @@ fit_bru <- bru(
 )
 ```
 
-## Example mgcv model fit
+\subsection[Example mgcv model fit]{Example \pkg{mgcv} model fit}
 
 ```{r mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE}
 # -------------------------------------------------------------------------
