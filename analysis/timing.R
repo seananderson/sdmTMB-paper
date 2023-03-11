@@ -187,8 +187,12 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 
   cat("sdmTMB\n")
   out <- system.time({
-    fit <- sdmTMB(observed ~ a1,
-      data = sim_dat, mesh = mesh, family = family,
+    fit <- sdmTMB(
+      observed ~ a1,
+      data = sim_dat,
+      mesh = mesh,
+      family = family,
+      control = sdmTMBcontrol(newton_loops = 0L),
       priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
     )
   })
@@ -357,8 +361,8 @@ system.time({
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-parallel-2023-01-24.rds")
-out <- readRDS("analysis/timing-cache-parallel-2023-01-24.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-2023-03-10.rds")
+out <- readRDS("analysis/timing-cache-parallel-2023-03-10.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
