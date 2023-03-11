@@ -6,7 +6,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Comparison between INLA, inlabru, and sdmTMB {#app:inla}
+# Comparison between \pkg{INLA}, \pkg{inlabru}, and \pkg{sdmTMB} {#app:inla}
 
 In this example, we will fit a presence-absence dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
 We will use a binomial distribution and a logit link.
@@ -46,7 +46,7 @@ sigma_max <- 5
 prior_prob <- 0.05
 ```
 
-In INLA, a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, sdmTMB only takes a Gaussian prior (e.g., `priors = sdmTMBpriors(ar1_rho = normal(0, 1))`).
+In INLA, a PC-prior can be used for the temporal autoregressive parameter, i.e., a prior that defines the probability the autocorrelation parameter is greater than a given value (e.g., `P(cor > 0) = 0.9`), but for now, \pkg{sdmTMB} only takes a Gaussian prior (e.g., `priors = sdmTMBpriors(ar1_rho = normal(0, 1))`).
 
 ```{r, echo=TRUE}
 h_spec <- list(rho = list(prior = "pccor1", param = c(0, 0.9)))
@@ -79,7 +79,7 @@ plot(spde$mesh, main = "", asp = 1)
 title(main = "INLA mesh")
 ```
 
-## INLA version
+## \pkg{INLA} version
 
 Data preparation for \pkg{INLA} models includes a formula, as well as objects made using several different functions including: `inla.spde.make.index()`, `inla.spde.make.A()`, and `inla.stack()`.
 We use `control.inla = list(int.strategy = "eb", strategy = "gaussian")` for comparability with \pkg{TMB}.
@@ -122,7 +122,7 @@ We could use `summary()` to inspect the model, but will omit the output to save 
 summary(m_inla)
 ```
 
-## inlabru version
+## \pkg{inlabru} version
 
 There are a couple ways to include the factor fixed effects with `inlabru`---using factor variables in the standard equation syntax does not work.
 One option is to create a design matrix and add year effects individually to the formula.
@@ -172,7 +172,7 @@ summary(m_bru)
 m_bru$summary.random$fac[, c("ID", "mean", "sd", "0.025quant", "0.975quant")]
 ```
 
-## sdmTMB version
+## \pkg{sdmTMB} version
 
 We will now fit a nearly identical model with `sdmTMB()` (the AR(1) correlation parameter prior is different).
 We again use very weak priors on the factor fixed effects.
@@ -321,7 +321,7 @@ nd <- replicate_df(qcs_grid, time_name = "year", time_values = unique(d$year))
 pred <- predict(m, newdata = nd)
 ```
 
-```{r maps, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the sdmTMB model.", fig.align='center'}
+```{r maps, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the \pkg{sdmTMB} model.", fig.align='center'}
 inverse_link <- m$family$linkinv
 ggplot(pred) +
   geom_raster(aes(X, Y, fill = inverse_link(est))) +
@@ -332,7 +332,7 @@ ggplot(pred) +
 
 We can get similar predictions with \pkg{inlabru} using a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation (Fig.\ \ref{fig:inlabru-pred}).
 
-```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the inlabru model.", fig.align='center'}
+```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the \pkg{inlabru} model.", fig.align='center'}
 nd_bru <- nd
 nd_bru <- dplyr::left_join(nd_bru, yr_lu, by = "year")
 sp::coordinates(nd_bru) <- c("X", "Y")
