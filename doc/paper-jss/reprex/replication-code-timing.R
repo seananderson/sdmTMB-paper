@@ -12,6 +12,46 @@ dir.create("analysis", showWarnings = FALSE)
 
 INLA::inla.setOption(num.threads = "1:1")
 
+# from remotes::install_github('seananderson/ggsidekick')
+theme_sleek <- function(base_size = 11, base_family = "") {
+  half_line <- base_size / 2
+  theme_light(base_size = base_size, base_family = base_family) +
+    theme(
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      axis.ticks.length = grid::unit(half_line / 2.2, "pt"), strip.background = element_rect(
+        fill = NA,
+        colour = NA
+      ), strip.text.x = element_text(colour = "grey30"),
+      strip.text.y = element_text(colour = "grey30"), axis.text = element_text(colour = "grey30"),
+      axis.title = element_text(colour = "grey30"), legend.title = element_text(
+        colour = "grey30",
+        size = rel(0.9)
+      ), panel.border = element_rect(
+        fill = NA,
+        colour = "grey70", linewidth = 1
+      ), legend.key.size = grid::unit(
+        0.9,
+        "lines"
+      ), legend.text = element_text(
+        size = rel(0.7),
+        colour = "grey30"
+      ), legend.key = element_rect(
+        colour = NA,
+        fill = NA
+      ), legend.background = element_rect(
+        colour = NA,
+        fill = NA
+      ), plot.title = element_text(
+        colour = "grey30",
+        size = rel(1)
+      ), plot.subtitle = element_text(
+        colour = "grey30",
+        size = rel(0.85)
+      )
+    )
+}
+theme_set(theme_sleek())
+
 # source(here::here("analysis/mgcv_spde_smooth.R"))
 # -------------------------------------------------------------------------
 # Code in this chunk is from:
@@ -147,8 +187,12 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
 
   cat("sdmTMB\n")
   out <- system.time({
-    fit <- sdmTMB(observed ~ a1,
-      data = sim_dat, mesh = mesh, family = family,
+    fit <- sdmTMB(
+      observed ~ a1,
+      data = sim_dat,
+      mesh = mesh,
+      family = family,
+      control = sdmTMBcontrol(newton_loops = 0L),
       priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
     )
   })
@@ -359,31 +403,6 @@ leg <- tribble(
   "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
 )
 
-# log-space version:
-
-# g <- out_long_sum %>%
-#   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-#   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
-#     alpha = 0.2,
-#     colour = NA
-#   ) +
-#   geom_line(lwd = 0.7) +
-#   # scale_y_log10() +
-#   scale_x_log10(breaks = c(250, 500, 1000)) +
-#   ggsidekick::theme_sleek() +
-#   theme(panel.grid.major = element_line(colour = "grey90")) +
-#   theme(legend.position = c(0.4, 0.85)) +
-#   geom_text(aes(label = model_clean), data = leg, hjust = 0) +
-#   scale_fill_manual(values = colour_vect) +
-#   scale_colour_manual(values = colour_vect) +
-#   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-#   coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
-#   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
-# print(g)
-#
-# .width <- 5
-# ggsave("figs/timing-spatial-2023-01-24.pdf", width = .width, height = .width / 1.3)
-
 leg <- tribble(
   ~model_clean, ~mean_mesh_n, ~time,
   "sdmTMB", 290, 0.40,
@@ -400,7 +419,7 @@ g <- out_long_sum %>%
   ) +
   geom_line(lwd = 0.7) +
   scale_x_log10(breaks = c(250, 500, 1000)) +
-  ggsidekick::theme_sleek() +
+  theme_sleek() +
   theme(panel.grid.major = element_line(colour = "grey90")) +
   theme(legend.position = c(0.4, 0.85)) +
   geom_text(aes(label = model_clean), data = leg, hjust = 0) +
