@@ -25,7 +25,7 @@ packageVersion("spaMM")
 packageVersion("sdmTMB")
 ```
 
-## Illustration of generating the \textbf{INLA} mesh
+\subsection[Illustration of generating the INLA mesh]{Illustration of generating the \pkg{INLA} mesh}
 
 ```{r pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE}
 library("INLA")
