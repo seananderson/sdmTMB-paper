@@ -131,7 +131,7 @@ The Matérn standard deviations are estimated separately for the various fields 
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Fig.\ \ref{fig:diagram}).
 Turning off both spatial and spatiotemporal effects allows for comparison with standard non-spatial GLMs or GLMMs.
 We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes: hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`.
-The smoothers in \pkg{sdmTMB} can mimic most `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers (`s(x, bs = "cc")`), and smoothers with specified basis dimensions (`s(x, k = 4)`) [@wood2017a].
+\pkg{sdmTMB} can use many `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers (`s(x, bs = "cc")`), and smoothers with specified basis dimensions (`s(x, k = 4)`) [@wood2017a].
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood.
 Internally, a \pkg{TMB} [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in \proglang{R} [@gay1990; @r2021].
@@ -159,7 +159,7 @@ The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, r
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
 See the sdmTMB \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
-Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{$\sim$ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
+Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{\textasciitilde\ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
 
@@ -417,7 +417,7 @@ To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2
 Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
 \pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
 There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
-We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix \ref{app:inla}.
+We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix&nbsp;\ref{app:inla}.
 <!-- and \pkg{VAST} (Appendix 5). -->
 
 ```{r compare-table, results='asis', eval=FALSE}
@@ -545,7 +545,7 @@ In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however,
 <!-- Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown). -->
 <!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
 Our test was restricted to one core and default \proglang{R} algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries on one core (openBLAS: @openblas and PARDISO: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
+Results with optimized math libraries on one core (\pkg{openBLAS}: @openblas and \pkg{PARDISO}: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that \pkg{VAST} does not) -->
 
@@ -558,7 +558,7 @@ Results with optimized math libraries on one core (openBLAS: @openblas and PARDI
 # Discussion
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
-Assuming a given package can fit the model of interest (Table \ref{tab:functionality}), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed.
+Assuming a given package can fit the model of interest (Table  &nbsp;\ref{tab:functionality}), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed.
 We think users familiar with `stats::glm()`, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \pkg{sdmTMB} most approachable.
 Users familiar with \proglang{R}-\pkg{INLA} will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code [@miller2019] and \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.

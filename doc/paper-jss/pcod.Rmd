@@ -8,7 +8,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purposes of area-weighted biomass index standardization. We will use a data set built into the package: trawl survey data for Pacific Cod in Queen Charlotte Sound. The density units are kg/km^2^. Here, X and Y are UTM zone 9 coordinates in kilometers. If our spatial coordinates were not already in an equidistant projection, we would transform them [e.g., using `sf::st_transform()`, @pebesma2018] to ensure that distance remains constant throughout the study region or using the built-in `sdmTMB::add_utm_columns()` function.
+We will fit a geostatistical spatiotemporal model with \pkg{sdmTMB} for the purposes of area-weighted biomass index standardization. We will use a data set built into the package: trawl survey data for Pacific Cod (*Gadus macrocephalus*) in Queen Charlotte Sound off the west coast of Canada. The density units are kg/km^2^. Here, X and Y are UTM zone 9 coordinates in kilometers. If our spatial coordinates were not already in an equidistant projection, we would transform them [e.g., using `sf::st_transform()`, @pebesma2018] to ensure that distance remains constant throughout the study region or using the built-in `sdmTMB::add_utm_columns()` function.
 
 First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). Custom built meshes with \pkg{INLA} (including meshes with barriers limiting covariance across polygons) can also be passed in. See examples included in `?make_mesh`.
 
