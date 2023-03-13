@@ -39,7 +39,7 @@ preamble: >
   \usepackage{amsmath}
   \usepackage{amssymb}
   \usepackage{bm}
-  \usepackage{lscape}
+  \usepackage{pdflscape}
   \usepackage{tablefootnote}
   \usepackage{threeparttable}
   \usepackage{booktabs}
@@ -159,21 +159,23 @@ The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, r
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
 See the sdmTMB \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
-Note that \texttt{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \texttt{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \texttt{(1|g)} denotes a random intercept by group \texttt{g}, and \texttt{~ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
+Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{$\sim$ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
 
 # Introductory example using fish survey data
 
-\pkg{sdmTMB} can be installed from the Comprehensive \proglang{R} Archive Network (CRAN) at <https://CRAN.R-project.org/package=sdmTMB>:
+\pkg{sdmTMB} can be installed from the Comprehensive \proglang{R} Archive Network (CRAN) at <https://CRAN.R-project.org/package=sdmTMB>
 
 ```{r sdmTMB-install, eval=FALSE, echo=TRUE}
 install.packages("sdmTMB", dependencies = TRUE)
 ```
 
-Here, we illustrate a spatial model fit to Pacific cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
+Importantly, `dependencies = TRUE` includes the \proglang{R}-INLA package  [@rue2009; @lindgren2011; @lindgren2015], which is not on CRAN but is needed for the `make_mesh()` function below.
+
+Here, we illustrate a spatial model fit to Pacific Cod (*Gadus macrocephalus*) trawl survey data from Queen Charlotte Sound, British Columbia, Canada.
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
-Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial longitude and latitude `lon` and `lat`.
+Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific Cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial longitude and latitude `lon` and `lat`.
 
 ```{r sdmTMB-lib0, eval=TRUE, echo=FALSE}
 library("sdmTMB")
@@ -219,7 +221,7 @@ We can inspect our mesh object with the associated plotting method (`plot(mesh)`
 
 We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`.
 We use a penalized smoother for depth as a main effect via `s()` from the \pkg{mgcv} package.
-We specify the family as Tweedie to account for positive continuous density values that also contain zeros.
+We specify the family as Tweedie [@tweedie1984] to account for positive continuous density values that also contain zeros.
 An alternative would be the `delta_gamma()` family [@aitchison1955] or to model catch weight with an offset for log(area swept) (via the `offset` argument).
 
 ```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
@@ -305,8 +307,8 @@ We show a basic plot of the estimated spatial random field, predictions across a
 \begin{figure}
 \centering
 \includegraphics[width=5.2in]{../../figs/pcod-fig}
-\caption[]{Output from the Pacific cod spatial model example in Queen Charlotte Sound, BC, Canada.
-(A) SPDE mesh (lines) combined with the trawl survey observations (points). Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. The circle area corresponds to biomass density of Pacific cod caught on individual trawls.
+\caption[]{Output from the Pacific Cod spatial model example in Queen Charlotte Sound, BC, Canada.
+(A) SPDE mesh (lines) combined with the trawl survey observations (points). Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. The circle area corresponds to biomass density of Pacific Cod caught on individual trawls.
 (B) Spatial random field: these values are shown in link (log) space and represent spatially correlated deviations that are not accounted for by the depth effect. (C) Overall prediction: these estimates represent the combination of all fixed and random effects. Crosses illustrate center of gravity (\texttt{get\_cog()}) from a spatiotemporal version; lighter crosses are more recent.
 (D) Conditional effect of depth modelled as a penalized smoother.
 These predictions are made omitting the spatial random field.
@@ -397,7 +399,7 @@ We provide several approaches to assist this process:
 (4) The `residuals()` method by default returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
 For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
-A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue is recommended but slower (`?residuals.sdmTMB`).
+A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue [@rufener2021] is recommended but slower (`?residuals.sdmTMB`).
 Simulation-based residuals [@dharma] are also possible.
 (5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model. 
 Models can be fit to these simulated data to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
@@ -408,7 +410,7 @@ Models can be fit to these simulated data to ensure identifiability, evaluate bi
 
 There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
 \pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models. 
-In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE [@miller2019] and \pkg{spBayes} since it is a prominent package that can fit related predictive-process models without the SPDE.
+In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE [@miller2019] and \pkg{spBayes} [@finley2007; @finley2015] since it is a prominent package that can fit related predictive-process models without the SPDE.
 \pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
 \pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
 To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
@@ -543,7 +545,7 @@ In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however,
 <!-- Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown). -->
 <!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
 Our test was restricted to one core and default \proglang{R} algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries on one core (openBLAS: @penblas2021 and PARDISO: @pardiso-7.2c) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
+Results with optimized math libraries on one core (openBLAS: @openblas and PARDISO: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
 <!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
 <!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that \pkg{VAST} does not) -->
 
