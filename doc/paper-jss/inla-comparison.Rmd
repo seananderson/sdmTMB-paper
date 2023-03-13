@@ -8,7 +8,7 @@ knitr::opts_chunk$set(
 
 \section[Comparison between INLA, inlabru, and sdmTMB]{Comparison between \pkg{INLA}, \pkg{inlabru}, and \pkg{sdmTMB}}\label{app:inla}
 
-In this example, we will fit a presence-absence dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
+In this example, we will fit a presence-absence (technically, encounter vs. lack of encounter) dynamic species distribution model with fixed-effect intercepts for year and spatiotemporal random fields structured as AR(1).
 We will use a binomial distribution and a logit link.
 
 We will start by loading necessary packages:
@@ -199,6 +199,10 @@ m <- sdmTMB(present ~ 0 + as.factor(year),
 tictoc::toc()
 ```
 
+```{r sdmtmb-sanity-comparison, echo=TRUE}
+sanity(m)
+```
+
 ```{r sdmtmb-m, echo=TRUE}
 print(m)
 ```
@@ -230,7 +234,7 @@ The confidence intervals are, however, reported.
 
 Comparing the fixed effects shows the estimates from all three models are also very similar (Fig.\ \ref{fig:coef-plot}).
 
-```{r coef-plot, fig.asp=0.4, out.width="85%", echo=FALSE, fig.cap="Fixed effect estimates from all three models with 95 percent CI.", fig.pos='ht', fig.align='center'}
+```{r coef-plot, fig.asp=0.25, out.width="85%", echo=FALSE, fig.cap="Fixed effect estimates from all three models with 95 percent CI.", fig.pos='ht', fig.align='center'}
 inla_coefs <- m_inla$summary.fixed[, c("0.025quant", "mean", "0.975quant")] %>%
   rename(estimate = mean, conf.low = `0.025quant`, conf.high = `0.975quant`) %>%
   mutate(term = unique(sdmTMB_coefs$term), model = "INLA")
@@ -313,15 +317,15 @@ ggplot(post_inla2) +
 
 ## Annual distribution maps
 
-We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the \pkg{sdmTMB} package to map occurrence probabilities in each year in space (Fig.\ \ref{fig:maps}).
-For \pkg{sdmTMB}, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`---the inverse logit here), to produce occurrence probabilities:
+We can predict on a grid (`qcs_grid`) provided with the `pcod` data in the \pkg{sdmTMB} package to map encounter probabilities in each year in space (Fig.\ \ref{fig:maps}).
+For \pkg{sdmTMB}, the resulting values are in link space and require the appropriate inverse-link transformation (always contained in `model$family$linkinv()`---the inverse logit here), to produce encounter probabilities:
 
 ```{r sdm-predictions}
 nd <- replicate_df(qcs_grid, time_name = "year", time_values = unique(d$year))
 pred <- predict(m, newdata = nd)
 ```
 
-```{r maps, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the \\pkg{sdmTMB} model.", fig.align='center'}
+```{r maps, out.width="5.5in", fig.cap="Predicted encounter probabilities in time and space from the \\pkg{sdmTMB} model.", fig.align='center'}
 inverse_link <- m$family$linkinv
 ggplot(pred) +
   geom_raster(aes(X, Y, fill = inverse_link(est))) +
@@ -332,7 +336,7 @@ ggplot(pred) +
 
 We can get similar predictions with \pkg{inlabru} using a few additional steps: we must recreate `i_year`, create a `SpatialPixelsDataFrame` class data frame, and specify in `formula` to include both the random field (`f`), the factors (`fac`), and the appropriate inverse-link transformation (Fig.\ \ref{fig:inlabru-pred}).
 
-```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted occurence probabilities in time and space from the \\pkg{inlabru} model.", fig.align='center'}
+```{r inlabru-pred, out.width="5.5in", fig.cap="Predicted encounter probabilities in time and space from the \\pkg{inlabru} model.", fig.align='center'}
 nd_bru <- nd
 nd_bru <- dplyr::left_join(nd_bru, yr_lu, by = "year")
 sp::coordinates(nd_bru) <- c("X", "Y")

@@ -604,7 +604,7 @@ The included \pkg{TMB} `.cpp` file provides a tested model template that can be 
 # Acknowledgements
 
 \pkg{sdmTMB} would not be possible without the \pkg{TMB} [@kristensen2016] and \proglang{R}-\pkg{INLA} [@rue2009; @lindgren2011; @lindgren2015] \proglang{R} packages.
-\pkg{sdmTMB} is heavily inspired by and in some places code has been adapted from both the \pkg{VAST} [@thorson2019] and \pkg{glmmTMB} [@brooks2017] \proglang{R} packages.
+\pkg{sdmTMB} is heavily inspired by and in some places code has been adapted from both the \pkg{VAST} [@thorson2019] and \pkg{glmmTMB} [@brooks2017] \proglang{R} packages (as described in the DESCRIPTION and inst/COPYRIGHTS files).
 Smoother support was possible thanks to \pkg{mgcv} [@wood2017a].
 We thank the authors of all these packages.
 We thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J.T. Thorson, and J. Watson for helpful comments that substantially improved the manuscript.

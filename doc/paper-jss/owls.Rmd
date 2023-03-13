@@ -80,7 +80,7 @@ Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0
 +datum=NAD83 +units=m +no_defs"
 ```
 
-First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations (Fig.\ \ref{fig:mesh-owls}). The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km).
+First, we construct a mesh to approximate the spatial process, which is used in the SPDE calculations. The `make_mesh()` function accepts the data coordinates and the minimum allowed distance between vertices (`cutoff`) or approximate number of knots in the mesh (`n_knots`). This mesh uses a cutoff distance of 1.5 units (or 150 km) (Fig.\ \ref{fig:mesh-owls}).
 
 ```{r mesh-owls, echo=TRUE, out.width="4in", fig.cap="This mesh uses an Albers projection divided by 100000 to give units of 100 km and a cutoff distance of 1.5 units (or 150 km).", fig.pos='ht', fig.align='center', dev='png', dpi=100}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
@@ -94,7 +94,7 @@ ggplot() + inlabru::gg(mesh$mesh) +
   theme_light()
 ```
 
-The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) knots.
+The result is a mesh with `r mesh$mesh$n` (`mesh$mesh$n`) vertices.
 
 <!-- Next, we will plot the owl counts through time to see if there is an obvious overall trend, or relationship with NAO. The dataframe also contains the Southern Oscillation Index (SOI), which is related to El Niño cycles, but we will only consider NAO in this example because any effect of SOI was even weaker.  -->
 
@@ -206,7 +206,7 @@ mean(s_nb2 == 0)
 mean(snow$count == 0)
 ```
 
-We can more formally test this with functions from the \pkg{DHARMa} package.
+We can more formally test this with functions from the \pkg{DHARMa} [@dharma] package.
  
 ```{r zero-test-owls3, echo=TRUE}
 pred_fixed <- fit_owl$family$linkinv(pred$est_non_rf)
@@ -222,7 +222,7 @@ We do not find evidence of zero inflation.
 
 ## Plotting spatial predictions
 
-To produce maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an \pkg{sf} object so that the plot axes will be in latitude and longitude. 
+To produce maps of these predictions, we back transform the spatial coordinates into the same units as our original projection and then convert back into an \pkg{sf} [@pebesma2018] object so that the plot axes will be in latitude and longitude. 
 
 ```{r proj-p}
 p <- pred %>% mutate(X = X * 100000, Y = Y * 100000)
@@ -230,7 +230,7 @@ p_proj <- p %>% mutate(x = X, y = Y) %>%
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
-Next we retrieve continental coastlines from the package \pkg{rnaturalearth} and outlines of the great lakes from <http://www.naturalearthdata.com/> and transform them to the correct projection.
+Next we retrieve continental coastlines from the package \pkg{rnaturalearth} [@rnaturalearth] and outlines of the great lakes from <http://www.naturalearthdata.com/> and transform them to the correct projection.
 
 ```{r shapes, echo=FALSE}
 if (!file.exists(here::here("data/ne_10m_lakes"))) {
