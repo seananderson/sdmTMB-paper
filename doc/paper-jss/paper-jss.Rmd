@@ -541,17 +541,12 @@ $^{10}$Hurdle models possible by fitting components separately.
 We ran a simple speed comparison between \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Fig. \ref{fig:timing}, Appendix \ref{app:speed}).
 In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however, \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \pkg{sdmTMB}.
 \pkg{mgcv} was most affected by mesh resolution.
-<!-- With the random effect normalizing constant calculated in R (`control = sdmTMBcontrol(normalize = TRUE)`), \pkg{sdmTMB} was the fastest across all mesh resolutions (this option may not be possible or as fast for all models). -->
-<!-- Results with up to an order of magnitude more data slightly shifted the lines up without affecting the qualitative pattern (not shown). -->
-<!-- TODO:  Too wordy and informal by describing ‘the lines’. Needs rewording as a discussion about the runtimes. -->
 Our test was restricted to one core and default \proglang{R} algebra libraries; all packages could run faster with optimized libraries and parallel processing.
 Results with optimized math libraries on one core (\pkg{openBLAS}: @openblas and \pkg{PARDISO}: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
-<!-- Note two other references for PARDISO were listed as required here https://pardiso-project.org/manual/manual.pdf -->
-<!-- LB: also worth noting which packages do/do not have parallel infrastructure (notably that \pkg{VAST} does not) -->
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=3.5in]{../../figs/timing-spatial-2023-01-24-xkcd.pdf}
+\includegraphics[width=3.5in]{../../figs/timing-spatial-2023-03-16-xkcd.pdf}
 \caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95\% quantiles across 50 random iterations. Note the log-distributed x axis. \pkg{VAST} should be similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \texttt{bru\_max\_iter = 1}, and the \texttt{like()} formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = `fREML'}, and discretized covariates \citep{miller2019}. Note that \pkg{spaMM} only fits spatial, not spatiotemporal, models. All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
 \end{figure}
 
@@ -568,7 +563,7 @@ Users looking for calculation, with uncertainty, of derived variables such as ar
 <!-- Speed-wise, the TMB-based packages \pkg{sdmTMB} and \pkg{VAST} were fastest up to at least 1000 mesh nodes, which in practice can cover fairly complex spatial processes on large datasets [e.g., @anderson2019b; @maureaud2021; @english2022]. -->
 
 
-With respect to computational speed, \pkg{sdmTMB} (and due to having the same \pkg{TMB} backend, \pkg{VAST}) were fastest up to at least 1000 mesh nodes at approximately 6--24 times faster than \proglang{R}-\pkg{INLA}/\pkg{inlabru} across the range of mesh complexities considered here.
+With respect to computational speed, \pkg{sdmTMB} (and due to having the same \pkg{TMB} backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \proglang{R}-\pkg{INLA}/\pkg{inlabru}.
 These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 However, for users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \proglang{R}-\pkg{INLA}/\pkg{inlabru} is likely to be considerably faster than passing the same model from \pkg{sdmTMB}/\pkg{VAST} to \pkg{tmbstan} for full Bayesian inference.
 <!-- Furthermore, although both \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{sdmTMB} can use parallel processing, the PARDISO library [@pardiso-7.2c] within \proglang{R}-\pkg{INLA}/\pkg{inlabru} allows memory to be shared across cores. -->
