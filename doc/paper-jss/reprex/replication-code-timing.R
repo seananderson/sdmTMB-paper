@@ -361,8 +361,8 @@ system.time({
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-parallel-2023-01-24.rds")
-out <- readRDS("analysis/timing-cache-parallel-2023-01-24.rds")
+saveRDS(out, file = "analysis/timing-cache-parallel-2023-03-15.rds")
+out <- readRDS("analysis/timing-cache-parallel-2023-03-15.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
@@ -431,7 +431,7 @@ g <- out_long_sum %>%
 print(g)
 
 .width <- 5
-ggsave("figs/timing-spatial-2023-01-24-xkcd.pdf", width = .width, height = .width / 1.3)
+ggsave("figs/timing-spatial-2023-03-16-xkcd.pdf", width = .width, height = .width / 1.3)
 
 cat("inlabru to sdmTMB timing ratios\n")
 x <- filter(
