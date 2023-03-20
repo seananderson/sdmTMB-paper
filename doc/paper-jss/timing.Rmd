@@ -15,7 +15,7 @@ The model included an intercept with a value of 0.2 and a normal(0, 1) predictor
 The observation error was Gaussian with a standard deviation of 0.3.
 
 We conducted 50 simulation iterations per model and mesh resolution and show results for the mean, lower, and upper values (Fig.\ \ref{fig:timing}).
-The models were fit on a 2022 14 inch M1 MacBook Pro with an Apple M1 Pro 10-core CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. The following package versions were used:
+The models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-core CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. The following package versions were used:
 
 ```{r pkg-versions, echo=TRUE}
 packageVersion("INLA")
