@@ -30,7 +30,7 @@ title:
   # For running headers, if needed
   short:     "\\pkg{sdmTMB}: geostatistical SPDE-based GLMMs with \\pkg{TMB}"
 abstract: >
-  Geostatistical data are common across scientific fields and available in increasingly large datasets. However, appropriate models to analyse these data, such as generalised linear mixed effects models with Gaussian random fields, are computationally intensive and challenging to implement for many users. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \proglang{R}-\pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or via Bayesian inference with \pkg{tmbstan} and \pkg{rstan}. We describe the model and explore case studies that illustrate \pkg{sdmTMB}'s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (directionally dependent spatial correlation). Additional functionality includes hurdle models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB can be an order of magnitude faster than \proglang{R}-\pkg{INLA}. We hope \pkg{sdmTMB}'s accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
+  Geostatistical data are common across scientific fields and available in increasingly large datasets. However, appropriate models to analyse these data, such as generalised linear mixed effects models with Gaussian random fields, are computationally intensive and challenging to implement for many users. Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} to include spatial and spatiotemporal latent fields using a predictive-process SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with \proglang{R}-\pkg{INLA} and estimation is conducted via maximum marginal likelihood with Template Model Builder (\pkg{TMB}) or via Bayesian inference with \pkg{tmbstan} and \pkg{rstan}. We describe the model and explore case studies that illustrate \pkg{sdmTMB}'s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), and anisotropy (directionally dependent spatial correlation). Additional functionality includes hurdle models, break-point effects, and out-of-sample cross validation. Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that \pkg{sdmTMB} can be an order of magnitude faster than \proglang{R}-\pkg{INLA}. We hope \pkg{sdmTMB}'s accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
 keywords:
   # at least one keyword must be supplied
   formatted: [Gaussian Markov random fields (GMRF), generalized linear mixed effects models (GLMM), INLA, SPDE, species distribution modelling, R package, spatio-temporal, spatial-temporal, Template Model Builder]
@@ -120,7 +120,7 @@ A benefit of the geostatistical approach over CAR or similar models is that the 
 The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Fig.\ \ref{fig:diagram}).
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
-See the the model description vignette for a full description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
+See the model description vignette for a full description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
 
 The GLMMs underpinning \pkg{sdmTMB} models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., \pkg{randomForest} [@liaw2002], \pkg{MaxEnt} [@phillips2006], and most smooths in \pkg{mgcv} [@wood2017a]).
@@ -158,12 +158,406 @@ We refer to design matrices as $\bm{X}$.
 The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
-See the sdmTMB \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
+See the \pkg{sdmTMB} \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
 Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{\textasciitilde\ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
 
 # Introductory example using fish survey data
+
+## Illustrating the need for spatial random fields
+
+We begin with a simple species distribution model of encounter probability of
+Pacific Cod (TODO spp) from a trawl survey conducted off the west
+coast of Vancouver Island, British Columbia, Canada. We will fit a logistic
+regression of encounter probability with and without spatial random fields to
+illustrate the importance of accounting for spatial correlation.
+
+```{r libs, warning=FALSE, message=FALSE, echo=TRUE, cache=FALSE}
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r libs-extras}
+theme_set(theme_light())
+options(ggplot2.continuous.fill = "viridis")
+```
+
+```{r dog-binomial, results='hide', message=FALSE, warning=FALSE, echo=TRUE}
+mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
+plot(mesh_pcod)
+```
+
+```{r}
+fit_bin_rf <- sdmTMB(
+  present ~ poly(log(depth), 2),
+  data = dat, mesh = mesh, spatial = "on",
+  family = binomial(link = "logit")
+)
+fit_bin <- update(fit_bin_rf, spatial = "off")
+```
+
+```{r dog-bin-summary, echo=TRUE}
+summary(fit_bin_rf)
+```
+
+Describe what we see here
+
+We can test for spatial autocorrelation with a Moran's I test or with a visual inspection of the residuals.
+
+```{r}
+# set.seed(1)
+# pcod$resid_bin <- residuals(fit_bin)
+# set.seed(1)
+# pcod$resid_bin_rf <- residuals(fit_bin_rf)
+# g1 <- ggplot(pcod, aes(X, Y, colour = resid_bin)) + geom_point() +
+#   scale_color_gradient2() +
+#   theme(legend.position = "bottom")
+# g2 <- ggplot(pcod, aes(X, Y, colour = resid_bin_rf)) + geom_point() +
+#   scale_color_gradient2() +
+#   theme(legend.position = "bottom")
+# cowplot::plot_grid(g1, g2, ncol = 2)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+test_autocor <- function(obj) {
+  set.seed(1)
+  s <- simulate(obj, nsim = 500)
+  pr <- predict(obj, type = "response")$est
+  r <- DHARMa::createDHARMa(
+    simulatedResponse = s,
+    observedResponse = pcod$present,
+    fittedPredictedResponse = pr
+  )
+  DHARMa::testSpatialAutocorrelation(r, x = pcod$X, y = pcod$Y, plot = FALSE)
+}
+test_autocor(fit_bin)
+test_autocor(fit_bin_rf)
+```
+
+We can also see that the AIC is considerably lower:
+
+```{r}
+AIC(fit_bin_rf, fit_bin)
+```
+
+Further testing could be done with cross validation via `sdmTMB_cv()`.
+
+```{r}
+cv_bin_rf <- sdmTMB_cv(present ~ poly(log(depth), 2),
+  data = dat, mesh = mesh, spatial = "on",
+  family = binomial(link = "logit"), k_folds = 10
+)
+cv_bin_rf <- sdmTMB_cv(present ~ poly(log(depth), 2),
+  data = dat, mesh = mesh, spatial = "off",
+  family = binomial(link = "logit"), k_folds = 10
+)
+```
+
+Indeed, the log likelihood of left-out data is considerably larger for the model that includes random fields:
+
+```{r}
+cv_bin_rf$sum_loglik
+cv_bin_rf$sum_loglik
+```
+
+The standard errors on our fixed effects have increased:
+
+```{r}
+tidy(fit_bin_rf, conf.int = T)
+tidy(fit_bin, conf.int = T)
+```
+
+We now have an effect of depth and a spatial random field, which combined in link space result in our overall prediction. Note the difference between only the fixed effects (left) and including the spatial random field (right).
+
+```{r}
+p <- predict(fit_bin_rf, newdata = qcs_grid)
+plot_spatial_map <- function(dat, column, title) {
+  ggplot(dat, aes(X, Y, fill = {{ column }})) +
+    geom_raster() +
+    coord_fixed() +
+    theme(legend.position = "bottom") +
+    ggtitle(title)
+}
+g1 <- plot_spatial_map(p, plogis(est_non_rf), "Fixed effects")
+g2 <- plot_spatial_map(p, omega_s, "Spatial random field") +  scale_fill_gradient2()
+g3 <- plot_spatial_map(p, plogis(est), "Combined prediction")
+cowplot::plot_grid(g1, g2, g3, ncol = 3)
+```
+
+# Spatiotemporal species distribution modeling with dogfish
+
+```{r dog-head-dat, echo=TRUE}
+dat <- select(dogfish, longitude, latitude, year, catch_weight, area_swept, depth)
+head(dat)
+```
+
+```{r dog-utms, echo=TRUE}
+dat <- add_utm_columns(dat, c("longitude", "latitude"), units = "km", utm_crs = 32609)
+dat$log_depth <- log(dat$depth)
+```
+
+```{r dog-mesh, echo=TRUE}
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
+plot(mesh)
+```
+
+
+```{r dog-tw, results='hide', message=FALSE, warning=FALSE, echo=TRUE}
+fit_tw <- sdmTMB(
+  catch_weight ~ s(log_depth),
+  data = dat,
+  mesh = mesh,
+  offset = log(dat$area_swept),
+  time = "year",
+  time_varying = ~ 1,
+  time_varying_type = "ar1",
+  spatial = "on",
+  spatiotemporal = "iid",
+  anisotropy = TRUE,
+  share_range = TRUE,
+  silent = FALSE,
+  family = tweedie()
+)
+```
+
+We can use `update()` to refit our model with four additional families:
+delta-gamma, delta-lognormal, delta-Poisson-link-gamma, and
+delta-Poisson-link-lognormal.
+
+```{r dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE}
+fit_dg <- update(fit_tw, family = delta_gamma(), spatiotemporal = list("off", "iid"))
+fit_dl <- update(fit_dg, family = delta_lognormal())
+fit_dpg <- update(fit_dg, family = delta_poisson_link_gamma())
+fit_dpl <- update(fit_dg, family = delta_poisson_link_lognormal())
+```
+
+We can then compare the fits via AIC:
+
+```{r dog-aic, echo=TRUE}
+AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |> 
+  mutate(delta_AIC = AIC - min(AIC)) |> 
+  arrange(delta_AIC)
+```
+
+We find that the Poisson-link-lognormal model is favoured with AIC. We next
+test two additional model formulations: making the spatial correlation
+isotropic (the default) instead of anisotropic and structuring the
+spatiotemporal random fields as AR(1).
+
+```{r dog-ar1, results='hide', echo=TRUE}
+fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
+fit_dpl_ar1 <- update(fit_dpl, spatiotemporal = list("off", "ar1"))
+```
+
+```{r dog-aci2, echo=TRUE}
+AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
+```
+
+We find that the anisotropic AR(1) is favoured. On inspecting the model output
+with `summary()`, we notice that the spatial random field SD has become very
+small once AR(1) spatiotemporal fields were added. We therefore consider
+a model where these are turned off in the second component of the delta model:
+
+```{r dog-ar1-2, echo=TRUE, results="hide"}
+fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
+```
+
+```{r dog-aic3, echo=TRUE}
+AIC(fit_dpl_ar1_only, fit_dpl_ar1, fit_dpl)
+```
+
+```{r dog-print, echo=TRUE}
+fit <- fit_dpl_ar1_only
+sanity(fit)
+summary(fit)
+```
+
+```{r dog-aniso, echo=TRUE}
+plot_anisotropy(fit_dpl)
+```
+
+```{r dog-grid, echo=TRUE}
+head(wcvi_grid, n = 3)
+grid <- replicate_df(wcvi_grid, "year", time_values = unique(dat$year))
+grid$log_depth <- log(grid$depth)
+head(grid, n = 3)
+```
+
+```{r dog-pred1, echo=TRUE}
+pred <- predict(fit, newdata = grid, type = "response")
+```
+
+```{r dog-pred2, echo=TRUE}
+names(pred)
+```
+
+```{r plot-map, echo=TRUE}
+plot_map <- function(dat, column) {
+  ggplot(dat, aes(X, Y, fill = {{ column }})) +
+    geom_raster() +
+    facet_wrap(vars(year)) +
+    coord_fixed()
+}
+```
+
+```{r dog-plot1, echo=TRUE}
+pred |> filter(year %in% c(2004, 2014, 2022)) |> 
+  plot_map(est) +
+  labs(fill = "Density") +
+  scale_fill_viridis_c(trans = "log10")
+```
+
+```{r dog-plot2, echo=TRUE}
+pred |> filter(year %in% 2004) |> 
+  plot_map(omega_s2) +
+  scale_fill_gradient2()
+```
+
+```{r dog-plot3, echo=TRUE}
+pred |> filter(year %in% c(2004, 2022)) |> 
+  plot_map(epsilon_st2) +
+  scale_fill_gradient2()
+```
+
+```{r dog-plot4, echo=TRUE}
+pred |> filter(year %in% 2004) |> 
+  plot_map(est_non_rf1) +
+  scale_fill_viridis_c(trans = "log10")
+```
+
+```{r dog-depth, echo=TRUE}
+nd <- data.frame(
+  log_depth = seq(min(dat$log_depth), max(dat$log_depth), length.out = 100), 
+  year = max(dat$year)
+)
+pred_depth <- predict(fit, newdata = nd, se_fit = TRUE, re_form = NA, model = NA)
+ggplot(pred_depth, aes(
+  exp(log_depth), exp(est), 
+  ymin = exp(est - 2 * est_se), 
+  ymax = exp(est + 2 * est_se))) +
+  geom_ribbon(fill = "grey90") +
+  geom_line() +
+  labs(x = "Depth (m)", y = "Density")
+```
+
+```{r dog-index, echo=TRUE}
+pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
+ind <- get_index(pred2, bias_correct = TRUE, area = rep(4, nrow(grid)))
+```
+
+```{r dog-index-plot, echo=TRUE}
+ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
+  geom_pointrange() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), limits = c(0, NA)) +
+  labs(y = "Biomass", x = "Year")
+```
+
+# Spatially varying coefficient example with citizen science data
+
+Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
+The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].
+The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014].
+Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
+We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial [NB2, @hilbe2011] distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
+
+We can write the model as TODO
+
+```{r owl-data}
+snow <- readRDS(here::here("data/SNOW_data.rds"))
+```
+
+```{r owl-fit, echo=TRUE, results = "hide"}
+mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
+fit_owl <- sdmTMB(
+  count ~ 1 + nao + (1 | year_f),
+  spatial_varying = ~ nao,
+  time = "year",
+  data = snow, 
+  family = nbinom2(link = "log"),
+  spatial = "on",
+  spatiotemporal = "iid",
+  mesh = mesh_snow,
+  reml = TRUE,
+  silent = FALSE
+)
+```
+
+```{r owl-sanity, eval=FALSE}
+sanity(fit_owl)
+```
+
+```{r owl-print, echo=TRUE}
+summary(fit_owl)
+```
+
+We can extract the SVC effect with TODO
+
+```{r p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
+nsim <- 200
+zeta_s <- predict(fit_owl, newdata = snow, nsim = nsim, sims_var = "zeta_s")
+sims <- spread_sims(fit_owl, nsim = nsim)
+combined <- sims$nao + t(zeta_s)
+snow$nao_effect <- apply(exp(combined), 2, median)
+```
+
+We can make a basic plot using the following code. A more elaborate version is shown in Figure \@ref(fig:owl-plot-fancy). 
+
+```{r owl-plot-basic, echo=TRUE, eval=FALSE}
+ggplot(snow, aes(X, Y)) +
+  geom_point(aes(colour = nao_effect)) +
+  scale_colour_viridis_c()
+```
+
+Overall, we found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect (Fig.\ \ref{fig:owl-nao}).
+This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO.
+We provide an extended version of this example in Appendix \ref{app:owls}.
+
+```{r shapes, echo=FALSE}
+if (!file.exists(here::here("data/ne_10m_lakes"))) {
+  zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
+    "download/10m/physical/ne_10m_lakes.zip")
+  download.file(zip_file, destfile = here::here("data/ne_10m_lakes.zip"))
+  unzip(here::here("data/ne_10m_lakes.zip"), exdir = here::here("data/ne_10m_lakes"))
+}
+```
+
+```{r shapes-read, echo=FALSE}
+Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
+  sf::st_transform(crs = Albers)
+lakes <- sf::st_read(here::here("data/ne_10m_lakes"), quiet = TRUE)
+lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
+```
+
+```{r owl-proj2}
+# project to get nice axis limits 
+snow2 <- snow |> mutate(X = X * 100000, Y = Y * 100000)
+snow2 <- snow2 |> mutate(x = X, y = Y) |> 
+  sf::st_as_sf(coords = c("x", "y"), crs = Albers)
+```
+
+```{r owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Map of spatially varying coefficient effects of NAO on Snowy Owl count. In the west, the lower values are near 1 implying no effect, whereas in the southeast the effect becomes positive. Points represent all count locations."}
+nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |> 
+  mutate(X = X * 100000, Y = Y * 100000) # to match CRS
+ggplot(data = nao_effect_df) +
+  geom_point(aes(X, Y, colour = nao_effect)) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  coord_sf(
+    xlim = c(min(snow2$X), max(snow2$X)),
+    ylim = c(min(snow2$Y), max(snow2$Y))
+  ) +
+   scale_colour_viridis_c(
+    guide = guide_colourbar(direction = "horizontal", title.position = "left")
+  ) +
+  labs(colour = "Estimated multiplicative effect\nof NAO on Snowy Owl count") +
+    theme(legend.position = "bottom", axis.title = element_blank())
+```
+
+\clearpage
 
 \pkg{sdmTMB} can be installed from the Comprehensive \proglang{R} Archive Network (CRAN) at <https://CRAN.R-project.org/package=sdmTMB>
 
@@ -177,25 +571,27 @@ Here, we illustrate a spatial model fit to Pacific Cod (*Gadus macrocephalus*) t
 Our model contains a main effect of depth as a penalized smoother, a spatial random field, and Tweedie observation error.
 Our data frame `pcod` (built into the package) has a column `year` for the year of the survey, `density` for biomass density of Pacific Cod in the area swept for a given survey tow, `depth` for depth in meters of that tow, and spatial longitude and latitude `lon` and `lat`.
 
-```{r sdmTMB-lib0, eval=TRUE, echo=FALSE}
-library("sdmTMB")
-# simplify for paper:
+```{r sdmTMB-lib0, eval=FALSE, echo=FALSE}
+# library("sdmTMB")
+# # simplify for paper:
 pcod_original <- pcod # save it for later
-pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |>
-  tibble::as_tibble()
+# pcod <- dplyr::select(pcod, year, density, depth, lon, lat) |>
+#   tibble::as_tibble()
+
 ```
 
-```{r sdmTMB-lib, eval=TRUE, echo=TRUE}
+```{r sdmTMB-lib, eval=FALSE, echo=TRUE}
 library("sdmTMB")
-head(pcod, n = 3)
-```
+dplyr::select(pcod, year, density, depth, lon, lat) |>
+  head(n = 3)
+```   
 
 <!-- An \pkg{sdmTMB} model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates. -->
 Usually it makes sense to convert the spatial coordinates to an equidistant projection such as the Universal Transverse Mercator (UTM) to ensure that distance remains constant throughout the study region [e.g., using `sf::st_transform()`, @pebesma2018].
 Here we use the helper function `add_utm_columns()` to add UTM coordinates with km units (so our estimated spatial range parameter is not too big or small).
 By default, the function will guess our UTM zone and create new columns `X` and `Y`.
 
-```{r pcod-utms-eval, echo=TRUE, eval=TRUE}
+```{r pcod-utms-eval, echo=TRUE, eval=FALSE}
 pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 ```
 
@@ -204,13 +600,13 @@ pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 #> Visit https://epsg.io/32609 to verify.
 ```
 
-```{r pcod-head2, echo=TRUE}
+```{r pcod-head2, echo=TRUE, eval=FALSE}
 head(pcod, n = 3)
 ```
 
 We then create a mesh object that contains triangulation and projection matrices needed to apply the SPDE approach.
 
-```{r, echo=TRUE, eval=TRUE, cache=TRUE}
+```{r, echo=TRUE, eval=FALSE, cache=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 ```
 
@@ -224,7 +620,7 @@ We use a penalized smoother for depth as a main effect via `s()` from the \pkg{m
 We specify the family as Tweedie [@tweedie1984] to account for positive continuous density values that also contain zeros.
 An alternative would be the `delta_gamma()` family [@aitchison1955] or to model catch weight with an offset for log(area swept) (via the `offset` argument).
 
-```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE}
+```{r pcod-eg1-fit, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE, cache=TRUE}
 fit <- sdmTMB(
   density ~ s(depth),
   data = pcod,
@@ -236,7 +632,7 @@ fit <- sdmTMB(
 
 We can get a summary of the fit with the `print()` method:
 
-```{r pcod-eg1-summary,eval=TRUE, echo=TRUE}
+```{r pcod-eg1-summary,eval=FALSE, echo=TRUE}
 fit
 ```
 
@@ -246,19 +642,19 @@ Next we see any estimated main effects including the linear component of the smo
 The smoother summary follows the format used in the \pkg{brms} package [@burkner2017].
 As noted in the print method, we can extract a tidy data frame similar to the format in the \pkg{broom} [@broom] and \pkg{broom.mixed} [@broommixed] packages:
 
-```{r pcod-eg1-tidy-fe, eval=TRUE, echo=TRUE}
+```{r pcod-eg1-tidy-fe, eval=FALSE, echo=TRUE}
 tidy(fit, conf.int = TRUE)
 ```
 
-```{r pcod-eg1-tidy-re, eval=TRUE, echo=TRUE}
+```{r pcod-eg1-tidy-re, eval=FALSE, echo=TRUE}
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 ```
 
-The latter `tidy()` call returns all variance components of the model and omits the standard errors since these are calculated in log space. 
+The latter `tidy()` call returns all variance components of the model and omits the standard errors since these are calculated in log space.
 
 We can run some basic checks on our model with the `sanity()` function:
 
-```{r pcod-eg1-sanity, eval=TRUE, echo=TRUE}
+```{r pcod-eg1-sanity, eval=FALSE, echo=TRUE}
 sanity(fit)
 ```
 
@@ -278,27 +674,27 @@ We can make predictions with the `predict()` method (`?predict.sdmTMB`) and opti
 Here, we will predict on a 2 $\times$ 2 km grid (`qcs_grid`) that covers the entire region of interest so we can visualize the predictions spatially.
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
 
-```{r pcod-eg1-suppress-depth2, eval=TRUE, echo=FALSE}
+```{r pcod-eg1-suppress-depth2, eval=FALSE, echo=FALSE}
 qcs_grid_original <- qcs_grid
 qcs_grid$depth_scaled <- NULL # for simplicity in paper
 qcs_grid$depth_scaled2 <- NULL # for simplicity in paper
 ```
 
-```{r qcs-head, echo=TRUE}
+```{r qcs-head, echo=FALSE}
 head(qcs_grid, n = 3)
 ```
 
-```{r pcod-eg1-predict, echo=TRUE, eval=TRUE, cache=TRUE}
+```{r pcod-eg1-predict, echo=FALSE, eval=TRUE, cache=TRUE}
 p <- predict(fit, newdata = qcs_grid)
 ```
 
 The output of `predict()` is a data frame containing overall estimates in link space (`est`), estimates from the non-random-field components (`est_non_rf`; here, intercept and depth), estimates from the random field components combined (`est_rf`), and estimates from the individual random field components (here, `omega_s`---the spatial field).
 
-```{r pcod-p-tibble}
+```{r pcod-p-tibble, eval=FALSE}
 p <- tibble::as_tibble(p)
 ```
 
-```{r pcod-head-predict, echo=TRUE}
+```{r pcod-head-predict, echo=TRUE, eval=FALSE}
 head(p, n = 3)
 ```
 
@@ -320,11 +716,11 @@ Here, we will keep the spatial field (`spatial = "on"`), structure the spatiotem
 
 \clearpage
 
-```{r time1, cache=TRUE}
+```{r time1, cache=TRUE, eval=FALSE}
 t1 <- Sys.time()
 ```
 
-```{r fit-tv, eval=TRUE, echo=TRUE, cache=TRUE, results='hide'}
+```{r fit-tv, eval=FALSE, echo=TRUE, cache=TRUE, results='hide'}
 fit_spatiotemporal <- sdmTMB(
   density ~ 0 + s(depth, k = 5),
   time_varying = ~ 1,
@@ -340,18 +736,18 @@ fit_spatiotemporal <- sdmTMB(
 )
 ```
 
-```{r time2, cache=TRUE}
+```{r time2, cache=TRUE, eval=FALSE}
 t2 <- Sys.time()
 ```
 
-```{r fit-tv-print, eval=TRUE, echo=TRUE}
+```{r fit-tv-print, eval=FALSE, echo=TRUE}
 fit_spatiotemporal
 ```
 
 We could inspect the anisotropy with `plot_anisotropy()`, which plots an ellipse showing the spatial range with the spatial coordinates centered on zero.
 We could generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from that fit on a grid covering the area of interest and summing the predicted biomass with the `get_index()` function (Fig.\ \ref{fig:pcod-fig}E, Appendix \ref{app:pcod}).
 
-```{r pcod-restore, echo=FALSE}
+```{r pcod-restore, echo=FALSE, eval=FALSE}
 pcod <- pcod_original
 qcs_grid <- qcs_grid_original
 ```
@@ -364,7 +760,7 @@ The North Atlantic Oscillation Index (NAO) has been linked to productivity of bo
 Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
 We fit counts observed in North America during annual Christmas Bird Counts [@cbc] using a negative binomial [NB2, @hilbe2011] distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
 
-```{r owl-fit, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
+```{r owl-fit-old, warning=FALSE, message=FALSE, cache=TRUE, echo=TRUE, eval=FALSE}
 mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owls <- sdmTMB(
   count ~ nao + (1 | year_factor),
@@ -401,7 +797,7 @@ We provide several approaches to assist this process:
 For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
 A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue [@rufener2021] is recommended but slower (`?residuals.sdmTMB`).
 Simulation-based residuals [@dharma] are also possible.
-(5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model. 
+(5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model.
 Models can be fit to these simulated data to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
 
 \clearpage
@@ -409,7 +805,7 @@ Models can be fit to these simulated data to ensure identifiability, evaluate bi
 # Package comparisons
 
 There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
-\pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models. 
+\pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models.
 In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE [@miller2019] and \pkg{spBayes} [@finley2007; @finley2015] since it is a prominent package that can fit related predictive-process models without the SPDE.
 \pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
 \pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
@@ -522,7 +918,7 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \label{tab:functionality}
 
 \caption{Comparison of functionality between several \proglang{R} packages that can fit geostatistical GLMMs.
-Notes: 
+Notes:
 $^1$Technically possible but non-trivial.
 $^2$Penalized smoother GAMs that determine `wiggliness'.
 $^3$\pkg{inlabru} but not \proglang{R}-\pkg{INLA}.
@@ -611,14 +1007,14 @@ Christmas Bird Count data were provided by National Audubon Society and through 
 
 \appendix
 
-```{r child="pcod.Rmd", eval=TRUE, cache=TRUE}
+```{r child="pcod.Rmd", eval=FALSE, cache=TRUE}
 ```
 
-```{r child="owls.Rmd", eval=TRUE, cache=TRUE}
+```{r child="owls.Rmd", eval=FALSE, cache=TRUE}
 ```
 
-```{r child="inla-comparison.Rmd", eval=TRUE, cache=TRUE}
+```{r child="inla-comparison.Rmd", eval=FALSE, cache=TRUE}
 ```
 
-```{r child="timing.Rmd", eval=TRUE, cache=TRUE}
+```{r child="timing.Rmd", eval=FALSE, cache=TRUE}
 ```
