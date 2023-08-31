@@ -104,7 +104,7 @@ Packages such as \pkg{VAST} [@thorson2019] and \pkg{inlabru} [@bachl2019] are po
 We provide a more detailed comparison of related software packages in Table \ref{tab:functionality} and the Discussion.
 
 Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which implements geostatistical spatial and spatiotemporal GLMMs using \pkg{TMB} for model fitting and \proglang{R}-\pkg{INLA} to set up SPDE matrices.
-Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} [@wood2017a] for a specific class of spatial and spatiotemporal models.
+Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} [@wood2017a] for a specific class of spatial and spatiotemporal models. Many features of \pkg{sdmTMB} may be found in other software (Table 1) but to date no package has included all in a single package. 
 One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}).
 This paper describes the basic functionality of this \proglang{R} package and its underlying statistical model, illustrates its use through two case studies, and concludes with a comparison to related software.
 
@@ -142,8 +142,7 @@ After rapid model exploration with maximum likelihood, one can optionally pass a
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.   
 Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters. 
 
-The results from an \pkg{sdmTMB} model can be used to generate various quantities of interest.
-For example, for the field of ecology, \pkg{sdmTMB} provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
+The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g. \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (`simulate.sdmTMB()`, `sdmTMB_simulate()` respectively). Estimation is done via maximum marginal likelihood with the `sdmTMB()` function (or `sdmTMB_cv()` for cross-validation), and the resulting fitted model can be used to make predictions (`predict.sdmTMB()`) or calculate residuals (`residuals.sdmTMB()`), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (`get_cog()`) [e.g., @thorson2016cog] or in the field of ecology, tracking total population densities through time (`get_index()`).
 
 \begin{landscape}
 \begin{figure}[p]
