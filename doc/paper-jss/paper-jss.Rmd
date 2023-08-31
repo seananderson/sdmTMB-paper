@@ -139,8 +139,8 @@ Random effects are estimated at values that maximize the log likelihood conditio
 After rapid model exploration with maximum likelihood, one can optionally pass an \pkg{sdmTMB} model to the \proglang{R} package \pkg{rstan} [@carpenter2017; @rstan] via \pkg{tmbstan} [@monnahan2018] to estimate the joint posterior distribution for Bayesian inference.
 
 \pkg{sdmTMB} models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
-Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters.
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.   
+Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters. 
 
 The results from an \pkg{sdmTMB} model can be used to generate various quantities of interest.
 For example, for the field of ecology, \pkg{sdmTMB} provides functionality for generating population-level summaries for each time slice including the center of gravity  (`get_cog()`) [e.g., @thorson2016cog] and total population index (`get_index()`) given a user-supplied grid.
@@ -169,9 +169,9 @@ Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \cod
 
 We begin with a simple species distribution model of encounter probability of
 Pacific Cod (TODO spp) from a trawl survey conducted off the west
-coast of Vancouver Island, British Columbia, Canada. We will fit a logistic
+coast of Vancouver Island, British Columbia, Canada. This survey consists of spatially random sampling in each year, resulting in a georeferenced dataset. For compatibility with other packages, spatial random fields in \pkg{sdmTMB} can be toggled on and off. We will fit a logistic
 regression of encounter probability with and without spatial random fields to
-illustrate the importance of accounting for spatial correlation.
+illustrate the importance of accounting for spatial correlation. In addition to the spatial random field, we include an intercept and a quadratic effect of depth on the probability of occurrence. 
 
 ```{r libs, warning=FALSE, message=FALSE, echo=TRUE, cache=FALSE}
 library(sdmTMB)
@@ -237,7 +237,7 @@ test_autocor(fit_bin)
 test_autocor(fit_bin_rf)
 ```
 
-We can also see that the AIC is considerably lower:
+We can also see that the AIC of the model with spatial random fields is considerably lower:
 
 ```{r}
 AIC(fit_bin_rf, fit_bin)
@@ -289,6 +289,10 @@ cowplot::plot_grid(g1, g2, g3, ncol = 3)
 
 # Spatiotemporal species distribution modeling with dogfish
 
+<!-- Need brief description of dogfish data and model here?? -->
+
+As a second example, we will construct a model of catch rates of North Pacific spiny dogfish from the same survey. This example extends the spatial model described previously by also including (1) spatiotemporal fields allowing the distribution in each year to be unique (modelled as an autoregressive process, allowing hotspots to persist through time), (2) a time varying intercept to allow each year to have a different mean catch rate, and (3) a smooth effect of ln(depth), allowing catch rates to vary non-linearly with depth. As catch rates are both skewed and zero inflated, we specify the response family as a Tweedie distribution [@tweedie1984].
+
 ```{r dog-head-dat, echo=TRUE}
 dat <- select(dogfish, longitude, latitude, year, catch_weight, area_swept, depth)
 head(dat)
@@ -323,7 +327,7 @@ fit_tw <- sdmTMB(
 )
 ```
 
-We can use `update()` to refit our model with four additional families:
+We can use `update()` to refit our model quickly without specifying all of the arguments. This is highlighted by exploring models with four additional families, each using a delta- or hurdle distribution:
 delta-gamma, delta-lognormal, delta-Poisson-link-gamma, and
 delta-Poisson-link-lognormal.
 
@@ -342,6 +346,7 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   arrange(delta_AIC)
 ```
 
+
 We find that the Poisson-link-lognormal model is favoured with AIC. We next
 test two additional model formulations: making the spatial correlation
 isotropic (the default) instead of anisotropic and structuring the
@@ -356,6 +361,7 @@ fit_dpl_ar1 <- update(fit_dpl, spatiotemporal = list("off", "ar1"))
 AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 ```
 
+<!-- Need description of anisotropy and why it's important here or somewhere else -->
 We find that the anisotropic AR(1) is favoured. On inspecting the model output
 with `summary()`, we notice that the spatial random field SD has become very
 small once AR(1) spatiotemporal fields were added. We therefore consider
@@ -379,6 +385,7 @@ summary(fit)
 plot_anisotropy(fit_dpl)
 ```
 
+<!-- Propose moving this to a short paragraph `Prediction` to highlight modularity -->
 ```{r dog-grid, echo=TRUE}
 head(wcvi_grid, n = 3)
 grid <- replicate_df(wcvi_grid, "year", time_values = unique(dat$year))
