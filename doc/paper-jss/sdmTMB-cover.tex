@@ -1,9 +1,9 @@
 \documentclass[letterpaper]{letter}
-\usepackage[margin=1.55in]{geometry}
+\usepackage[margin=1.43in]{geometry}
 \geometry{letterpaper}
 \usepackage{graphicx}
-\addtolength{\topmargin}{-30pt}
-\addtolength{\textheight}{55pt}
+\addtolength{\topmargin}{-20pt}
+\addtolength{\textheight}{75pt}
 
 \usepackage{textcomp}
 % \usepackage[sb]{libertine}
@@ -47,13 +47,7 @@
 
 \opening{Dear Editorial Board,}
 
-Thank you for considering our manuscript for publication in the Journal of Statistical Software. This is a revised version of manuscript 4939 after receiving the following editor comments with an encouragement to resubmit:
-
-\begin{quote}
-\input{editor-comments0}
-\end{quote}
-
-We apologize for not better dealing with the GitHub-only package \pkg{sdmTMBextra}. Indeed, this was originally a part of the main package. We had just split this functionality out of the main package because of valgrind/gcc-ASAN check errors on CRAN that could not be replicated or resolved. This also had the benefit of substantially reducing the number of package dependencies for the main CRAN package. We have now omitted the corresponding code in the appendix and referenced the vignette on residuals for further details.
+Thank you for considering our manuscript for publication in the Journal of Statistical Software. We have made all the requested editorial changes as described in the file \texttt{formatting-response.pdf}.
 
 Our original cover letter follows:
 
@@ -65,17 +59,17 @@ Functionality: This package represents a spatial analog of the \pkg{glmmTMB} \pr
 
 Accessibility: \pkg{sdmTMB} provides a more usable interface than alternatives, particularly for users who may be familiar with the syntax found in \proglang{R}'s \texttt{glm()}, \pkg{glmmTMB}, \pkg{lme4}, or \pkg{mgcv} packages. Furthermore, existing packages such as \pkg{INLA} or \pkg{inlabru} are fundamentally Bayesian and require users to deal with the complexity of priors. While \pkg{sdmTMB} can incorporate priors and extend to full Bayesian inference via \pkg{Stan}, by default estimation is done using the simplicity and speed of maximum likelihood.
 
-Speed: The package combines the SPDE approximation with estimation in the \pkg{TMB} \proglang{R} package for computational efficiency. Across our comparisons, \pkg{sdmTMB} was 6--24 times faster than the \pkg{INLA} or \pkg{inlabru} packages---the software with the most similar capabilities for this class of models.
+Speed: The package combines the SPDE approximation with estimation in the \pkg{TMB} \proglang{R} package for computational efficiency. Across our comparisons, \pkg{sdmTMB} was 7--30 times faster than the \pkg{INLA} or \pkg{inlabru} packages---the software with the most similar capabilities for this class of models.
 
-As evidence of its utility, there are already \href{https://github.com/pbs-assess/sdmTMB/wiki/Publications-using-sdmTMB}{16 published preprints, papers, or reports} using \pkg{sdmTMB}, six funded research grants, an ever-growing number of ongoing research projects, and international workshops that in total have been attended by $>$200 participants.
+As evidence of its utility, there are already \href{https://github.com/pbs-assess/sdmTMB/wiki/Publications-using-sdmTMB}{19 published preprints, papers, or reports} using \pkg{sdmTMB}, six funded research grants, an ever-growing number of ongoing research projects, and international workshops that in total have been attended by $>$200 participants.
 
 % We think the readers of JSS would be the ideal audience for our manuscf
 
 JSS would be the ideal outlet to provide a citable resource for \pkg{sdmTMB} and to introduce the package to a wider audience. \pkg{sdmTMB} is an open-source \proglang{R} package \href{https://CRAN.R-project.org/package=sdmTMB}{published on CRAN}. Our code is fully reproducible and included with our submission. We have posted a preprint version of our manuscript \href{https://doi.org/10.1101/2022.03.24.485545}{on bioRxiv}.  We have included a list of potential reviewers on the following page should it be helpful. We look forward to constructive feedback from your reviewers and editors.
 
-\vspace{3mm}
+\vspace{2mm}
 \closing{Sincerely,\\
-\fromsig{\includegraphics[scale=0.42]{/Users/seananderson/Dropbox/sig.pdf}}
+\fromsig{\includegraphics[scale=0.3]{/Users/seananderson/Dropbox/sig.pdf}}
 }
 
 \vspace{6mm}
