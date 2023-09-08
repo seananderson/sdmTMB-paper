@@ -294,7 +294,7 @@ All these effects are in link space (`link = "log"`) and could be exponentiated 
 ```{r plot-map-owls, echo=FALSE, eval=TRUE, out.width="65%", dpi=140, dev="png"}
 ggplot(data = p_proj) +
   geom_point(
-    data = p_mean, aes(X, Y, colour = nao_effect, size = mean_est_count), alpha = 0.5
+    data = p, aes(X, Y, colour = nao_effect_sim, size = exp(est)), alpha = 0.5
   ) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
