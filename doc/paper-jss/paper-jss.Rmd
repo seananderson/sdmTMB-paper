@@ -110,6 +110,8 @@ This paper describes the basic functionality of this \proglang{R} package and it
 
 # Model description
 
+TODO ADD EQUATIONS
+
 \pkg{sdmTMB} fits GLMMs to spatial or spatiotemporal geostatistical data.
 Geostatistical data refers to data observed at specific spatial coordinates reflecting some underlying spatial process [@rossi1992; @diggle2007].
 These data can be collected across discrete points in time.
@@ -161,6 +163,170 @@ See the \pkg{sdmTMB} \href{https://pbs-assess.github.io/sdmTMB/articles/}{model 
 Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint 'hockey-stick' shape \citep[e.g.][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{\textasciitilde\ 0} is used in an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
+
+# Model validation and selection
+
+Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a].
+We provide several approaches to assist this process:
+(1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
+(2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
+(3) An \pkg{sdmTMB} model can be passed to the \pkg{tmbstan} package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or perform posterior predictive checks (see `?extract_mcmc`).
+(4) The `residuals()` method by default returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
+<!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
+For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
+A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue [@rufener2021] is recommended but slower (`?residuals.sdmTMB`).
+Simulation-based residuals [@dharma] are also possible.
+(5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model.
+Models can be fit to these simulated data to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
+
+\clearpage
+
+# Package comparisons
+
+TODO: BEFORE OR AFTER EXAMPLES
+
+There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
+\pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models.
+In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE [@miller2019] and \pkg{spBayes} [@finley2007; @finley2015] since it is a prominent package that can fit related predictive-process models without the SPDE.
+\pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
+\pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
+To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
+Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
+\pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
+There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
+We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix&nbsp;\ref{app:inla}.
+<!-- and \pkg{VAST} (Appendix 5). -->
+
+```{r compare-table, results='asis', eval=FALSE}
+library(kableExtra)
+suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
+d <- as.matrix(d)
+# d[d == "1"] <- "\\checkmark"
+d <- gsub("^1", "\\\\checkmark", d)
+# d[d == "1*"] <- "\\checkmark\\footnote{a}"
+# d[d == "GAMs*"] <- "GAMs\\footnote{a}"
+# d[d == "0"] <- "--"
+d <- gsub("^0", "--", d)
+# d[d == "0*"] <- "--\\footnote{a}"
+d <- as.data.frame(d)
+names(d)[1] <- ""
+row.names(d) <- NULL
+d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
+d$Hmsc <- NULL
+
+d$INLA <- NULL
+names(d)[names(d) == "inlabru"] <- "INLA/inlabru"
+
+knitr::kable(d, format = "latex", caption = "Comparison of functionality between several R packages that can fit geostatistical GLMMs.",
+  booktabs = TRUE,
+  linesep = c(
+    rep('', 4), # coefs
+    '\\addlinespace',
+    rep('', 6), # correlation stuff
+    '\\addlinespace',
+    rep('', 12), # likelihood
+    '\\addlinespace',
+    rep('', 2), # bayes
+    '\\addlinespace'
+  ),
+  escape = FALSE, row.names = FALSE) %>%
+  kableExtra::kable_styling(font_size = 8) %>%
+  kableExtra::footnote(
+    general = paste(
+      "$^1$Technically possible but non-trivial.",
+      "$^2$Penalized smoother GAMs that determine `wiggliness'.",
+      "$^3$inlabru but not INLA.",
+      "$^4$Spatiotemporal fields as random walk only.",
+      "$^5$SPDE approach as in Miller et al. (2019).",
+      "$^6$Does have predictive process knots.",
+      "$^7$Zero-inflated NB2 only.",
+      "$^8$Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}.",
+      "$^9$Possible as log-linked Poisson GLMM with aggregated data.",
+      "$^{10}$Hurdle models possible by fitting components separately."
+    ),
+    escape = FALSE, threeparttable = TRUE
+  )
+```
+
+\begin{table}
+
+\centering
+\fontsize{8}{10}\selectfont
+\begin{threeparttable}
+\begin{tabular}[t]{lllllll}
+\toprule
+ & \pkg{sdmTMB} & \pkg{VAST} & \proglang{R}-\pkg{INLA}/\pkg{inlabru} & \pkg{mgcv} & \pkg{spBayes} & \pkg{spaMM}\\
+\midrule
+Time-varying coefficients & \checkmark & --$^1$ & \checkmark & \checkmark & \checkmark & --\\
+Spatially varying coefficients (SVC) & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & --\\
+GAMs$^2$ & \checkmark & -- & \checkmark & \checkmark & -- & --\\
+Threshold covariates & \checkmark & -- & \checkmark$^3$ & -- & -- & --\\
+Offsets & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
+\addlinespace
+Spatiotemporal fields & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark$^4$ & --\\
+Spatial + spatiotemporal fields & \checkmark & \checkmark & \checkmark & \checkmark & -- & --\\
+Anisotropy & \checkmark & \checkmark & -- & \checkmark & -- & --\\
+Correlation barriers & \checkmark & \checkmark & \checkmark & \checkmark & -- & --\\
+Separate range parameters for fields & \checkmark & -- & \checkmark & \checkmark & -- & --\\
+Share range parameters across fields & \checkmark & \checkmark & \checkmark & -- & -- & --\\
+SPDE-based & \checkmark & \checkmark & \checkmark & \checkmark$^5$ & --$^6$ & \checkmark\\
+\addlinespace
+NB1 distribution & \checkmark & -- & \checkmark & \checkmark & -- & \checkmark\\
+NB2 distribution & \checkmark & \checkmark$^7$ & \checkmark & \checkmark & -- & \checkmark\\
+Zero-truncated distributions & \checkmark & -- & \checkmark & -- & -- & \checkmark\\
+Zero-inflated distributions & \checkmark & \checkmark & \checkmark & -- & -- & \checkmark\\
+Tweedie distribution & \checkmark & \checkmark & \checkmark & \checkmark$^8$ & -- & --\\
+Student-t distribution & \checkmark & -- & \checkmark & \checkmark & -- & --\\
+Censored Poisson distribution & \checkmark & -- & \checkmark & -- & -- & --\\
+log Gaussian Cox processes & --$^9$ & --$^9$ & \checkmark & --$^9$ & --$^9$ & --$^9$\\
+Multivariate responses & -- & \checkmark & \checkmark & -- & \checkmark & \checkmark\\
+Built-in delta/hurdle models & \checkmark & \checkmark & \checkmark & --$^{10}$ & -- & \checkmark\\
+Poisson-link delta model & \checkmark & \checkmark & \checkmark & -- & -- & --\\
+Likelihood weights & \checkmark & -- & \checkmark & \checkmark & \checkmark & \checkmark\\
+Maximum/marginal likelihood & \checkmark & \checkmark & -- & \checkmark & -- & --\\
+\addlinespace
+Bayesian/optionally Bayesian & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & --\\
+Priors/penalties & \checkmark & -- & \checkmark & -- & \checkmark & --\\
+Matern PC priors & \checkmark & -- & \checkmark & -- & -- & --\\
+\addlinespace
+Spatial (or spatial dynamic) factor analysis & -- & \checkmark & -- & -- & -- & --\\
+Empirical Orthogonal Function (EOF) analysis & -- & \checkmark & -- & -- & -- & --\\
+Built-in area-weighted index standardization & \checkmark & \checkmark & -- & -- & -- & --\\
+Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\label{tab:functionality}
+
+\caption{Comparison of functionality between several \proglang{R} packages that can fit geostatistical GLMMs.
+Notes:
+$^1$Technically possible but non-trivial.
+$^2$Penalized smoother GAMs that determine `wiggliness'.
+$^3$\pkg{inlabru} but not \proglang{R}-\pkg{INLA}.
+$^4$Spatiotemporal fields as random walk only.
+$^5$SPDE approach as in \citet{miller2019}.
+$^6$Does have predictive process knots.
+$^7$Zero-inflated NB2 only.
+$^8$Tweedie power parameter fixed for \texttt{mgcv::gamm()}.
+$^9$Possible as log-linked Poisson GLMM with aggregated data.
+$^{10}$Hurdle models possible by fitting components separately.
+}
+\end{table}
+
+<!-- TODO: Line 242. Can \pkg{sdmTMB} be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within \proglang{R}-\pkg{INLA}/\pkg{inlabru} allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
+
+We ran a simple speed comparison between \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Figure \ref{fig:timing}, Appendix \ref{app:speed}).
+In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however, \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \pkg{sdmTMB}.
+\pkg{mgcv} was most affected by mesh resolution.
+Our test was restricted to one core and default \proglang{R} algebra libraries; all packages could run faster with optimized libraries and parallel processing.
+Results with optimized math libraries on one core (\pkg{openBLAS}: @openblas and \pkg{PARDISO}: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=3.5in]{../../figs/timing-spatial-2023-03-16-xkcd.pdf}
+\caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95\% quantiles across 50 random iterations. Note the log-distributed x axis. \pkg{VAST} should be similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \texttt{bru\_max\_iter = 1}, and the \texttt{like()} formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = `fREML'}, and discretized covariates \citep{miller2019}. Note that \pkg{spaMM} only fits spatial, not spatiotemporal, models. All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
+\end{figure}
+
 
 # Installation
 
@@ -400,6 +566,14 @@ tidy(fit_bin_rf, conf.int = TRUE)
 tidy(fit_bin, conf.int = TRUE)
 ```
 
+We can also use `tidy()` to get a data frame of our random field parameters,
+where `sigma_O` is $\sigma_O$ in the above equations: the standard deviation of
+the random field.
+
+```{r pcod-eg1-tidy-re, eval=TRUE, echo=TRUE}
+tidy(fit, effects = "ran_pars", conf.int = TRUE)
+```
+
 \sloppy
 To visualize our model, we can make predictions with the `predict()` method
 (`?predict.sdmTMB`) and optionally use the `newdata` argument to predict on
@@ -424,13 +598,14 @@ which combined in link space result in our overall prediction. Note the
 difference between only the fixed effects (left) and including the spatial
 random field (right). TODO DESCRIBE PLOTTING AND/OR INCLUDE
 
-```{r pcod-predict-maps, fig.width=11, fig.asp=0.3, out.width="6in", fig.cap="TODO"}
+```{r pcod-predict-maps, fig.width=10, fig.asp=0.4, out.width="6.1in", fig.cap="TODO"}
 plot_spatial_map <- function(dat, column, title) {
   ggplot(dat, aes(X, Y, fill = {{ column }})) +
     geom_raster() +
     coord_fixed() +
-    theme(legend.position = "bottom") +
-    ggtitle(title)
+    theme(legend.position= "bottom") +
+    ggtitle(title) +
+    theme(axis.title = element_blank(), axis.ticks = element_blank(), axis.text = element_blank())
 }
 g1 <- plot_spatial_map(p, plogis(est_non_rf), "Fixed effects")
 g2 <- plot_spatial_map(p, omega_s, "Spatial random field") +  scale_fill_gradient2()
@@ -664,6 +839,7 @@ plot_map <- function(dat, column) {
     geom_raster() +
     facet_wrap(vars(year)) +
     coord_fixed() +
+    theme(legend.position= "bottom") +
     theme(axis.title = element_blank(), axis.ticks = element_blank(), axis.text = element_blank())
 }
 ```
@@ -693,7 +869,7 @@ g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |>
   scale_fill_viridis_c(trans = "log10")
 ```
 
-```{r dog-wvci-pred, fig.asp = 0.5, fig.cap="Example prediction components... TODO", fig.width=9, out.width="6in"}
+```{r dog-wvci-pred, fig.asp = 0.7, fig.cap="Example prediction components... TODO", fig.width=9, out.width="6in"}
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -823,13 +999,13 @@ summary(fit_owl)
 ```
 
 The spatially varying coefficient effect at any point in space is the
-combination of the main effect and spatial random effect for `nao`. Here we
+combination of the main effect and spatial random effect for `nao`. We
 illustrate deriving uncertainty on their combination by simulating from the
 parameter precision matrix assuming the joint parameter covariance matrix in
 multivariate normal. We do this by specifying a non-null number of simulation
 draws to `nsim` in `predict.sdmTMB()`. By default, `nsim > 0` will return
-a matrix of draws from the overall prediction. Here, we we instead specify that
-we want to return draws from the `zeta_s` random field, which is the spatially
+a matrix of draws from the overall prediction. Here, we instead specify that we
+want to return draws from the `zeta_s` random field, which is the spatially
 varying random field. This returns a matrix where each row matches a row of
 `newdata` and each column is a simulation draw. We then use the function
 `spread_sims()` to draw 200 simulations from the parameters themselves, combine
@@ -884,7 +1060,7 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 ```
 
-```{r owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the lower values are near 1 implying no effect, whereas in the southeast the effect becomes positive."}
+```{r owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the values are near 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=6.5}
 nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |> 
   mutate(X = X * 100000, Y = Y * 100000) # to match CRS
 ggplot(data = nao_effect_df) +
@@ -903,15 +1079,6 @@ ggplot(data = nao_effect_df) +
 ```
 
 \clearpage
-
-
-```{r pcod-eg1-tidy-fe, eval=FALSE, echo=TRUE}
-# tidy(fit, conf.int = TRUE)
-```
-
-```{r pcod-eg1-tidy-re, eval=FALSE, echo=TRUE}
-# tidy(fit, effects = "ran_pars", conf.int = TRUE)
-```
 
 <!-- The latter `tidy()` call returns all variance components of the model and omits the standard errors since these are calculated in log space. -->
 
@@ -936,167 +1103,6 @@ ggplot(data = nao_effect_df) +
 <!-- Here, we will keep the spatial field (`spatial = "on"`), structure the spatiotemporal random fields as independent (`spatiotemporal = "iid"`), include a time-varying intercept (`~ 1`) fit as a random walk process (`time_varying_type = "rw"`), include anisotropy to allow spatial correlation to decay at different rates up the coast vs.\ away from the coast (`anisotropy = TRUE`), and use `silent = FALSE` to see model fitting progress. -->
 
 \clearpage
-
-# Model validation and selection
-
-Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a].
-We provide several approaches to assist this process:
-(1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
-(2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
-(3) An \pkg{sdmTMB} model can be passed to the \pkg{tmbstan} package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or perform posterior predictive checks (see `?extract_mcmc`).
-(4) The `residuals()` method by default returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
-<!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
-For state-space models, these residuals have known statistical issues with the Laplace approximation [@thygesen2017a] but are quick to calculate.
-A version that uses Markov chain Monte Carlo (MCMC) sampling of the random effects to avoid this issue [@rufener2021] is recommended but slower (`?residuals.sdmTMB`).
-Simulation-based residuals [@dharma] are also possible.
-(5) The `simulate.sdmTMB()` method can simulate from fitted models and the `sdmTMB_simulate()` function facilitates simulating data without starting from a fitted model.
-Models can be fit to these simulated data to ensure identifiability, evaluate bias and precision in parameter estimation, or evaluate the consequences of model misspecification.
-
-\clearpage
-
-# Package comparisons
-
-There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models [e.g., @heaton2019].
-\pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} [@rousset2014] are the most closely related, as they all provide a user interface to SPDE-based GRF models.
-In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE [@miller2019] and \pkg{spBayes} [@finley2007; @finley2015] since it is a prominent package that can fit related predictive-process models without the SPDE.
-\pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
-\pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
-To our knowledge, \pkg{VAST} is the only package to implement spatial [@thorson2015] and spatial dynamic factor analysis [@thorson2016] and spatial empirical orthogonal function (EOF) regression [@thorson2020].
-Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
-\pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
-There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
-We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix&nbsp;\ref{app:inla}.
-<!-- and \pkg{VAST} (Appendix 5). -->
-
-```{r compare-table, results='asis', eval=FALSE}
-library(kableExtra)
-suppressMessages(suppressWarnings(d <- readr::read_csv(here::here("doc/software-comparison.csv"), show_col_types = FALSE, comment = "#")))
-d <- as.matrix(d)
-# d[d == "1"] <- "\\checkmark"
-d <- gsub("^1", "\\\\checkmark", d)
-# d[d == "1*"] <- "\\checkmark\\footnote{a}"
-# d[d == "GAMs*"] <- "GAMs\\footnote{a}"
-# d[d == "0"] <- "--"
-d <- gsub("^0", "--", d)
-# d[d == "0*"] <- "--\\footnote{a}"
-d <- as.data.frame(d)
-names(d)[1] <- ""
-row.names(d) <- NULL
-d <- d[,c(1, 2, 3, 5, 6, 4, 7, 8, 9)]
-d$Hmsc <- NULL
-
-d$INLA <- NULL
-names(d)[names(d) == "inlabru"] <- "INLA/inlabru"
-
-knitr::kable(d, format = "latex", caption = "Comparison of functionality between several R packages that can fit geostatistical GLMMs.",
-  booktabs = TRUE,
-  linesep = c(
-    rep('', 4), # coefs
-    '\\addlinespace',
-    rep('', 6), # correlation stuff
-    '\\addlinespace',
-    rep('', 12), # likelihood
-    '\\addlinespace',
-    rep('', 2), # bayes
-    '\\addlinespace'
-  ),
-  escape = FALSE, row.names = FALSE) %>%
-  kableExtra::kable_styling(font_size = 8) %>%
-  kableExtra::footnote(
-    general = paste(
-      "$^1$Technically possible but non-trivial.",
-      "$^2$Penalized smoother GAMs that determine `wiggliness'.",
-      "$^3$inlabru but not INLA.",
-      "$^4$Spatiotemporal fields as random walk only.",
-      "$^5$SPDE approach as in Miller et al. (2019).",
-      "$^6$Does have predictive process knots.",
-      "$^7$Zero-inflated NB2 only.",
-      "$^8$Tweedie power parameter fixed for \\\\texttt{mgcv::gamm()}.",
-      "$^9$Possible as log-linked Poisson GLMM with aggregated data.",
-      "$^{10}$Hurdle models possible by fitting components separately."
-    ),
-    escape = FALSE, threeparttable = TRUE
-  )
-```
-
-\begin{table}
-
-\centering
-\fontsize{8}{10}\selectfont
-\begin{threeparttable}
-\begin{tabular}[t]{lllllll}
-\toprule
- & \pkg{sdmTMB} & \pkg{VAST} & \proglang{R}-\pkg{INLA}/\pkg{inlabru} & \pkg{mgcv} & \pkg{spBayes} & \pkg{spaMM}\\
-\midrule
-Time-varying coefficients & \checkmark & --$^1$ & \checkmark & \checkmark & \checkmark & --\\
-Spatially varying coefficients (SVC) & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & --\\
-GAMs$^2$ & \checkmark & -- & \checkmark & \checkmark & -- & --\\
-Threshold covariates & \checkmark & -- & \checkmark$^3$ & -- & -- & --\\
-Offsets & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
-\addlinespace
-Spatiotemporal fields & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark$^4$ & --\\
-Spatial + spatiotemporal fields & \checkmark & \checkmark & \checkmark & \checkmark & -- & --\\
-Anisotropy & \checkmark & \checkmark & -- & \checkmark & -- & --\\
-Correlation barriers & \checkmark & \checkmark & \checkmark & \checkmark & -- & --\\
-Separate range parameters for fields & \checkmark & -- & \checkmark & \checkmark & -- & --\\
-Share range parameters across fields & \checkmark & \checkmark & \checkmark & -- & -- & --\\
-SPDE-based & \checkmark & \checkmark & \checkmark & \checkmark$^5$ & --$^6$ & \checkmark\\
-\addlinespace
-NB1 distribution & \checkmark & -- & \checkmark & \checkmark & -- & \checkmark\\
-NB2 distribution & \checkmark & \checkmark$^7$ & \checkmark & \checkmark & -- & \checkmark\\
-Zero-truncated distributions & \checkmark & -- & \checkmark & -- & -- & \checkmark\\
-Zero-inflated distributions & \checkmark & \checkmark & \checkmark & -- & -- & \checkmark\\
-Tweedie distribution & \checkmark & \checkmark & \checkmark & \checkmark$^8$ & -- & --\\
-Student-t distribution & \checkmark & -- & \checkmark & \checkmark & -- & --\\
-Censored Poisson distribution & \checkmark & -- & \checkmark & -- & -- & --\\
-log Gaussian Cox processes & --$^9$ & --$^9$ & \checkmark & --$^9$ & --$^9$ & --$^9$\\
-Multivariate responses & -- & \checkmark & \checkmark & -- & \checkmark & \checkmark\\
-Built-in delta/hurdle models & \checkmark & \checkmark & \checkmark & --$^{10}$ & -- & \checkmark\\
-Poisson-link delta model & \checkmark & \checkmark & \checkmark & -- & -- & --\\
-Likelihood weights & \checkmark & -- & \checkmark & \checkmark & \checkmark & \checkmark\\
-Maximum/marginal likelihood & \checkmark & \checkmark & -- & \checkmark & -- & --\\
-\addlinespace
-Bayesian/optionally Bayesian & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & --\\
-Priors/penalties & \checkmark & -- & \checkmark & -- & \checkmark & --\\
-Matern PC priors & \checkmark & -- & \checkmark & -- & -- & --\\
-\addlinespace
-Spatial (or spatial dynamic) factor analysis & -- & \checkmark & -- & -- & -- & --\\
-Empirical Orthogonal Function (EOF) analysis & -- & \checkmark & -- & -- & -- & --\\
-Built-in area-weighted index standardization & \checkmark & \checkmark & -- & -- & -- & --\\
-Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
-\bottomrule
-\end{tabular}
-\end{threeparttable}
-\label{tab:functionality}
-
-\caption{Comparison of functionality between several \proglang{R} packages that can fit geostatistical GLMMs.
-Notes:
-$^1$Technically possible but non-trivial.
-$^2$Penalized smoother GAMs that determine `wiggliness'.
-$^3$\pkg{inlabru} but not \proglang{R}-\pkg{INLA}.
-$^4$Spatiotemporal fields as random walk only.
-$^5$SPDE approach as in \citet{miller2019}.
-$^6$Does have predictive process knots.
-$^7$Zero-inflated NB2 only.
-$^8$Tweedie power parameter fixed for \texttt{mgcv::gamm()}.
-$^9$Possible as log-linked Poisson GLMM with aggregated data.
-$^{10}$Hurdle models possible by fitting components separately.
-}
-\end{table}
-
-<!-- TODO: Line 242. Can \pkg{sdmTMB} be run in parallel? If so, does the parallelism share memory across the cores or does the memory grow with the number of cores? This is a HUGE feature of PARDISO within \proglang{R}-\pkg{INLA}/\pkg{inlabru} allowing for very large models to be fit on HPCs. It might be worth mentioning and adding to Table 1. Also Line 242: do you expect the same relative performance between the software packages as more cores are used? -->
-
-We ran a simple speed comparison between \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Figure \ref{fig:timing}, Appendix \ref{app:speed}).
-In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however, \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \pkg{sdmTMB}.
-\pkg{mgcv} was most affected by mesh resolution.
-Our test was restricted to one core and default \proglang{R} algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries on one core (\pkg{openBLAS}: @openblas and \pkg{PARDISO}: @pardiso7.2a) resulted in a ~10% speed increase for \pkg{sdmTMB} and \pkg{inlabru} and a ~7--9-fold speed increase for \pkg{mgcv}.
-
-\begin{figure}[htb]
-\centering
-\includegraphics[width=3.5in]{../../figs/timing-spatial-2023-03-16-xkcd.pdf}
-\caption[]{Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions. Lines represent means and ribbons 95\% quantiles across 50 random iterations. Note the log-distributed x axis. \pkg{VAST} should be similar to \pkg{sdmTMB} and so is not shown. \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \texttt{bru\_max\_iter = 1}, and the \texttt{like()} formulation. \pkg{mgcv} used \texttt{bam()}, \texttt{method = `fREML'}, and discretized covariates \citep{miller2019}. Note that \pkg{spaMM} only fits spatial, not spatiotemporal, models. All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}\label{fig:timing}
-\end{figure}
 
 # Discussion
 
