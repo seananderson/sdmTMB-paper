@@ -387,8 +387,9 @@ options(
   pillar.print_max = 3,
   pillar.print_min = 3,
   pillar.advice = FALSE,
-  pillar.width = 72
+  pillar.width = 80
 )
+options(width = 80)
 ```
 
 ```{r libs-extras}
@@ -424,9 +425,10 @@ allowed distance between mesh vertices in the units of `X` and `Y`.
 `fmesher::fm_rcdt_2d_inla()` and `cutoff` is passed through to these functions.
 Alternatively, we could have created any mesh via \proglang{R}-\pkg{INLA} or
 \pkg{fmesher} and supplied it to the `mesh` argument in `make_mesh()`. We can
-inspect our mesh object with the associated plotting method.
+inspect our mesh object with the associated plotting method. Our mesh has `r mesh_pcod$mesh$n` (`mesh_pcod$mesh$n`) vertices.
+ 
 
-```{r dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="TODO"}
+```{r dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. This is a simple mesh created with the convenience function \\code{make\\_mesh()}. A greater degree of control over the mesh construction can be achieved by using the \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5}
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 plot(mesh_pcod)
 ```
@@ -485,12 +487,12 @@ sanity(fit_bin_rf)
 
 Here, this does not flag any issues. `sanity()` is checking that the `nlminb()`
 optimizer reported successful convergence, that the Hessian matrix is positive
-definite, that no extreme (XX) or small (XX) eigenvalues are detected, that no
-absolute log likelihood gradients with respect two fixed defects are >= 0.001,
-that all fixed effects have reported standard errors and that they do not look
-unreasonably large (XX by default), that random field marginal standard
-deviations are not unexpectedly small or large, and that the random field
-Matérn range parameter does not look unreasonably large.
+definite, that no extreme or small eigenvalues are detected, that no
+absolute log likelihood gradients with respect to fixed defects are >= 0.001,
+that all fixed effects have reported standard errors that do not look
+unreasonably large (< 100 by default), that random field marginal standard
+deviations are not unexpectedly small or large (> 0.01 and < 100), and that the random field
+Matérn range parameter does not look unreasonably large (< 1.5 times the largest edge of a bounding box around the observations).
 
 We can get a summary of our model fit:
 
@@ -542,7 +544,7 @@ p_rf <- round(t_rf$p.value, 2)
 
 We can test for spatial autocorrelation with a Moran's I test or with a visual
 inspection of the residuals calculated from the `residuals()` S3 method. We
-omit code for Moran's I calculation for brevity but include an example in the
+omit example code for Moran's I calculation for brevity but include it in the
 code supplement. The p-value for spatial autocorrelation is low for the model
 without a random field (p < 0.01) but large for the model with a random field
 (p = `r p_rf`) suggesting significant residual correlation in the simpler model
@@ -588,7 +590,7 @@ tidy(fit_bin, conf.int = TRUE)
 ```
 
 We can also use `tidy()` to get a data frame of our random field parameters,
-where `sigma_O` is $\sigma_O$ in the above equations: the standard deviation of
+where `sigma_O` is $\sigma_O$ in the above equations---the standard deviation of
 the spatial random field $\bm{\omega}$.
 
 ```{r pcod-eg1-tidy-re, eval=TRUE, echo=TRUE}
@@ -614,12 +616,7 @@ select(p, X, Y, depth, est, est_non_rf, omega_s) |>
   as_tibble() |> head(n = 2)
 ```
 
-TODO MOVE TO CAPTION? We have an effect of depth and a spatial random field,
-which combined in link space result in our overall prediction. Note the
-difference between only the fixed effects (left) and including the spatial
-random field (right). TODO DESCRIBE PLOTTING AND/OR INCLUDE
-
-```{r pcod-predict-maps, fig.width=10, fig.asp=0.4, out.width="6.1in", fig.cap="TODO"}
+```{r pcod-predict-maps, fig.width=10, fig.asp=0.4, out.width="6.1in", fig.cap="Prediction components from the binomial species distribution model of Pacific Cod. Shown are (a) the quadratic effect of bottom depth, (b) the spatial random field in link space, and (c) the overall prediction, which here is the combination of panels a and b. Note the difference between only the fixed effects (a) and including the spatial random field (c)."}
 plot_spatial_map <- function(dat, column, title) {
   ggplot(dat, aes(X, Y, fill = {{ column }})) +
     geom_raster() +
@@ -628,9 +625,9 @@ plot_spatial_map <- function(dat, column, title) {
     ggtitle(title) +
     theme(axis.title = element_blank(), axis.ticks = element_blank(), axis.text = element_blank())
 }
-g1 <- plot_spatial_map(p, plogis(est_non_rf), "Fixed effects")
-g2 <- plot_spatial_map(p, omega_s, "Spatial random field") +  scale_fill_gradient2()
-g3 <- plot_spatial_map(p, plogis(est), "Combined prediction")
+g1 <- plot_spatial_map(p, plogis(est_non_rf), "(a) Fixed effects")
+g2 <- plot_spatial_map(p, omega_s, "(b) Spatial random field") +  scale_fill_gradient2()
+g3 <- plot_spatial_map(p, plogis(est), "(c) Combined prediction")
 cowplot::plot_grid(g1, g2, g3, ncol = 3)
 ```
 
@@ -822,8 +819,10 @@ the spatiotemporal random fields, and a spatiotemporal random field marginal
 standard deviation. We can use `plot_anisotropy()` to visually inspect the
 anisotropy (Figure \ref{fig:dog-aniso}).
 
-```{r dog-aniso, echo=TRUE, fig.cap="TODO", out.width="4in"}
-plot_anisotropy(fit_dpl)
+(ref:dog-aniso)
+
+```{r dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the space of the X-Y coordinates being modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from zero.", out.width="4in"}
+plot_anisotropy(fit)
 ```
 
 Similarly to the first example, we can visualize model predictions on a grid
@@ -866,31 +865,35 @@ plot_map <- function(dat, column) {
 ```
 
 ```{r dog-plot1, echo=FALSE}
-g_est <- pred |> filter(year %in% c(2004, 2022)) |> 
-  plot_map(est) +
-  # labs(fill = "Density") +
-  scale_fill_viridis_c(trans = "log10")
+g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |> 
+  plot_map(est_non_rf1) +
+  scale_fill_viridis_c(trans = "log10") +
+  ggtitle("(a) Non-random-field components; first delta model")
 ```
 
 ```{r dog-plot2, echo=FALSE}
 g_omega <- pred |> filter(year %in% c(2004, 2022)) |> 
   plot_map(omega_s1) +
-  scale_fill_gradient2()
+  scale_fill_gradient2() +
+  ggtitle("(b) Spatial random field; first delta model")
 ```
 
 ```{r dog-plot3, echo=FALSE}
 g_eps <- pred |> filter(year %in% c(2004, 2022)) |> 
   plot_map(epsilon_st2) +
-  scale_fill_gradient2()
+  scale_fill_gradient2() +
+  ggtitle("(c) Spatiotemporal random field; second delta model")
 ```
 
 ```{r dog-plot4, echo=FALSE}
-g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |> 
-  plot_map(est_non_rf1) +
-  scale_fill_viridis_c(trans = "log10")
+g_est <- pred |> filter(year %in% c(2004, 2022)) |> 
+  plot_map(est) +
+  # labs(fill = "Density") +
+  scale_fill_viridis_c(trans = "log10") +
+  ggtitle("(d) Overall prediction")
 ```
 
-```{r dog-wvci-pred, fig.asp = 0.7, fig.cap="Example prediction components... TODO", fig.width=9, out.width="6in"}
+```{r dog-wvci-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, \\code{omega\\_s1} refers to the spatial random field from the first delta model, \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time and represents TODO. The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent TODO.", fig.width=9, out.width="6in"}
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -949,6 +952,8 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), limits = c(0, NA)) +
   labs(y = "Biomass", x = "Year")
 ```
+
+\clearpage
 
 # Spatially varying coefficient example with citizen science data
 
