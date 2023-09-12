@@ -689,9 +689,9 @@ O_{\boldsymbol{s},t} +
 \end{aligned}
 $$
 
-where TODO.
+where $\boldsymbol{\beta}$ are coefficients associated with the main effects, $O_{\boldsymbol{s},t}$ represents the offset (here, log area swept), $\gamma_t$ represents the time-varying coefficients, $\omega_{\boldsymbol{s}}$ is the spatial field (equivalent to a spatial intercept) and $\epsilon_{\boldsymbol{s},t} $ represents spatiotemporal fields.
 
-and TODO
+The temporally varying intercepts $\gamma_t$ are modeled as a stationary AR(1) process,
 
 $$
 \begin{aligned}
