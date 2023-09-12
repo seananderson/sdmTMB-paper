@@ -117,18 +117,18 @@ Areal data (data aggregated to polygon or grid level) may be analyzed using othe
 \pkg{sdmTMB} can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004] (e.g., spatial variance and range---the distance at which points are effectively independent).
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects $\boldsymbol{\beta}$ and offset $O_{\boldsymbol{s},t}$, IID (independent and identically distributed) random intercepts $\alpha_g$, spatial intercept random fields $\omega_{\boldsymbol{s}}$, spatiotemporal intercept random fields $\epsilon_{\boldsymbol{s},t}$, time-varying effects $\boldsymbol{\gamma_t}$, and spatially varying effects $\zeta_{\boldsymbol{s}}$ (Figure \ref{fig:diagram}). These components are discussed in more detail via our examples below.
+The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects $\bm{\beta}$ and offset $O_{\bm{s},t}$, IID (independent and identically distributed) random intercepts $\alpha_g$, spatial intercept random fields $\omega_{\bm{s}}$, spatiotemporal intercept random fields $\epsilon_{\bm{s},t}$, time-varying effects $\bm{\gamma_t}$, and spatially varying effects $\zeta_{\bm{s}}$ (Figure \ref{fig:diagram}). These components are discussed in more detail via our examples below.
 
 $$
 \begin{aligned}
-\mu_{\boldsymbol{s},t} &=
-f^{-1} \left( \boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s},t} \boldsymbol{\beta} +
-O_{\boldsymbol{s},t} +
+\mu_{\bm{s},t} &=
+f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
+O_{\bm{s},t} +
 \alpha_g +
-\omega_{\boldsymbol{s}} +
-\epsilon_{\boldsymbol{s},t} + 
-\boldsymbol{X}^{\mathrm{tvc}}_{\boldsymbol{s},t} \boldsymbol{\gamma_t} +
-\boldsymbol{X}^{\mathrm{svc}}_{\boldsymbol{s},t} \zeta_{\boldsymbol{s}} \right),
+\omega_{\bm{s}} +
+\epsilon_{\bm{s},t} + 
+\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \bm{\gamma_t} +
+\bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} \right),
 \end{aligned}
 $$
 This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link function $f^{-1}$ (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
@@ -432,17 +432,17 @@ Our random field model can be written as
 
 $$
 \begin{aligned}
-y_{\boldsymbol{s}} &\sim \operatorname{Bernoulli} \left(\mu_{\boldsymbol{s}}\right),\\
-\mu_{\boldsymbol{s}} &= \operatorname{logit}^{-1} \left( \boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s}} \boldsymbol{\beta} +
-\omega_{\boldsymbol{s}}
+y_{\bm{s}} &\sim \operatorname{Bernoulli} \left(\mu_{\bm{s}}\right),\\
+\mu_{\bm{s}} &= \operatorname{logit}^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s}} \bm{\beta} +
+\omega_{\bm{s}}
 \right),
 \end{aligned}
 $$
 
-where $\boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s}}$ contains main effect covariates (intercept, quadratic effects of depth), $\boldsymbol{\beta}$ represents estimated main effect coefficients, and $\omega_{\boldsymbol{s}}$ represents the estimated spatial field, 
+where $\bm{X}^{\mathrm{main}}_{\bm{s}}$ contains main effect covariates (intercept, quadratic effects of depth), $\bm{\beta}$ represents estimated main effect coefficients, and $\omega_{\bm{s}}$ represents the estimated spatial field, 
 
 $$
-\omega_{\boldsymbol{s}} \sim \mathrm{MVN}(\boldsymbol{0},\boldsymbol{\Sigma}_\omega)
+\omega_{\bm{s}} \sim \mathrm{MVN}(\bm{0},\bm{\Sigma}_\omega)
 $$
 
 ```{r, echo=TRUE}
@@ -678,18 +678,18 @@ Our model can be written as TODO
 
 $$
 \begin{aligned}
-\mathbb{E}[y_{\boldsymbol{s},t}] &= \mu_{\boldsymbol{s},t},\\
-\mu_{\boldsymbol{s},t} &=
-f^{-1} \left( \boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s},t} \boldsymbol{\beta} +
-O_{\boldsymbol{s},t} +
-\boldsymbol{X}^{\mathrm{tvc}}_{\boldsymbol{s},t} \gamma_t +
-\omega_{\boldsymbol{s}} +
-\epsilon_{\boldsymbol{s},t} 
+\mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
+\mu_{\bm{s},t} &=
+f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
+O_{\bm{s},t} +
+\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \gamma_t +
+\omega_{\bm{s}} +
+\epsilon_{\bm{s},t} 
 \right),
 \end{aligned}
 $$
 
-where $\boldsymbol{\beta}$ are coefficients associated with the main effects, $O_{\boldsymbol{s},t}$ represents the offset (here, log area swept), $\gamma_t$ represents the time-varying coefficients, $\omega_{\boldsymbol{s}}$ is the spatial field (equivalent to a spatial intercept) and $\epsilon_{\boldsymbol{s},t} $ represents spatiotemporal fields.
+where $\bm{\beta}$ are coefficients associated with the main effects, $O_{\bm{s},t}$ represents the offset (here, log area swept), $\gamma_t$ represents the time-varying coefficients, $\omega_{\bm{s}}$ is the spatial field (equivalent to a spatial intercept) and $\epsilon_{\bm{s},t}$ represents spatiotemporal fields.
 
 The temporally varying intercepts $\gamma_t$ are modeled as a stationary AR(1) process,
 
@@ -754,9 +754,9 @@ The AR(1) fields can be represented as TODO.
 
 $$
 \begin{aligned}
-\boldsymbol{\delta}_{t=1} &\sim \operatorname{MVNormal} (\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon}),\\
-\boldsymbol{\delta}_{t>1} &= \rho \boldsymbol{\delta}_{t-1} + \sqrt{1 - \rho^2} \boldsymbol{\epsilon_{t}},  \:
-\boldsymbol{\epsilon_{t}} \sim \operatorname{MVNormal} \left(\boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right),
+\bm{\delta}_{t=1} &\sim \operatorname{MVNormal} (\bm{0}, \bm{\Sigma}_{\epsilon}),\\
+\bm{\delta}_{t>1} &= \rho \bm{\delta}_{t-1} + \sqrt{1 - \rho^2} \bm{\epsilon_{t}},  \:
+\bm{\epsilon_{t}} \sim \operatorname{MVNormal} \left(\bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$ 
 
@@ -968,13 +968,13 @@ We can write the model as TODO
 
 $$
 \begin{aligned}
-\mathbb{E}[y_{\boldsymbol{s},t}] &= \mu_{\boldsymbol{s},t},\\
-\mu_{\boldsymbol{s},t} &=
-f^{-1} \left( \boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s},t} \boldsymbol{\beta} +
+\mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
+\mu_{\bm{s},t} &=
+f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 \alpha_g +
-\boldsymbol{X}^{\mathrm{svc}}_{\boldsymbol{s},t} \zeta_{\boldsymbol{s}} +
-\omega_{\boldsymbol{s}} +
-\epsilon_{\boldsymbol{s},t} \right),
+\bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
+\omega_{\bm{s}} +
+\epsilon_{\bm{s},t} \right),
 \end{aligned}
 $$
 
