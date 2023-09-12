@@ -110,8 +110,6 @@ This paper describes the basic functionality of this \proglang{R} package and it
 
 # Model description
 
-TODO ADD EQUATIONS
-
 \pkg{sdmTMB} fits GLMMs to spatial or spatiotemporal geostatistical data.
 Geostatistical data refers to data observed at specific spatial coordinates reflecting some underlying spatial process [@rossi1992; @diggle2007].
 These data can be collected across discrete points in time.
@@ -119,8 +117,21 @@ Areal data (data aggregated to polygon or grid level) may be analyzed using othe
 \pkg{sdmTMB} can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted [@wall2004] (e.g., spatial variance and range---the distance at which points are effectively independent).
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects, spatial intercept random fields, spatiotemporal intercept random fields, IID (independent and identically distributed) random intercepts (but not currently random slopes), time-varying effects, and spatially varying effects (Figure \ref{fig:diagram}).
-This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
+The process component of an \pkg{sdmTMB} model can be formed by any combination of main ("fixed") effects $\boldsymbol{\beta}$ and offset $O_{\boldsymbol{s},t}$, IID (independent and identically distributed) random intercepts $\alpha_g$, spatial intercept random fields $\omega_{\boldsymbol{s}}$, spatiotemporal intercept random fields $\epsilon_{\boldsymbol{s},t}$, time-varying effects $\boldsymbol{\gamma_t}$, and spatially varying effects $\zeta_{\boldsymbol{s}}$ (Figure \ref{fig:diagram}). These components are discussed in more detail via our examples below.
+
+$$
+\begin{aligned}
+\mu_{\boldsymbol{s},t} &=
+f^{-1} \left( \boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s},t} \boldsymbol{\beta} +
+O_{\boldsymbol{s},t} +
+\alpha_g +
+\omega_{\boldsymbol{s}} +
+\epsilon_{\boldsymbol{s},t} + 
+\boldsymbol{X}^{\mathrm{tvc}}_{\boldsymbol{s},t} \boldsymbol{\gamma_t} +
+\boldsymbol{X}^{\mathrm{svc}}_{\boldsymbol{s},t} \zeta_{\boldsymbol{s}} \right),
+\end{aligned}
+$$
+This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link function $f^{-1}$ (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
 See the model description vignette for a full description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
 
@@ -169,7 +180,7 @@ Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \cod
 Validation and selection of state-space models is challenging, particularly when using the Laplace approximation [@thygesen2017a].
 We provide several approaches to assist this process:
 (1) The Akaike Information Criterion [AIC, @akaike1974] can be calculated with `AIC()`, although AIC has well-documented biases with mixed-effects models [@liang2008].
-(2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection [e.g., via expected log predictive density [ELPD], @vehtari2017] or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
+(2) Alternatively, k-fold cross validation with `sdmTMB_cv()` can be used with user-specified or randomly chosen folds for model selection or to evaluate goodness of fit according to user-calculated criteria (e.g., mean squared error, area under the curve).
 (3) An \pkg{sdmTMB} model can be passed to the \pkg{tmbstan} package [@monnahan2018] to sample from the joint posterior with Stan [@carpenter2017], evaluate the accuracy of the Laplace approximation, or perform posterior predictive checks (see `?extract_mcmc`).
 (4) The `residuals()` method by default returns randomized quantile [@dunn1996] or probability integral transform (PIT) [@smith1985] residuals.
 <!-- These residuals, however, are calculated as $\hat{y} - y$ where $\hat{y}$ is the sum of the fixed effect estimates and the random effect values that maximize the likelihood conditional on the estimated fixed effects.  -->
@@ -428,7 +439,7 @@ y_{\boldsymbol{s}} &\sim \operatorname{Bernoulli} \left(\mu_{\boldsymbol{s}}\rig
 \end{aligned}
 $$
 
-where TODO.
+where $\boldsymbol{X}^{\mathrm{main}}_{\boldsymbol{s}}$ contains main effect covariates (intercept, quadratic effects of depth), $\boldsymbol{\beta}$ represents estimated main effect coefficients, and $\omega_{\boldsymbol{s}}$ represents the estimated spatial field, 
 
 $$
 \omega_{\boldsymbol{s}} \sim \mathrm{MVN}(\boldsymbol{0},\boldsymbol{\Sigma}_\omega)
@@ -622,7 +633,7 @@ Pacific Spiny Dogfish (*Squalus suckleyi*) from a trawl survey off the west
 coast of Vancouver Island, Canada. This example extends the spatial model
 described above by also including (1) spatiotemporal fields allowing the
 distribution in each year to be unique, (2) a time-varying intercept as an
-AR(1) process to allow each year to have a different mean catch rate, (3)
+AR(1) process to allow year effects to vary but remain autocorrelated, (3)
 a smooth effect of depth, allowing catch rates to vary non-linearly with
 depth, and (4) spatial anisotropy allowing spatial correlation to be directionally
 dependent. Since catch rates are positive, continuous, and contain zeros, we begin
