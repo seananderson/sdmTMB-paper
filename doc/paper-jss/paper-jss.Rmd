@@ -459,7 +459,7 @@ fit_bin <- update(fit_bin_rf, spatial = "off")
 We can run some basic checks on our model with the `sanity()` function:
 
 ```{r pcod-eg1-sanity, eval=TRUE, echo=TRUE, message=FALSE}
-sanity(fit)
+sanity(fit_bin_rf)
 ```
 
 ```
@@ -640,7 +640,7 @@ depth, and (4) spatial anisotropy allowing spatial correlation to be directional
 dependent. Since catch rates are positive, continuous, and contain zeros, we begin
 by specifying the response family as a Tweedie distribution [@tweedie1984] with
 a log link. We then compare alternative families, spatiotemporal random field
-structures, and the inclusion of anisotropy to illustrate the flexibility of
+structures, and the exclusion of anisotropy to illustrate the flexibility of
 \pkg{sdmTMB}.
 
 <!-- We can then fit a model with spatial random fields (`spatial = "on"`) via the function `sdmTMB()`. -->
@@ -653,7 +653,7 @@ area swept in km, and bottom depth:
 
 ```{r dog-head-dat, echo=TRUE}
 dat <- select(dogfish, longitude, latitude, year, 
-  catch_weight, area_swept, depth)
+  catch_weight, area_swept, depth) |> as_tibble()
 head(dat, n = 3)
 ```
 
