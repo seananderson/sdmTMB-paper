@@ -122,7 +122,7 @@ The process component of an \pkg{sdmTMB} model can be formed by any combination 
 $$
 \begin{aligned}
 \mu_{\bm{s},t} &=
-f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
+g^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 O_{\bm{s},t} +
 \alpha_g +
 \omega_{\bm{s}} +
@@ -131,20 +131,20 @@ O_{\bm{s},t} +
 \bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} \right),
 \end{aligned}
 $$
-This process component is combined with an observation error family (e.g., Gaussian, Gamma, binomial, Tweedie) and link function $f^{-1}$ (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
+This process component is combined with an observation error family (e.g., Gaussian, gamma, binomial, Tweedie) and link function $g$ (e.g., identity, log, logit) as in any generalized linear model (GLM) [@mccullagh1989].
 Some families can be combined into a two-part "delta" or "hurdle" model [@aitchison1955] to model the zero vs. non-zero observations separately from the positive observations.
-See the model description vignette for a full description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
+See the model description vignette for an expanded description of the statistical model (`browseVignettes("sdmTMB")` or see the \href{https://pbs-assess.github.io/sdmTMB/articles/}{rendered version}).
 
 The GLMMs underpinning \pkg{sdmTMB} models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., \pkg{randomForest} [@liaw2002], \pkg{MaxEnt} [@phillips2006], and most smooths in \pkg{mgcv} [@wood2017a]).
 The random fields in \pkg{sdmTMB} are structured as MVN constrained by a Matérn covariance function [@matern1960].
 The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) [@haskard2007].
-The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared or estimated separately (`share_range` argument).
+The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to $\sim 0.13$ [@lindgren2015]---can be shared among random fields or estimated separately (`share_range` argument).
 
 By default, if spatiotemporal fields are included, they are assumed IID; however, additional options allow them to be modelled as a random walk or first-order autoregressive, AR(1), process (Figure \ref{fig:diagram}).
 Turning off both spatial and spatiotemporal effects allows for comparison with standard non-spatial GLMs or GLMMs.
-We include additional flexibility in specifying the linear fixed effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes: hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`.
-\pkg{sdmTMB} can use many `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers (`s(x, y)`), smoothers varying by continuous or categorical variables (`s(x1, by = x2)`), cyclical smoothers (`s(x, bs = "cc")`), and smoothers with specified basis dimensions (`s(x, k = 4)`) [@wood2017a].
+We include additional flexibility in specifying the linear main effect matrix: covariates can be modelled as penalized smooth functions (generalized additive models, GAMs) using the same `s()` syntax as in \pkg{mgcv} [@wood2017a] (thereby allowing automatic selection of smoother 'wiggliness'), or can be modelled with threshold shapes: hockey-stick models, `breakpt()`, [@barrowman2000] or logistic functions, `logistic()`.
+\pkg{sdmTMB} can use many `mgcv::s()` and `mgcv::t2()` smoothers including bivarate smoothers `s(x, y)`, smoothers varying by continuous or categorical variables `s(x1, by = x2)`, cyclical smoothers `s(x, bs = "cc")`, and smoothers with specified basis dimensions `s(x, k = 4)` [@wood2017a].
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood.
 Internally, a \pkg{TMB} [@kristensen2016] model template is used to calculate the marginal log likelihood and its gradient, and the negative log likelihood is minimized via the non-linear optimization routine `stats::nlminb()` in \proglang{R} [@gay1990; @r2021].
@@ -152,10 +152,11 @@ Random effects are estimated at values that maximize the log likelihood conditio
 After rapid model exploration with maximum likelihood, one can optionally pass an \pkg{sdmTMB} model to the \proglang{R} package \pkg{rstan} [@carpenter2017; @rstan] via \pkg{tmbstan} [@monnahan2018] to estimate the joint posterior distribution for Bayesian inference.
 
 \pkg{sdmTMB} models can include penalized likelihoods by assigning priors to model parameters (`?sdmTMBpriors`).
-These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.   
+These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in \pkg{TMB} [@breivik2021; @osgood-zimmerman2021], penalized complexity (PC) priors [@simpson2017; @fuglstad2019] (`?pc_matern`) can constrain the spatial range and variance parameters. 
 
-The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g. \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (`simulate.sdmTMB()`, `sdmTMB_simulate()` respectively). Estimation is done via maximum marginal likelihood with the `sdmTMB()` function (or `sdmTMB_cv()` for cross-validation), and the resulting fitted model can be used to make predictions (`predict.sdmTMB()`) or calculate residuals (`residuals.sdmTMB()`), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (`get_cog()`) [e.g., @thorson2016cog] or in the field of ecology, tracking total population densities through time (`get_index()`).
+The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g. \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (`simulate.sdmTMB()`, `sdmTMB_simulate()` respectively). Estimation is done via maximum marginal likelihood with the `sdmTMB()` function, and the resulting fitted model can be used to make predictions (`predict.sdmTMB()`) or calculate residuals (`residuals.sdmTMB()`), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (`get_cog()`) [e.g., @thorson2016cog] or in the field of ecology, tracking total population densities through time (`get_index()`).
+<!-- TODO: describe this in more detail and how it could apply beyond ecology; maybe a derived variables subsection? -->
 
 \begin{landscape}
 \begin{figure}[p]
@@ -416,7 +417,7 @@ Alternatively, we could have created any mesh via \proglang{R}-\pkg{INLA} or
 \pkg{fmesher} and supplied it to the `mesh` argument in `make_mesh()`. We can
 inspect our mesh object with the associated plotting method.
 
-```{r dog-binomial, results='hide', message=FALSE, warning=FALSE, echo=TRUE}
+```{r dog-binomial, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="TODO"}
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 plot(mesh_pcod)
 ```
@@ -532,11 +533,11 @@ p_rf <- round(t_rf$p.value, 2)
 
 We can test for spatial autocorrelation with a Moran's I test or with a visual
 inspection of the residuals calculated from the `residuals()` S3 method. We
-omit the Moran's I code for brevity but include it in the code supplement. The
-p-value for spatial autocorrelation is low for the model without a random field
-(p < 0.01) but large for the model with a random field (p = `r p_rf`)
-suggesting significant residual correlation in the simpler model that is
-alleviated by including the random field. 
+omit code for Moran's I calculation for brevity but include an example in the
+code supplement. The p-value for spatial autocorrelation is low for the model
+without a random field (p < 0.01) but large for the model with a random field
+(p = `r p_rf`) suggesting significant residual correlation in the simpler model
+that is alleviated by including the random field. 
 
 We can also see that the AIC of the model with spatial random fields is
 considerably lower:
@@ -579,7 +580,7 @@ tidy(fit_bin, conf.int = TRUE)
 
 We can also use `tidy()` to get a data frame of our random field parameters,
 where `sigma_O` is $\sigma_O$ in the above equations: the standard deviation of
-the random field.
+the spatial random field $\bm{\omega}$.
 
 ```{r pcod-eg1-tidy-re, eval=TRUE, echo=TRUE}
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
@@ -680,7 +681,7 @@ $$
 \begin{aligned}
 \mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
 \mu_{\bm{s},t} &=
-f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
+\exp \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 O_{\bm{s},t} +
 \bm{X}^{\mathrm{tvc}}_{\bm{s},t} \gamma_t +
 \omega_{\bm{s}} +
@@ -721,7 +722,7 @@ We can explore four alternative families that may better represent the data.
 Each alternative family uses a delta or hurdle distribution: delta-gamma and
 delta-lognormal (REF), and delta-Poisson-link-gamma and
 delta-Poisson-link-lognormal (REF). Note that we choose to omit the
-spatiotemporal random fields from the first model component 
+spatiotemporal random fields from the binomial model component 
 (`spatiotemporal = list("off", "iid")`) because initial fits indicated this random field was
 collapsing to zero indicating minimal changes in encounter spatial distribution
 from year to year.
@@ -754,9 +755,9 @@ The AR(1) fields can be represented as TODO.
 
 $$
 \begin{aligned}
-\bm{\delta}_{t=1} &\sim \operatorname{MVNormal} (\bm{0}, \bm{\Sigma}_{\epsilon}),\\
+\bm{\delta}_{t=1} &\sim \operatorname{MVN} (\bm{0}, \bm{\Sigma}_{\epsilon}),\\
 \bm{\delta}_{t>1} &= \rho \bm{\delta}_{t-1} + \sqrt{1 - \rho^2} \bm{\epsilon_{t}},  \:
-\bm{\epsilon_{t}} \sim \operatorname{MVNormal} \left(\bm{0}, \bm{\Sigma}_{\epsilon} \right),
+\bm{\epsilon_{t}} \sim \operatorname{MVN} \left(\bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{aligned}
 $$ 
 
@@ -838,11 +839,11 @@ pred <- predict(fit, newdata = grid, type = "response")
 names(pred)
 ```
 
-Our prediction data frame is similar to the binomial spatial model, but
-includes columns for the two delta model components (labelled with suffixes `1`
-and `2`) and adds an `epsilon_st` column for spatiotemporal random effects. We can
-easily generate plots from this data frame with ggplot2 or similar. We suppress
-that code in this paper for brevity.
+Our prediction data frame is similar to the binomial spatial model, but includes
+columns for the two delta model components (labelled with suffixes `1` and `2`)
+and adds an `epsilon_st` column for spatiotemporal random effects. We can easily
+generate plots from this data frame (e.g., with `ggplot2::geom_raster()`). We
+suppress that code in this paper for brevity.
 
 ```{r plot-map, echo=FALSE}
 plot_map <- function(dat, column) {
@@ -926,6 +927,7 @@ the predicted biomass with the `get_index()` function (Figure
 argument and specify `bias_correct = TRUE` to enable a generic epsilon-bias
 correction needed due to the non-linear transformation of the random effects
 (REF).
+<!-- TODO: and the Laplace? -->
 
 ```{r dog-index, echo=TRUE}
 pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
@@ -970,7 +972,7 @@ $$
 \begin{aligned}
 \mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
 \mu_{\bm{s},t} &=
-f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
+\exp \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 \alpha_g +
 \bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
 \omega_{\bm{s}} +
@@ -979,6 +981,7 @@ f^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
 $$
 
 where TODO.
+TODO: get NB2 above and similar in previous examples
 
 
 ```{r owl-data}
