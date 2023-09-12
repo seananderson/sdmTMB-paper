@@ -293,7 +293,7 @@ Censored Poisson distribution & \checkmark & -- & \checkmark & -- & -- & --\\
 log Gaussian Cox processes & --$^9$ & --$^9$ & \checkmark & --$^9$ & --$^9$ & --$^9$\\
 Multivariate responses & -- & \checkmark & \checkmark & -- & \checkmark & \checkmark\\
 Built-in delta/hurdle models & \checkmark & \checkmark & \checkmark & --$^{10}$ & -- & \checkmark\\
-Poisson-link delta model & \checkmark & \checkmark & \checkmark & -- & -- & --\\
+Poisson-link delta models & \checkmark & \checkmark & \checkmark & -- & -- & --\\
 Likelihood weights & \checkmark & -- & \checkmark & \checkmark & \checkmark & \checkmark\\
 Maximum/marginal likelihood & \checkmark & \checkmark & -- & \checkmark & -- & --\\
 \addlinespace
@@ -382,6 +382,15 @@ library(dplyr)
 library(ggplot2)
 ```
 
+```{r setoptions, echo=FALSE}
+options(
+  pillar.print_max = 3,
+  pillar.print_min = 3,
+  pillar.advice = FALSE,
+  pillar.width = 72
+)
+```
+
 ```{r libs-extras}
 theme_set(theme_light())
 options(ggplot2.continuous.fill = "viridis")
@@ -390,7 +399,7 @@ options(ggplot2.continuous.fill = "viridis")
 
 ```{r pcod-head, echo=TRUE}
 select(pcod, lat, lon, X, Y, depth, present) |> 
-  head(n = 3)
+  head()
 ```
 
 An \pkg{sdmTMB} model requires a data frame that contains a response column,
@@ -417,7 +426,7 @@ Alternatively, we could have created any mesh via \proglang{R}-\pkg{INLA} or
 \pkg{fmesher} and supplied it to the `mesh` argument in `make_mesh()`. We can
 inspect our mesh object with the associated plotting method.
 
-```{r dog-binomial, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="TODO"}
+```{r dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="TODO"}
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 plot(mesh_pcod)
 ```
@@ -583,7 +592,7 @@ where `sigma_O` is $\sigma_O$ in the above equations: the standard deviation of
 the spatial random field $\bm{\omega}$.
 
 ```{r pcod-eg1-tidy-re, eval=TRUE, echo=TRUE}
-tidy(fit, effects = "ran_pars", conf.int = TRUE)
+tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 ```
 
 \sloppy
@@ -652,16 +661,16 @@ The dataset includes spatial coordinates, year, dogfish catch weight in kg,
 area swept in km, and bottom depth:
 
 ```{r dog-head-dat, echo=TRUE}
-dat <- select(dogfish, longitude, latitude, year, 
+dat <- select(dogfish, lon = longitude, lat = latitude, year, 
   catch_weight, area_swept, depth) |> as_tibble()
-head(dat, n = 3)
+head(dat)
 ```
 
 We add UTM zone 9 columns, create a log depth column for convenience, and
 create a basic mesh:
 
 ```{r dog-utms, echo=TRUE}
-dat <- add_utm_columns(dat, c("longitude", "latitude"), 
+dat <- add_utm_columns(dat, c("lon", "lat"), 
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
