@@ -334,10 +334,10 @@ spatial range and variance parameters.
 The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g., \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (\texttt{simulate.sdmTMB()}, \texttt{sdmTMB\_simulate()} respectively). Estimation is done via maximum marginal likelihood with the \texttt{sdmTMB()} function, and the resulting fitted model can be used to make predictions (\texttt{predict.sdmTMB()}) or calculate residuals (\texttt{residuals.sdmTMB()}), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (\texttt{get\_cog()}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\texttt{get\_index()}). The \texttt{get\_index()} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
 % TODO: describe this in more detail and how it could apply beyond ecology; maybe a derived variables subsection? Expanded this sentence a bit -- COGs are pretty common in other fields, but I don't know about indices -- removed `ecology` from the description
 
-\begin{landscape}
+% \begin{landscape}
 \begin{figure}[p]
 \centering
-\includegraphics[width=9in]{../../figs/diagram}
+\includegraphics[width=\textwidth]{../../figs/diagram}
 \caption[]{
 Components of an \pkg{sdmTMB} model with illustrations, descriptions, examples,
 notation, and example code. An \pkg{sdmTMB} model can be built from any
@@ -357,7 +357,7 @@ in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint
 a random intercept by group \code{g}, and \code{\textasciitilde 0} is used in
 an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
-\end{landscape}
+% \end{landscape}
 
 % TODO rename this? move this? add additional sections above!?
 
@@ -824,7 +824,7 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   arrange(delta_AIC)
 @
 
-We find that the Poisson-link delta-lognormal model is favoured with AIC.
+We find that the Poisson-link delta-lognormal model is favoured by AIC.
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}
 
@@ -1464,10 +1464,11 @@ deviation of 0.3.
 We conducted 50 simulation iterations per model and mesh resolution and show
 results for the mean, lower, and upper values (Figure~\ref{fig:timing}). The
 models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-core
-CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. The following
-package versions were used:
+CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. 
 
-<<pkg-versions, echo=TRUE>>=
+% The following package versions were used:
+
+<<pkg-versions, echo=FALSE, eval=FALSE>>=
 packageVersion("INLA")
 packageVersion("inlabru")
 packageVersion("mgcv")
