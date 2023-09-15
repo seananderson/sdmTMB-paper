@@ -359,6 +359,8 @@ an \proglang{R} formula to omit an intercept.}\label{fig:diagram}
 \end{figure}
 \end{landscape}
 
+% TODO rename this? move this? add additional sections above!?
+
 \section{Model validation and selection}\label{model-validation-and-selection}
 
 Validation and selection of state-space models is challenging, particularly when
@@ -385,8 +387,6 @@ fitted models and the \texttt{sdmTMB\_simulate()} function facilitates
 simulating data without starting from a fitted model. Models can be fit to these
 simulated data to ensure identifiability, evaluate bias and precision in
 parameter estimation, or evaluate the consequences of model misspecification.
-
-\clearpage
 
 \section{Installation}\label{installation}
 
@@ -517,7 +517,7 @@ We can implement this model with \texttt{sdmTMB()}:
 <<pcod-fit, echo=TRUE>>=
 fit_bin_rf <- sdmTMB(
   present ~ poly(log(depth), 2),
-  data = pcod, 
+  data = pcod,
   mesh = mesh_pcod,
   spatial = "on",
   family = binomial(link = "logit")
@@ -717,7 +717,7 @@ The dataset includes spatial coordinates, year, dogfish catch weight in kg, area
 swept in km, and bottom depth:
 
 <<dog-head-dat, echo=TRUE>>=
-dat <- select(dogfish, lon = longitude, lat = latitude, year, 
+dat <- select(dogfish, lon = longitude, lat = latitude, year,
   catch_weight, area_swept, depth)
 dat
 @
@@ -726,7 +726,7 @@ We add UTM zone 9 columns, create a log depth column for convenience, and create
 a basic mesh:
 
 <<dog-utms, echo=TRUE>>=
-dat <- add_utm_columns(dat, c("lon", "lat"), 
+dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
@@ -809,7 +809,7 @@ from year to year.
 % TODO EQUATIONS NEED TO INTRO THE POISSON LINK AS BRIEFLY AS POSSIBLE. SEE sdmTMB VIGNETTE.
 
 <<dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE>>=
-fit_dg <- update(fit_tw, family = delta_gamma(), 
+fit_dg <- update(fit_tw, family = delta_gamma(),
   spatiotemporal = list("off", "iid"))
 fit_dl <- update(fit_dg, family = delta_lognormal())
 fit_dpg <- update(fit_dg, family = delta_poisson_link_gamma())
@@ -819,12 +819,12 @@ fit_dpl <- update(fit_dg, family = delta_poisson_link_lognormal())
 We can then compare the models via AIC:
 
 <<dog-aic, echo=TRUE>>=
-AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |> 
-  mutate(delta_AIC = AIC - min(AIC)) |> 
+AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
+  mutate(delta_AIC = AIC - min(AIC)) |>
   arrange(delta_AIC)
 @
 
-We find that the Poisson-link delta-lognormal model is favoured with AIC. 
+We find that the Poisson-link delta-lognormal model is favoured with AIC.
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}
 
@@ -902,7 +902,7 @@ intercepts and information on our anisotropic spatial correlation. We then have
 the second model component (lognormal) with a similar summary structure but with
 the addition of a dispersion parameter for the lognormal, the AR(1) correlation
 of the spatiotemporal random fields, and a spatiotemporal random field marginal
-standard deviation. 
+standard deviation.
 
 \subsection{Visualizing model predictions}
 
@@ -948,28 +948,28 @@ plot_map <- function(dat, column) {
 @
 
 <<dog-plot1, echo=FALSE>>=
-g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |> 
+g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est_non_rf1) +
   scale_fill_viridis_c(trans = "log10") +
   ggtitle("(a) Non-random-field components; first delta model")
 @
 
 <<dog-plot2, echo=FALSE>>=
-g_omega <- pred |> filter(year %in% c(2004, 2022)) |> 
+g_omega <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(omega_s1) +
   scale_fill_gradient2() +
   ggtitle("(b) Spatial random field; first delta model")
 @
 
 <<dog-plot3, echo=FALSE>>=
-g_eps <- pred |> filter(year %in% c(2004, 2022)) |> 
+g_eps <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(epsilon_st2) +
   scale_fill_gradient2() +
   ggtitle("(c) Spatiotemporal random field; second delta model")
 @
 
 <<dog-plot4, echo=FALSE>>=
-g_est <- pred |> filter(year %in% c(2004, 2022)) |> 
+g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est) +
   # labs(fill = "Density") +
   scale_fill_viridis_c(trans = "log10") +
@@ -995,19 +995,19 @@ fields (\texttt{re\_form = NA}), and return standard errors (\texttt{se\_fit\
 
 <<dog-depth, echo=TRUE, out.width="5in">>=
 nd <- data.frame(
-  log_depth = seq(min(dat$log_depth), max(dat$log_depth), length.out = 100), 
+  log_depth = seq(min(dat$log_depth), max(dat$log_depth), length.out = 100),
   year = max(dat$year)
 )
 pred_depth <- predict(
-  fit, newdata = nd, 
+  fit, newdata = nd,
   model = NA, re_form = NA, se_fit = TRUE
 )
 @
 
 <<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are omitted from the prediction.", out.width="4in">>=
 ggplot(pred_depth, aes(
-  exp(log_depth), exp(est), 
-  ymin = exp(est - 2 * est_se), 
+  exp(log_depth), exp(est),
+  ymin = exp(est - 2 * est_se),
   ymax = exp(est + 2 * est_se))) +
   geom_ribbon(fill = "grey90") +
   geom_line() +
@@ -1062,7 +1062,7 @@ linked to productivity of both owls and their prey in Europe \citep{millon2014}.
 Because both productivity and the choice of wintering location could be
 influenced by climate, we modelled a spatially varying effect of annual mean NAO
 index on winter abundance across the southern boundary of their winter
-distribution. 
+distribution.
 
 Our data are read in from supplementary data and contain columns for UTM spatial coordinates, year, year as a factor, and the annual NAO value:
 
@@ -1085,10 +1085,10 @@ We can write the model as
 
 \[
 \begin{aligned}
-y_{\bm{s},t} &\sim \operatorname{NB2} 
+y_{\bm{s},t} &\sim \operatorname{NB2}
   \left(
-  \mu_{\bm{s},t}, 
-  \phi 
+  \mu_{\bm{s},t},
+  \phi
   \right),\\
 \mu_{\bm{s},t} &=
 \exp \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
@@ -1114,7 +1114,7 @@ fit_owl <- sdmTMB(
   count ~ 1 + nao + (1 | year_f),
   spatial_varying = ~ nao,
   time = "year",
-  data = snow, 
+  data = snow,
   mesh = mesh_snow,
   family = nbinom2(link = "log"),
   spatial = "on",
@@ -1175,7 +1175,7 @@ Overall, we find a weak average positive effect of annual mean NAO on overall
 counts, but a southeast to northwest gradient in the intensity of the effect
 (Figure~\ref{fig:owl-plot-fancy}). This result is consistent with owls closest
 to the Atlantic coast and those migrating the furthest south being the most
-affected by NAO.
+affected by the NAO.
 
 % TODO keep this? We provide an extended version of this example in Appendix \ref{app:owls}.
 
@@ -1197,14 +1197,14 @@ lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
 @
 
 <<owl-proj2>>=
-# project to get nice axis limits 
+# project to get nice axis limits
 snow2 <- snow |> mutate(X = X * 100000, Y = Y * 100000)
-snow2 <- snow2 |> mutate(x = X, y = Y) |> 
+snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
 <<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the values are near 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=6.5>>=
-nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |> 
+nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |>
   mutate(X = X * 100000, Y = Y * 100000) # to match CRS
 ggplot(data = nao_effect_df) +
   geom_point(aes(X, Y, colour = nao_effect)) +
@@ -1434,5 +1434,267 @@ across the Western Hemisphere.
 %% -- Appendix (if any) --------------------------------------------------------
 %% - After the bibliography with page break.
 %% - With proper section titles and _not_ just "Appendix".
+
+\newpage
+
+\clearpage
+
+\appendix
+
+\section{Speed testing related packages}\label{app:speed}
+
+Here, we describe the methods underlying the speed testing in
+Figure~\ref{fig:timing}. We generated a mesh that was consistent across
+simulated data sets for a given mesh resolution
+(Figure~\ref{fig:mesh-vis-timing}). We did this by setting the \texttt{max.edge}
+argument, which controls the largest allowed triangle edge length. We tested
+values of \texttt{max.edge} of 0.06, 0.075, 0.1, 0.15, and 0.2. In
+Figure~\ref{fig:timing}, we report on the x-axis the number of mesh nodes
+(``vertices'') that result from each of these meshes.
+
+We simulated 1000 spatial observations with both x and y coordinates from
+uniform(0, 1) distributions (Figure~\ref{fig:sim-dat-plot-timing}). Each
+iteration generated unique coordinates, predictor data, Gaussian random field
+values, and observation error. The Gaussian random field was parameterized with
+a range of 0.5 and marginal standard deviation of 0.2. The model included an
+intercept with a value of 0.2 and a normal(0, 1) predictor with an associated
+coefficient of -0.4. The observation error was Gaussian with a standard
+deviation of 0.3.
+
+We conducted 50 simulation iterations per model and mesh resolution and show
+results for the mean, lower, and upper values (Figure~\ref{fig:timing}). The
+models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-core
+CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. The following
+package versions were used:
+
+<<pkg-versions, echo=TRUE>>=
+packageVersion("INLA")
+packageVersion("inlabru")
+packageVersion("mgcv")
+packageVersion("spaMM")
+packageVersion("sdmTMB")
+@
+
+\subsection[Illustration of generating the INLA mesh]{Illustration of generating the \pkg{INLA} mesh}
+
+<<pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE>>=
+library("INLA")
+library("inlabru")
+library("ggplot2")
+library("sdmTMB")
+library("mgcv")
+library("spaMM")
+@
+
+We will illustrate with a \texttt{max.edge} of 0.06:
+
+<<mesh-timing, echo=TRUE>>=
+max_edge <- 0.06
+loc_bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
+segm_bnd <- INLA::inla.mesh.segment(loc_bnd)
+mesh <- INLA::inla.mesh.2d(
+  boundary = segm_bnd,
+  max.edge = c(max_edge, 0.2),
+  offset = c(0.1, 0.05)
+)
+@
+
+<<get-vertices, echo=FALSE>>=
+vertices <- mesh$n
+@
+
+This mesh has \Sexpr{vertices} (\texttt{mesh\$n}) vertices.
+
+<<mesh-vis-timing, fig.width=7, fig.asp=1.1, echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='ht', fig.align='center'>>=
+max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
+g <- list()
+for (i in seq_along(max_edge_vec)) {
+  .mesh <- INLA::inla.mesh.2d(
+    boundary = segm_bnd,
+    max.edge = c(max_edge_vec[i], 0.2),
+    offset = c(0.1, 0.05)
+  )
+  g[[i]] <- ggplot() +
+    gg(.mesh) +
+    theme_light() +
+    coord_equal(expand = FALSE) +
+    ggtitle(paste("Mesh vertices =", .mesh$n))
+}
+cowplot::plot_grid(plotlist = g, ncol = 2)
+@
+
+\subsection{Illustration of simulating data}
+
+<<sim-timing, echo=TRUE>>=
+set.seed(123)
+n_obs <- 1000
+predictor_dat <- data.frame(
+  X = runif(n_obs), Y = runif(n_obs),
+  a1 = rnorm(n_obs)
+)
+mesh_sdmTMB <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), mesh = mesh)
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1 + a1,
+  data = predictor_dat,
+  mesh = mesh_sdmTMB,
+  family = gaussian(),
+  range = 0.5,
+  phi = 0.3,
+  sigma_O = 0.2,
+  B = c(0.2, -0.4) # B0 = intercept, B1 = a1 slope
+)
+@
+
+% Look at the simulated data:
+
+<<sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'>>=
+ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
+  geom_point() +
+  scale_color_gradient2() +
+  coord_fixed() +
+  theme_light()
+@
+
+\subsection[Example sdmTMB model fit]{Example \pkg{sdmTMB} model fit}
+
+<<sdmTMBfit-timing, echo=TRUE>>=
+fit_sdmTMB <- sdmTMB(
+  observed ~ a1,
+  data = sim_dat,
+  mesh = mesh_sdmTMB,
+  family = gaussian(),
+  priors = sdmTMBpriors(
+    matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2)
+  )
+)
+@
+
+\subsection[Example spaMM model fit]{Example \pkg{spaMM} model fit}
+
+<<spaMMfit-timing, echo=TRUE, cache=TRUE>>=
+spde <- INLA::inla.spde2.pcmatern(
+  mesh = mesh,
+  prior.range = c(0.05, 0.05),
+  prior.sigma = c(2, 0.05)
+)
+
+fit_spaMM <- fitme(
+  observed ~ a1 + IMRF(1 | X + Y, model = spde),
+  family = gaussian(),
+  data = sim_dat
+)
+@
+
+\subsection[Example inlabru model fit]{Example \pkg{inlabru} model fit}
+
+<<inlabrufit-timing, echo=TRUE, cache=TRUE>>=
+# convert to sp SpatialPointsDataFrame first:
+dat_sp <- sp::SpatialPointsDataFrame(
+  cbind(sim_dat$X, sim_dat$Y),
+  proj4string = sp::CRS(
+    "+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
++ +y_0=0 +datum=NAD83 +units=km +no_defs"
+  ), data = sim_dat
+)
+components <- observed ~ -1 + Intercept(1) + a1 +
+  spatrf(main = coordinates, model = spde)
+like <- like(observed ~ Intercept + a1 + spatrf,
+  family = "gaussian", data = dat_sp
+)
+fit_bru <- bru(
+  like,
+  components = components,
+  options = bru_options(
+    control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+    bru_max_iter = 1, num.threads = "1:1"
+  )
+)
+@
+
+\subsection[Example mgcv model fit]{Example \pkg{mgcv} model fit}
+
+<<mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE>>=
+# -------------------------------------------------------------------------
+# Code in this chunk is from:
+#
+# Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial
+# Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020).
+# https://doi.org/10.1007/s13253-019-00377-z
+#
+# Re-used here under a Creative Commons Attribution 4.0 International License
+# http://creativecommons.org/licenses/by/4.0/
+smooth.construct.spde.smooth.spec <- function(object, data, knots) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  if (is.null(object$xt)) {
+    if (dim == 1) {
+      t <- seq(min(x), max(x), len = object$bs.dim)
+      mesh <- INLA::inla.mesh.1d(loc = t, degree = 2, boundary = "free")
+    } else {
+      stop("For 2D, mesh must be supplied as argument xt$mesh in s(...,xt = )")
+    }
+  } else {
+    if (class(object$xt$mesh) != "inla.mesh") stop("xt must be NULL or an inla.mesh object")
+    mesh <- object$xt$mesh
+  }
+  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
+  inlamats <- INLA::inla.mesh.fem(mesh)
+  object$S <- list()
+  object$S[[1]] <- as.matrix(inlamats$c1)
+  object$S[[2]] <- 2 * as.matrix(inlamats$g1)
+  object$S[[3]] <- as.matrix(inlamats$g2)
+  object$L <- matrix(c(2, 2, 2, 4, 2, 0), ncol = 2)
+  object$rank <- rep(object$bs.dim, 3)
+  object$null.space.dim <- 0
+  object$mesh <- mesh
+  object$df <- ncol(object$X)
+  class(object) <- "spde.smooth"
+  return(object)
+}
+Predict.matrix.spde.smooth <- function(object, data) {
+  dim <- length(object$term)
+  if (dim > 2 | dim < 1) stop("SPDE Matern can only be fit in 1D or 2D.")
+  if (dim == 1) {
+    x <- data[[object$term]]
+  } else {
+    x <- matrix(0, nr = length(data[[1]]), nc = 2)
+    x[, 1] <- data[[object$term[1]]]
+    x[, 2] <- data[[object$term[2]]]
+  }
+  Xp <- INLA::inla.spde.make.A(object$mesh, x)
+  return(as.matrix(Xp))
+}
+# End of code from Miller et al. 2020.
+# -------------------------------------------------------------------------
+@
+
+First define \texttt{smooth.construct.spde.smooth.spec()} and
+\texttt{Predict.matrix.spde.smooth()} from the supplement of \citet{miller2019},
+then:
+
+<<mgcvfit-timing, echo=TRUE, eval=TRUE>>=
+class(mesh) <- "inla.mesh"
+fit_bam <- bam(
+  observed ~ a1 + s(X, Y,
+    bs = "spde", k = mesh$n,
+    xt = list(mesh = mesh)
+  ),
+  data = sim_dat,
+  family = gaussian(),
+  method = "fREML",
+  control = gam.control(scalePenalty = FALSE),
+  discrete = TRUE
+)
+@
+
+\clearpage
 
 \end{document}
