@@ -254,7 +254,7 @@ of main (``fixed'') effects \(\bm{\beta}\) and offset \(O_{\bm{s},t}\), IID
 (independent and identically distributed) random intercepts \(\alpha_g\),
 spatial intercept random fields \(\omega_{\bm{s}}\), spatiotemporal intercept
 random fields \(\epsilon_{\bm{s},t}\), time-varying effects \(\bm{\gamma_t}\),
-and spatially varying effects \(\zeta_{\bm{s}}\) (Figure \ref{fig:diagram}).
+and spatially varying effects \(\zeta_{\bm{s}}\) (Figure~\ref{fig:diagram}).
 These components are discussed in more detail via our examples below.
 
 \[
@@ -296,7 +296,7 @@ or estimated separately (\texttt{share\_range} argument).
 
 By default, if spatiotemporal fields are included, they are assumed IID;
 however, additional options allow them to be modelled as a random walk or
-first-order autoregressive, AR(1), process (Figure \ref{fig:diagram}). Turning
+first-order autoregressive, AR(1), process (Figure~\ref{fig:diagram}). Turning
 off both spatial and spatiotemporal effects allows for comparison with standard
 non-spatial GLMs or GLMMs. We include additional flexibility in specifying the
 linear main effect matrix: covariates can be modelled as penalized smooth
@@ -449,8 +449,7 @@ options(ggplot2.continuous.fill = "viridis")
 
 
 <<pcod-head, echo=TRUE>>=
-select(pcod, lat, lon, X, Y, depth, present) |>
-  head()
+select(pcod, lat, lon, X, Y, depth, present)
 @
 
 \subsection{Adding UTM columns}
@@ -712,13 +711,15 @@ with a log link. We then compare alternative families, spatiotemporal random
 field structures, and the exclusion of anisotropy to illustrate the flexibility
 of \pkg{sdmTMB}.
 
+\subsection{Adding UTM columns and creating a mesh}
+
 The dataset includes spatial coordinates, year, dogfish catch weight in kg, area
 swept in km, and bottom depth:
 
 <<dog-head-dat, echo=TRUE>>=
 dat <- select(dogfish, lon = longitude, lat = latitude, year, 
-  catch_weight, area_swept, depth) |> as_tibble()
-head(dat)
+  catch_weight, area_swept, depth)
+dat
 @
 
 We add UTM zone 9 columns, create a log depth column for convenience, and create
@@ -734,6 +735,8 @@ mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
 <<dog-mesh2, eval=FALSE>>=
 plot(mesh)
 @
+
+\subsection{Fitting the model}
 
 We can then specify our model. We include an offset for the effort variable log
 area swept such that we are effectively modelling density and our predictions
@@ -787,19 +790,21 @@ fit_tw <- sdmTMB(
 )
 @
 
+\subsection{Exploring delta-model alternative families}
+
 We can explore four alternative families that may better represent the data.
 Each alternative family uses a delta or hurdle distribution: delta-gamma and
 delta-lognormal \citep{aitchison1955}, and delta-Poisson-link-gamma and
 delta-Poisson-link-lognormal \citep{thorson2018poisson}. The Poisson-link models
-depart from the conventional delta models in treating the probability of
-occurrence at a given location ($p_i$) as a Poisson process rather than
-a Bernoulli one, $p_i = 1 - exp(a_i * n_i)$, where $n_i$ is the total number of
-individuals available to be encountered, and $a_i$ is a measure of sampling
-effort \citep{thorson2018poisson}. Note that we choose to omit the
-spatiotemporal random fields from the binomial model component
-(\texttt{spatiotemporal = list("off", "iid")}) because initial fits indicated
-this random field was collapsing to zero indicating minimal changes in encounter
-spatial distribution from year to year.
+depart from conventional delta models in treating the probability of occurrence
+at a given location ($p_i$) as a Poisson process rather than a Bernoulli one,
+$p_i = 1 - \exp(a_i \cdot n_i)$, where $n_i$ is the total number of individuals
+available to be encountered, and $a_i$ is a measure of sampling effort
+\citep{thorson2018poisson}. Note that we choose to omit the spatiotemporal
+random fields from the binomial model component (\texttt{spatiotemporal
+= list("off", "iid")}) because initial fits indicated this random field was
+collapsing to zero indicating minimal changes in encounter spatial distribution
+from year to year.
 
 % TODO EQUATIONS NEED TO INTRO THE POISSON LINK AS BRIEFLY AS POSSIBLE. SEE sdmTMB VIGNETTE.
 
@@ -819,13 +824,16 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   arrange(delta_AIC)
 @
 
-We find that the Poisson-link delta-lognormal model is favoured with AIC. We
-next test two additional model formulations: making the spatial correlation
+We find that the Poisson-link delta-lognormal model is favoured with AIC. 
+
+\subsection{Adding AR(1) random fields and comparing isotropic correlation}
+
+We next test two additional model formulations: making the spatial correlation
 isotropic (the default) instead of anisotropic, and structuring the positive
 model component spatiotemporal random fields as AR(1) to allow spatiotemporal
 hotspots to persist from year to year.
 
-The AR(1) fields can be represented as TODO.
+The AR(1) fields can be represented as:
 
 \[
 \begin{aligned}
@@ -851,11 +859,18 @@ AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 
 We find that the anisotropic AR(1) is favoured. It makes sense that anisotropy
 is important here given the elongated shape of the continental shelf with
-a rapid transition to deeper water. On inspecting the model output with
+a rapid transition to deeper water. We can use \texttt{plot\_anisotropy()} to
+visually inspect the anisotropy (Figure~\ref{fig:dog-aniso}).
+
+<<dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the space of the X-Y coordinates being modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from the center (zero).", out.width="4in">>=
+plot_anisotropy(fit)
+@
+
+On inspecting the model output with
 \texttt{summary()}, we notice that the spatial random field SD in the positive
 model component has become very small once AR(1) spatiotemporal fields were
 added. We therefore consider a model where these are turned off in the second
-component of the delta model:
+component of the delta model and choose this model.
 
 <<dog-ar1-2, echo=TRUE, results="hide">>=
 fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
@@ -865,8 +880,10 @@ fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
 AIC(fit_dpl_ar1_only, fit_dpl_ar1, fit_dpl)
 @
 
+\subsection{Inspecting the model}
+
 We save our chosen model to the object \texttt{fit} to simplify subsequent code,
-run the \texttt{sanity()} check (suppressed for space), and inspect
+run the \texttt{sanity()} check (suppressed for brevity), and inspect
 \texttt{summary()}:
 
 <<dog-print, echo=TRUE>>=
@@ -885,12 +902,9 @@ intercepts and information on our anisotropic spatial correlation. We then have
 the second model component (lognormal) with a similar summary structure but with
 the addition of a dispersion parameter for the lognormal, the AR(1) correlation
 of the spatiotemporal random fields, and a spatiotemporal random field marginal
-standard deviation. We can use \texttt{plot\_anisotropy()} to visually inspect
-the anisotropy (Figure \ref{fig:dog-aniso}).
+standard deviation. 
 
-<<dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the space of the X-Y coordinates being modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from zero.", out.width="4in">>=
-plot_anisotropy(fit)
-@
+\subsection{Visualizing model predictions}
 
 Similarly to the first example, we can visualize model predictions on a grid
 covering the area of interest. Because this is a spatiotemporal model, we first
@@ -918,8 +932,8 @@ names(pred)
 Our prediction data frame is similar to the binomial spatial model, but includes
 columns for the two delta model components (labelled with suffixes \texttt{1}
 and \texttt{2}) and adds an \texttt{epsilon\_st} column for spatiotemporal
-random effects. We can easily generate plots from this data frame (e.g., with
-\texttt{ggplot2::geom\_raster()}). We suppress that code in this paper for
+random effects. We can easily generate plots from this data frame using code
+similar to in our spatial example with Pacific Cod. We suppress that code for
 brevity.
 
 <<plot-map, echo=FALSE>>=
@@ -962,7 +976,7 @@ g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   ggtitle("(d) Overall prediction")
 @
 
-<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, \\code{omega\\_s1} refers to the spatial random field from the first delta model, \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time and represents static biotic or abiotic features not included as covariates (e.g. habitat). The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Dogfish (resulting from movement, local changes in population densities, etc).", fig.width=9, out.width="6in">>=
+<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, \\code{omega\\_s1} refers to the spatial random field from the first delta model, \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time and represents static biotic or abiotic features not included as covariates (e.g. habitat). The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in">>=
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -974,7 +988,7 @@ cowplot::plot_grid(
 
 We can visualize the conditional effect of the bottom depth smoother by
 predicting across a sequence of depths and holding other variables at reference
-values (Figure \ref{fig:dog-depth-plot}). Here, we pick the last year, specify
+values (Figure~\ref{fig:dog-depth-plot}). Here, we pick the last year, specify
 to include both delta model components (\texttt{model = NA}), omit the random
 fields (\texttt{re\_form = NA}), and return standard errors (\texttt{se\_fit\
 = TRUE}).
@@ -990,7 +1004,7 @@ pred_depth <- predict(
 )
 @
 
-<<dog-depth-plot, echo=FALSE, fig.cap="TODO", out.width="4in">>=
+<<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are omitted from the prediction.", out.width="4in">>=
 ggplot(pred_depth, aes(
   exp(log_depth), exp(est), 
   ymin = exp(est - 2 * est_se), 
@@ -1001,14 +1015,16 @@ ggplot(pred_depth, aes(
   labs(x = "Depth (m)", y = "Density")
 @
 
+\subsection{Calculating an area-weighted index}
+
 We can generate an area-weighted population index (e.g., a relative or absolute
 index of abundance or biomass) that is independent of sampling locations by
 predicting from the model on a grid covering the area of interest and summing
 the predicted biomass with the \texttt{get\_index()} function (Figure
 \ref{fig:dog-index-plot}). We supply the grid cell area (4
 km\textsuperscript{2}) to the \texttt{area} argument and specify
-\texttt{bias\_correct = TRUE} to enable a generic epsilon-bias correction
-needed due to the non-linear transformation of the random effects (REF).
+\texttt{bias\_correct = TRUE} to enable a bias correction needed due to the
+non-linear transformation of the random effects \citep{thorson2016bias}.
 
 % TODO and the Laplace?
 
@@ -1017,7 +1033,7 @@ pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(pred2, bias_correct = TRUE, area = rep(4, nrow(grid)))
 @
 
-<<dog-index-plot, echo=FALSE, fig.cap="TODO", out.width="4in">>=
+<<dog-index-plot, echo=FALSE, fig.cap="Area-weighted index of relative biomass over time for Pacific Spiny Dogfish. Dots and line segments represent means and 95\\% confidence intervals.", out.width="4in">>=
 ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), limits = c(0, NA)) +
@@ -1046,7 +1062,21 @@ linked to productivity of both owls and their prey in Europe \citep{millon2014}.
 Because both productivity and the choice of wintering location could be
 influenced by climate, we modelled a spatially varying effect of annual mean NAO
 index on winter abundance across the southern boundary of their winter
-distribution. We fit counts observed in North America during annual Christmas
+distribution. 
+
+Our data are read in from supplementary data and contain columns for UTM spatial coordinates, year, year as a factor, and the annual NAO value:
+
+<<owl-data>>=
+snow <- readRDS(here::here("data/SNOW_data.rds"))
+@
+
+<<owl-data-head, echo=TRUE>>=
+select(snow, X, Y, year, year_f, nao)
+@
+
+\subsection{Fitting the model}
+
+We fit counts observed in North America during annual Christmas
 Bird Counts \citep{cbc} using a negative binomial \citep[NB2,][]{hilbe2011}
 distribution, random intercepts for year, spatial and spatiotemporal random
 fields, and a spatially varying coefficient associated with the NAO.
@@ -1055,21 +1085,28 @@ We can write the model as
 
 \[
 \begin{aligned}
-\mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
+y_{\bm{s},t} &\sim \operatorname{NB2} 
+  \left(
+  \mu_{\bm{s},t}, 
+  \phi 
+  \right),\\
 \mu_{\bm{s},t} &=
 \exp \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
-\alpha_g +
+\alpha_t +
 \bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
 \omega_{\bm{s}} +
 \epsilon_{\bm{s},t} \right),
 \end{aligned}
 \]
 
-where three spatial fields are now estimated: the spatial intercept ($\omega_{\bm{s}}$), spatiotemporal variation ($\epsilon_{\bm{s},t}$), and spatially varying NAO coefficients ($\zeta_{\bm{s}}$).
-
-<<owl-data>>=
-snow <- readRDS(here::here("data/SNOW_data.rds"))
-@
+where three types of random fields are now estimated: the spatial intercept
+($\omega_{\bm{s}}$), spatiotemporal variation ($\epsilon_{\bm{s},t}$), and
+spatially varying NAO coefficients ($\zeta_{\bm{s}}$). The NB2 distribution is
+specified with a mean $\mu_{\bm{s},t}$ and size parameter $\phi$. The
+observation variance scales quadratically with the mean: $\mathrm{Var}[y] = \mu
++ \mu^2 / \phi$ \citep{hilbe2011}. The $\alpha_t$ represent IID random
+intercepts by year: $\alpha_t \sim \operatorname{Normal} \left(0,
+\sigma_\alpha^2 \right)$.
 
 <<owl-fit, echo=TRUE, results = "hide">>=
 mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
@@ -1078,14 +1115,16 @@ fit_owl <- sdmTMB(
   spatial_varying = ~ nao,
   time = "year",
   data = snow, 
+  mesh = mesh_snow,
   family = nbinom2(link = "log"),
   spatial = "on",
   spatiotemporal = "iid",
-  mesh = mesh_snow,
   reml = TRUE,
   silent = FALSE
 )
 @
+
+\subsection{Inspecting the model}
 
 <<owl-sanity, eval=FALSE>>=
 sanity(fit_owl)
@@ -1094,6 +1133,13 @@ sanity(fit_owl)
 <<owl-print, echo=TRUE>>=
 summary(fit_owl)
 @
+
+In addition to the output seen for other models, we now have a section for
+random intercepts and a standard deviation for the spatially varying coefficient
+random field. Given our model specification, all random fields are sharing
+a single Matérn range.
+
+\subsection{Extracting the spatially varying coefficient effects}
 
 The spatially varying coefficient effect at any point in space is the
 combination of the main effect and spatial random effect for \texttt{nao}. We
@@ -1119,7 +1165,7 @@ snow$nao_effect <- apply(exp(combined), 2, median)
 @
 
 We can make a basic plot using the following code. A more elaborate
-version is shown in Figure \ref{fig:owl-plot-fancy}.
+version is shown in Figure~\ref{fig:owl-plot-fancy}.
 
 <<owl-plot-basic, echo=TRUE, eval=FALSE>>=
 ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
@@ -1127,7 +1173,7 @@ ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 
 Overall, we find a weak average positive effect of annual mean NAO on overall
 counts, but a southeast to northwest gradient in the intensity of the effect
-(Figure \ref{fig:owl-plot-fancy}). This result is consistent with owls closest
+(Figure~\ref{fig:owl-plot-fancy}). This result is consistent with owls closest
 to the Atlantic coast and those migrating the furthest south being the most
 affected by NAO.
 
@@ -1275,7 +1321,7 @@ $^{10}$Hurdle models possible by fitting components separately.
 We ran a simple speed comparison between \pkg{sdmTMB},
 \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE
 spatial random field model to 1000 data points with Gaussian error across
-a range of mesh resolutions (Figure \ref{fig:timing}, Appendix \ref{app:speed}).
+a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
 In this test, \pkg{sdmTMB} was the fastest across all mesh resolutions; however,
 \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh
 resolution than \pkg{sdmTMB}. \pkg{mgcv} was most affected by mesh resolution.
