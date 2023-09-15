@@ -331,18 +331,8 @@ regularization. Following other recent SPDE implementations in \pkg{TMB}
 \citep{simpson2017, fuglstad2019} (\texttt{?pc\_matern}) can constrain the
 spatial range and variance parameters.
 
-The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both
-modular and familiar to users of widely used \proglang{R} packages
-(e.g.~\pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or
-without a fitted model (\texttt{simulate.sdmTMB()}, \texttt{sdmTMB\_simulate()}
-respectively). Estimation is done via maximum marginal likelihood with the
-\texttt{sdmTMB()} function, and the resulting fitted model can be used to make
-predictions (\texttt{predict.sdmTMB()}) or calculate residuals
-(\texttt{residuals.sdmTMB()}), derive additional quantities of interest, and
-simulate Bayesian posterior distributions. Common quantities of interest may
-include summarizing shifts in the center of gravity (\texttt{get\_cog()})
-\citep[e.g.,][]{thorson2016cog} or in the field of ecology, tracking total
-population densities through time (\texttt{get\_index()}).
+The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g., \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (\texttt{simulate.sdmTMB()}, \texttt{sdmTMB\_simulate()} respectively). Estimation is done via maximum marginal likelihood with the \texttt{sdmTMB()} function, and the resulting fitted model can be used to make predictions (\texttt{predict.sdmTMB()}) or calculate residuals (\texttt{residuals.sdmTMB()}), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (\texttt{get\_cog()}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\texttt{get\_index()}). The \texttt{get\_index()} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
+% TODO: describe this in more detail and how it could apply beyond ecology; maybe a derived variables subsection? Expanded this sentence a bit -- COGs are pretty common in other fields, but I don't know about indices -- removed `ecology` from the description
 
 \begin{landscape}
 \begin{figure}[p]
@@ -798,8 +788,13 @@ fit_tw <- sdmTMB(
 
 We can explore four alternative families that may better represent the data.
 Each alternative family uses a delta or hurdle distribution: delta-gamma and
-delta-lognormal (REF), and delta-Poisson-link-gamma and
-delta-Poisson-link-lognormal (REF). Note that we choose to omit the
+delta-lognormal \citep{aitchison1955}, and delta-Poisson-link-gamma and
+delta-Poisson-link-lognormal \citep{thorson2018poisson}. The Poisson-link models
+depart from the conventional delta models in treating the probability of
+occurrence at a given location ($p_i$) as a Poisson process rather than
+a Bernoulli one, $p_i = 1 - exp(a_i * n_i)$, where $n_i$ is the total number of
+individuals available to be encountered, and $a_i$ is a measure of sampling
+effort \citep{thorson2018poisson}. Note that we choose to omit the
 spatiotemporal random fields from the binomial model component
 (\texttt{spatiotemporal = list("off", "iid")}) because initial fits indicated
 this random field was collapsing to zero indicating minimal changes in encounter
@@ -839,7 +834,8 @@ The AR(1) fields can be represented as TODO.
 \end{aligned}
 \]
 
-where TODO.
+where $\rho$ represents the estimated autoregressive parameter allowing the
+spatial field at time $t$ to be correlated with the spatial field at time $t-1$.
 
 <<dog-ar1, results='hide', echo=TRUE>>=
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
@@ -965,7 +961,7 @@ g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   ggtitle("(d) Overall prediction")
 @
 
-<<dog-wvci-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, \\code{omega\\_s1} refers to the spatial random field from the first delta model, \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time and represents TODO. The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent TODO.", fig.width=9, out.width="6in">>=
+<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, \\code{omega\\_s1} refers to the spatial random field from the first delta model, \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time and represents static biotic or abiotic features not included as covariates (e.g. habitat). The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Dogfish (resulting from movement, local changes in population densities, etc).", fig.width=9, out.width="6in">>=
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -1054,7 +1050,7 @@ Bird Counts \citep{cbc} using a negative binomial \citep[NB2,][]{hilbe2011}
 distribution, random intercepts for year, spatial and spatiotemporal random
 fields, and a spatially varying coefficient associated with the NAO.
 
-We can write the model as TODO
+We can write the model as
 
 \[
 \begin{aligned}
@@ -1068,7 +1064,7 @@ We can write the model as TODO
 \end{aligned}
 \]
 
-where TODO. TODO: get NB2 above and similar in previous examples
+where three spatial fields are now estimated: the spatial intercept ($\omega_{\bm{s}}$), spatiotemporal variation ($\epsilon_{\bm{s},t}$), and spatially varying NAO coefficients ($\zeta_{\bm{s}}$).
 
 <<owl-data>>=
 snow <- readRDS(here::here("data/SNOW_data.rds"))
@@ -1349,6 +1345,15 @@ models \citep[e.g.,][]{blangiardo2015book}, multivariate responses, and
 non-Gaussian random fields \citep[e.g.,][]{anderson2019}. The included \pkg{TMB}
 \texttt{.cpp} file provides a tested model template that can be modified to add
 additional features.
+
+There are several planned additions to the \pkg{sdmTMB} model structure.
+A subset of features to be added in the near future includes (1) multivariate
+models to allow for simultaneous modelling of data from multiple species, (2)
+integration with the \pkg{RTMB} package so that the model code base will be
+written in \proglang{R} rather than \proglang{C++}, (3) inclusion of
+a dispersion formula similar to \pkg{glmmTMB}, and (4) estimation of random
+slopes.
+% TODO random slopes looks gnarly to do generically?
 
 \section{Acknowledgements}\label{acknowledgements}
 
