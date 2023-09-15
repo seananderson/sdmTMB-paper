@@ -1106,7 +1106,7 @@ specified with a mean $\mu_{\bm{s},t}$ and size parameter $\phi$. The
 observation variance scales quadratically with the mean: $\mathrm{Var}[y] = \mu
 + \mu^2 / \phi$ \citep{hilbe2011}. The $\alpha_t$ represent IID random
 intercepts by year: $\alpha_t \sim \operatorname{Normal} \left(0,
-\sigma_\alpha^2 \right)$.
+\sigma_\alpha^2 \right)$. We can then fit this model:
 
 <<owl-fit, echo=TRUE, results = "hide">>=
 mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
@@ -1142,19 +1142,23 @@ a single Matérn range.
 \subsection{Extracting the spatially varying coefficient effects}
 
 The spatially varying coefficient effect at any point in space is the
-combination of the main effect and spatial random effect for \texttt{nao}. We
-illustrate deriving uncertainty on their combination by simulating from the
-parameter precision matrix assuming the joint parameter covariance matrix in
-multivariate normal. We do this by specifying a non-null number of simulation
-draws to \texttt{nsim} in \texttt{predict.sdmTMB()}. By default, \texttt{nsim >
-0} will return a matrix of draws from the overall prediction. Here, we instead
-   specify that we want to return draws from the \texttt{zeta\_s} random field,
-   which is the spatially varying random field. This returns a matrix where each
-   row matches a row of \texttt{newdata} and each column is a simulation draw.
-   We then use the function \texttt{spread\_sims()} to draw 200 simulations from
-   the parameters themselves, combine the main effect draws (\texttt{sims\$nao})
-   with the random field values \texttt{zeta\_s}, and calculate the median for
-   each row of data so we can plot them.
+combination of the main effect and spatially varying random effect for
+\texttt{nao}. Mean estimates of the spatially varying random effect are
+available in the output of \texttt{predict.sdmTMB()} in a column starting with
+\texttt{zeta\_s} (here, \texttt{zeta\_s\_nao}). However, we wish to combine the
+fixed and random effects with uncertainty on the combined predictions. We
+illustrate a way of accomplishing this by simulating from the parameter
+precision matrix assuming the joint parameter covariance matrix is multivariate
+normal. We do this by specifying a non-null number of simulation draws to
+\texttt{nsim} in \texttt{predict.sdmTMB()}. By default, \texttt{nsim > 0} will
+return a matrix of draws from the overall prediction. Here, we instead specify
+that we want to return draws from the \texttt{zeta\_s} ($\zeta_{\bm{s}}$) random
+field, which is the spatially varying random field. This returns a matrix where
+each row matches a row of \texttt{newdata} and each column is a simulation draw.
+We then use the function \texttt{spread\_sims()} to draw 200 simulations from
+the parameters themselves, combine the main effect draws (\texttt{sims\$nao})
+with the random field values \texttt{zeta\_s}, and calculate the median for each
+column of data so we can plot them.
 
 <<p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
 zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
@@ -1203,7 +1207,7 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
-<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the values are near 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=6.5>>=
+<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the values are near 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=5.75>>=
 nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |>
   mutate(X = X * 100000, Y = Y * 100000) # to match CRS
 ggplot(data = nao_effect_df) +
@@ -1224,8 +1228,6 @@ ggplot(data = nao_effect_df) +
 \clearpage
 
 \section{Package comparisons}\label{package-comparisons}
-
-TODO: BEFORE OR AFTER EXAMPLES
 
 There are many \proglang{R} packages capable of fitting geostatistical spatial
 or spatiotemporal models \citep[e.g.,][]{heaton2019}. \pkg{sdmTMB}, \pkg{VAST},
@@ -1464,7 +1466,7 @@ deviation of 0.3.
 We conducted 50 simulation iterations per model and mesh resolution and show
 results for the mean, lower, and upper values (Figure~\ref{fig:timing}). The
 models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-core
-CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library. 
+CPU and 32 GB of RAM in R 4.2.2 and the default Matrix library.
 
 % The following package versions were used:
 
