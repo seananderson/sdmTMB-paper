@@ -480,13 +480,14 @@ and \texttt{Y}. \texttt{make\_mesh()} is a wrapper function for
 \texttt{cutoff} is passed through to these functions. Alternatively, we could
 have created any mesh via \proglang{R}-\pkg{INLA} or \pkg{fmesher} and supplied
 it to the \texttt{mesh} argument in \texttt{make\_mesh()}. We recommend
-constructing such a mesh for applied analyses to take advantage of
-additional functionality such as coarser mesh triangles in a border around the
-data and control over maximum triangle length and minimum triangle angles. We
-can inspect mesh object with the associated plotting method. Our mesh has
-238 (\texttt{mesh\_pcod\$mesh\$n}) vertices.
+constructing such a mesh for applied analyses to take advantage of additional
+functionality such as coarser mesh triangles in a border around the data and
+control over maximum triangle length and minimum triangle angles. We can inspect
+mesh object with the associated plotting method
+(Figure~\ref{fig:dog-binomial-mesh}). Our mesh has 238
+(\texttt{mesh\_pcod\$mesh\$n}) vertices.
 
-<<dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. This is a simple mesh created with the convenience function \\code{make\\_mesh()}. A greater degree of control over the mesh construction can be achieved by using the \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5>>=
+<<dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. This is a simple mesh created with the convenience function \\code{make\\_mesh()}. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5>>=
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 plot(mesh_pcod)
 @
@@ -526,7 +527,7 @@ fit_bin_rf <- sdmTMB(
 
 We can also fit a version that omits the spatial random field by setting
 \texttt{spatial = "off"}. We will use the \texttt{update()} S3 method to refit
-the model updating any specified arguments:
+the model while updating any specified arguments:
 
 <<pcod-fit-off, echo=TRUE>>=
 fit_bin <- update(fit_bin_rf, spatial = "off")
@@ -552,7 +553,7 @@ sanity(fit_bin_rf)
 #> ✓ Range parameter doesn't look unreasonably large
 \end{verbatim}
 
-Here, this does not flag any issues. \texttt{sanity()} is checking that the
+This does not flag any issues. \texttt{sanity()} is checking that the
 \texttt{nlminb()} optimizer reported successful convergence, that the Hessian
 matrix is positive definite, that no extreme or small eigenvalues are detected,
 that no absolute log likelihood gradients with respect to fixed defects are
@@ -620,7 +621,7 @@ p_rf <- round(t_rf$p.value, 2)
 @
 
 We can also see that the AIC of the model with spatial random fields is
-considerably lower:
+lower:
 
 <<pcod-aic, eval=TRUE, echo=TRUE, results='markup'>>=
 AIC(fit_bin_rf, fit_bin)
@@ -632,8 +633,8 @@ We can do additional model comparison with cross validation via
 \texttt{sdmTMB\_cv()}. Here we will do 10-fold cross validation with the folds
 constructed randomly. Using the \texttt{fold\_ids} argument, we could supply our
 own folds and conduct spatially blocked cross validation. If we set a parallel
-plan with the \pkg{future} (REF TODO) package, our folds will be fit in
-parallel.
+plan with the \pkg{future} package \citep{bengtsson2021future}, our folds will
+be fit in parallel.
 
 <<pcod-cv-future, eval=FALSE, echo=TRUE>>=
 library(future)
@@ -659,7 +660,7 @@ cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 @
 
-\subsection{Visualizing model predictions}
+\subsection{Making predictions on new data}
 
 \sloppy To visualize our model, we can make predictions with the
 \texttt{predict()} method (\texttt{?predict.sdmTMB}) and optionally use the
