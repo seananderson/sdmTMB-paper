@@ -1047,9 +1047,10 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 In our final example, we demonstrate a model with spatially varying coefficient
 (SVC) effects and illustrate combining uncertainty from parameters by working
 with draws from the joint parameter precision matrix. Spatially varying
-coefficients \ldots{} TODO REFS. In addition, we illustrate using restricted
-maximum likelihood (REML), which integrates over the fixed effects as well as
-the random effects.
+coefficient models \citep{hastie1993} are a class of models in which
+coefficients are allowed to vary spatially constrained by some smooth function.
+In addition, we illustrate using restricted maximum likelihood (REML), which
+integrates over the fixed effects as well as the random effects.
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive
 migrants, meaning that they appear across the mid-latitudes of North America in
