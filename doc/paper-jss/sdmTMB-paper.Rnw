@@ -401,7 +401,7 @@ install.packages("sdmTMB", dependencies = TRUE)
 Importantly, \texttt{dependencies = TRUE} includes the \proglang{R}-INLA
 package \citep{rue2009, lindgren2011, lindgren2015}, which is not on CRAN but is
 needed for the \texttt{make\_mesh()} function below. Soon, we intend to switch
-to using the \pkg{fmesher} package to eliminate this dependency.
+to using the \pkg{fmesher} \citep{fmesher} package to eliminate this dependency.
 
 Alternatively, the development version can be installed with:
 
@@ -1409,8 +1409,8 @@ additional features.
 There are several planned additions to the \pkg{sdmTMB} model structure.
 A subset of features to be added in the near future includes (1) multivariate
 models to allow for simultaneous modelling of data from multiple species, (2)
-integration with the \pkg{RTMB} package so that the model code base will be
-written in \proglang{R} rather than \proglang{C++}, (3) inclusion of
+integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base
+will be written in \proglang{R} rather than \proglang{C++}, (3) inclusion of
 a dispersion formula similar to \pkg{glmmTMB}, and (4) estimation of random
 slopes.
 % TODO random slopes looks gnarly to do generically?
