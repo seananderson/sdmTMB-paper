@@ -442,7 +442,7 @@ options(
 options(width = 80)
 @
 
-<<libs-extras>>=
+<<libs-extras, cache=FALSE, echo=FALSE>>=
 theme_set(theme_light())
 options(ggplot2.continuous.fill = "viridis")
 @
@@ -574,10 +574,11 @@ The output indicates our model was fit by maximum (marginal) likelihood
 see any estimated main effects, the Matérn range distance, the spatial random
 field standard deviation, and the negative log likelihood at convergence.
 
-We can use the \texttt{tidy()} function (formatted to match the \pkg{broom}
-package TODO) to obtain a data frame with parameter estimates (standard methods
-such as \texttt{fixef()} and \texttt{vcov()} are also available). The standard
-errors on our fixed effects have increased with the spatial random field:
+We can use the \texttt{tidy()} function \citep[formatted to match the
+\pkg{broom} package;][]{broom} to obtain a data frame with parameter estimates
+(standard methods such as \texttt{fixef()}, \texttt{confint()}, and
+\texttt{vcov()} are also available). The standard errors on our fixed effects
+have increased with the spatial random field:
 
 <<pcod-tidy, eval=TRUE, echo=TRUE, results='markup'>>=
 tidy(fit_bin_rf, conf.int = TRUE)
@@ -629,7 +630,7 @@ AIC(fit_bin_rf, fit_bin)
 \subsection{Comparing models with cross validation}
 
 We can do additional model comparison with cross validation via
-\texttt{sdmTMB\_cv()}. Here we will do 10-fold cross validation with the folds
+\texttt{sdmTMB\_cv()}. We will do 10-fold cross validation with the folds
 constructed randomly. Using the \texttt{fold\_ids} argument, we could supply our
 own folds and conduct spatially blocked cross validation. If we set a parallel
 plan with the \pkg{future} package \citep{bengtsson2021future}, our folds will
@@ -672,7 +673,8 @@ The output of \texttt{predict()} is a data frame containing overall estimates in
 link space (\texttt{est}), estimates from the non-random-field components
 (\texttt{est\_non\_rf}; here, intercept and depth), and estimates from the
 individual random field components (here, \texttt{omega\_s}---the spatial
-field).
+field). We can plot these with \texttt{geom\_raster()} from the \pkg{ggplot2}
+package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
 p <- predict(fit_bin_rf, newdata = qcs_grid)
@@ -680,7 +682,7 @@ select(p, X, Y, depth, est, est_non_rf, omega_s) |>
   as_tibble() |> head(n = 2)
 @
 
-<<pcod-predict-maps, fig.width=10, fig.asp=0.4, out.width="6.1in", fig.cap="Prediction components from the binomial species distribution model of Pacific Cod. Shown are (a) the quadratic effect of bottom depth, (b) the spatial random field in link (logit) space, and (c) the overall prediction, which here is the combination of panels a and b. Note the difference between predictions from depth alone (a) and predictions including a spatial random field (c).">>=
+<<pcod-predict-maps, fig.width=10, fig.asp=0.4, out.width="6.1in", fig.cap="Prediction components from the binomial species distribution model of Pacific Cod. Shown are (a) the quadratic effect of bottom depth, (b) the spatial random field in link (logit) space, and (c) the overall prediction, which here is the combination of panels a and b. The spatial random field represents spatially correlated latent effects not accounted for by the fixed effects. Note the difference between predictions from depth alone (a) and predictions including a spatial random field (c).">>=
 plot_spatial_map <- function(dat, column, title) {
   ggplot(dat, aes(X, Y, fill = {{ column }})) +
     geom_raster() +
@@ -769,15 +771,21 @@ process,
 \[
 \begin{aligned}
   \gamma_{t=1} &\sim \operatorname{Normal} \left(0, \sigma^2_{\gamma} \right),\\
-  \gamma_{t>1} &\sim \operatorname{Normal} \left(\rho_\gamma\gamma_{t-1}, \sqrt{1 - \rho_\gamma^2} \sigma^2_{\gamma} \right).
+  \gamma_{t>1} &\sim \operatorname{Normal} \left(\rho_\gamma\gamma_{t-1}, \sqrt{1 - \rho_\gamma^2} \sigma^2_{\gamma} \right),
 \end{aligned}
 \]
+
+where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\)
+at time $t-1$ and $t$.
+
+We can fit this model as:
 
 <<dog-tw, results='hide', message=FALSE, warning=FALSE, echo=TRUE>>=
 fit_tw <- sdmTMB(
   catch_weight ~ s(log_depth),
   data = dat,
   mesh = mesh,
+  family = tweedie(),
   offset = log(dat$area_swept),
   time = "year",
   time_varying = ~ 1,
@@ -785,8 +793,7 @@ fit_tw <- sdmTMB(
   spatial = "on",
   spatiotemporal = "iid",
   anisotropy = TRUE,
-  silent = FALSE,
-  family = tweedie()
+  silent = FALSE
 )
 @
 
@@ -824,7 +831,9 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   arrange(delta_AIC)
 @
 
-We find that the Poisson-link delta-lognormal model is favoured by AIC.
+We find that the Poisson-link delta-lognormal model is favoured by AIC. In an
+applied situation we would consider comparing models with cross validation and
+inspecting the distribution of residuals.
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}
 
@@ -909,8 +918,8 @@ standard deviation.
 Similarly to the first example, we can visualize model predictions on a grid
 covering the area of interest. Because this is a spatiotemporal model, we first
 need to replicate our grid for each year we will predict on. Since this is
-a common operation, we include the convenience function \texttt{replicate\_df()}
-to replicate a data frame. We then ensure our data frame contains all the
+a common operation, we include the function \texttt{replicate\_df()} to
+replicate a data frame. We then ensure our data frame contains all the
 predictors used in the model (here \texttt{log\_depth}).
 
 % TODO Propose moving this to a short paragraph `Prediction` to highlight modularity
@@ -932,8 +941,9 @@ names(pred)
 Our prediction data frame is similar to the binomial spatial model, but includes
 columns for the two delta model components (labelled with suffixes \texttt{1}
 and \texttt{2}) and adds an \texttt{epsilon\_st} column for spatiotemporal
-random effects. We can easily generate plots from this data frame using code
-similar to in our spatial example with Pacific Cod. We suppress that code for
+random effects. We can easily generate plots from this data frame using
+\pkg{ggplot2} code with \texttt{geom\_raster()} similar to our spatial example
+with Pacific Cod (Figure~\ref{fig:dog-wcvi-pred}). We suppress that code for
 brevity.
 
 <<plot-map, echo=FALSE>>=
