@@ -237,38 +237,157 @@ concludes with a comparison to related software.
 
 \section{Model description}\label{model-description}
 
-\pkg{sdmTMB} fits GLMMs to spatial or spatiotemporal geostatistical data.
-Geostatistical data refers to data observed at specific spatial coordinates
-reflecting some underlying spatial process \citep{rossi1992, diggle2007}. These
-data can be collected across discrete points in time. Areal data (data
-aggregated to polygon or grid level) may be analyzed using other spatial models,
-including conditional (CAR) autoregressive models \citep[e.g.,][]{verhoef2018};
-\pkg{sdmTMB} can also fit models with areal data if each polygon has an
-associated centroid. A benefit of the geostatistical approach over CAR or
-similar models is that the parameters describing spatial covariance can be more
-easily interpreted \citep{wall2004} (e.g., spatial variance and range---the
-distance at which points are effectively independent).
+\subsection{A spatial Gaussian random field GLMM}
 
-The process component of an \pkg{sdmTMB} model can be formed by any combination
-of main (``fixed'') effects \(\bm{\beta}\) and offset \(O_{\bm{s},t}\), IID
-(independent and identically distributed) random intercepts \(\alpha_g\),
-spatial intercept random fields \(\omega_{\bm{s}}\), spatiotemporal intercept
-random fields \(\epsilon_{\bm{s},t}\), time-varying effects \(\bm{\gamma_t}\),
-and spatially varying effects \(\zeta_{\bm{s}}\) (Figure~\ref{fig:diagram}).
-These components are discussed in more detail via our examples below.
+A basic GLMM with spatial Gaussian random fields (GRFs) can be written as
 
+\[
+\begin{aligned}
+\mathbb{E}[y_{\bm{s}}] &= \mu_{\bm{s}},\\
+\mu_{\bm{s}} &=
+g^{-1} \left( \eta_{\bm{s}} \right),\\
+\eta_{\bm{s}} &= \bm{X}_{\bm{s}} \bm{\beta} + \omega_{\bm{s}},\\
+\boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
+\end{aligned}
+\]
+
+where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected value of zero that is added to the prediction in link space.
+
+The vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) is assumed drawn from a multivariate normal distribution with covariance matrix $\boldsymbol{\Sigma}_\omega$ constrained by some covariance function that defines the rate that spatial covariance decays with
+distance.
+Various covariance functions are possible, but a popular and flexible function is the Mat\'ern (REF) (FIGURE TODO).
+The Mat\'ern function describes the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$. If we define $\lVert d \rVert$ as the Euclidean distance between $s_j$ and $s_k$, we can define the covariance as
+\[
+\Phi\left( s_j, s_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
+\left(\kappa \lVert d \rVert \right)^\nu K_\nu \left( \kappa \lVert d \rVert \right),
+\]
+where $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma
+function, $K_\nu$ represents the modified Bessel function of the second kind,
+and $\kappa$ represents the spatial decorrelation rate. The parameter $\nu$
+controls the smoothness of the covariance function, which is fixed at $\nu = 1$, to take advantage of the SPDE \citep{lindgren2011}.
+Internally, the parameters $\kappa$ and $\tau$ are converted to correlation range as $\textrm{range} = \sqrt{8} / \kappa$ and to a marginal standard deviation as $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
+The range is the distance that correlation decays to $\approx 0.13$.
+
+The assumption that correlation decays equally in all directions can be relaxed to allow for geometric anisotropy
+\[
+\Phi\left( s_j, s_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
+\left(\kappa \lVert d \rVert \bm{H} \right)^\nu K_\nu \left( \kappa \lVert d \rVert \bm{H} \right).
+\]
+Here, we add a linear transformation matrix $\bm{H}$ with two estimated parameters governing the major axis direction of geometric anisotropy and the ratio of the major and minor axes \citep{lindgren2011, thorson2015ices, thorson2018comp}. Again, the smoothness parameter $\nu$ is fixed at 1.
+
+In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally expensive; methods of working directly with the sparse precision matrix ($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are much more efficient. We introduce the SPDE approach to working with the precision matrix in the software section, but for now, note that we can instead represent our spatial random field as
+\[
+\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \boldsymbol{Q}^{-1}_\omega\right),
+\]
+where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
+
+%
+% The SPDE approach does just that, ... have been developed lets us stay with precision and so as precision:
+%
+% The approach involves finding an SPDE w
+
+% Details are beyond the scope of this paper and are not necessary to use the
+% software discussed here, but the idea is that the solution to a specific SPDE is
+% a GRF with a Matérn covariance function and this `trick' enables one to
+% efficiently fit approximations to GRFs to large spatial datasets
+% \citep{lindgren2011}.
+
+% Miller et al:
+% The SPDE approach provides a method to approximate Q without the common substantial computational burden. The SPDE is an equation to be solved. Solutions to this equation are stochastic processes whose covariance structure is chosen to satisfy the relationship the SPDE specifies. The SPDE approach involves finding an SPDE whose solutions have the covariance structure, and implied precision matrix, that is desired for f . Lindgren et al. (2011) show how to find an approximate solution to the SPDE by representing f as a sum of basis functions multiplied by coefficients; this provides a computationally efficient way to compute Q: Lindgren et al. (2011) show that the coefficients of these basis functions form a Gaussian Markov random field, for which methods for fast computation of precision matrices already exist (Rue and Held 2005). These computations make it possible to fit models quickly using integrated nested Laplace approximations (INLA; Rue et al. 2009). Rue et al. (2017) is a comprehensive review of INLA that defines the class of latent
+
+\subsection{Adding spatiotemporal random fields}
+
+We can extend our model to accommodate spatiotemporal data by adding Gaussian random fields for each time step $t$, $\epsilon_{\bm{s},t}$
+
+\[
+\begin{aligned}
+\mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
+\mu_{\bm{s},t} &=
+g^{-1} \left( \bm{X}_{\bm{s},t} \bm{\beta} + \omega_{\bm{s}} + \epsilon_{\bm{s},t} \right),\\
+\boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
+\boldsymbol{\epsilon_{t}} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right).
+\end{aligned}
+\]
+
+\subsection{Adding additional model components}
+
+In practice, the above models can become considerably more complex by, for example, structuring the spatiotemporal random fields as autoregressive, letting coefficients vary though time, letting coefficients vary through space as random fields (i.e., SVC REF), or including offsets (REF). All these components are additive in link space. Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
 \[
 \begin{aligned}
 \mu_{\bm{s},t} &=
 g^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
-O_{\bm{s},t} +
-\alpha_g +
-\omega_{\bm{s}} +
-\epsilon_{\bm{s},t} +
 \bm{X}^{\mathrm{tvc}}_{\bm{s},t} \bm{\gamma_t} +
-\bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} \right),
+\bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
+\alpha_g +
+O_{\bm{s},t} +
+\omega_{\bm{s}} +
+\epsilon_{\bm{s},t} \right).
 \end{aligned}
 \]
+where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$, $O$ represents an offset variable (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before. We demonstrate all of these model components in the examples later in this paper.
+
+\subsection{Delta models}
+
+So far we have described models with one linear predictor and one family. Frequently, observations are better represented with two-part delta or hurdle models, which include linear predictors and observation distributions for two processes: zero vs.\ non-zero values and positive values. Here, we describe two types of delta models. We drop the space and time subscripts for simplicity and use $\bm{X_1} \bm{\beta_1}$ and $\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors for the first and second model components.
+
+\subsubsection{Traditional delta models}
+
+Using $p$ to denote the probability of a non-zero observation and $r$ to represent the expected rate for positive data, we can construct linear predictors in link space
+\[
+\begin{aligned}
+\operatorname{logit} (p) &= \boldsymbol{X_1} \boldsymbol{\beta_1} + \ldots,\\
+\log (r) &= \boldsymbol{X_2} \boldsymbol{\beta_2} + \ldots.
+\end{aligned}
+\]
+We can relate $p$ and $r$ to the data via a Bernoulli and positive likelihood distribution (e.g., lognormal or gamma with $\phi$ representing a generic dispersion parameter). We use $\mathrm{I}(.)$ to denote an indicator function, which is $1$ if $y > 0$ and 0 if $y = 0$.
+\[
+\begin{aligned}
+\mathrm{I}(y > 0) &\sim \operatorname{Bernoulli} \left( p \right),\\
+y | y > 0 &\sim \operatorname{Positive-distribution} \left( r, \phi \right).
+\end{aligned}
+\]
+
+The prediction for a new data point $y$ is then $p \cdot r$.
+
+\subsubsection{Poisson-link delta models}
+
+An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}. The primary advantage is that both linear components use a log link so the effects are additive in log space and can be combined. In this case, there are two linear predictors, but they represent a theoretical group number $n$ and a theoretical weight per group $w$ \citep{thorson2018poisson}.
+\[
+\begin{aligned}
+\log (n) &= \boldsymbol{X_1} \boldsymbol{\beta_1} + \ldots,\\
+\log (w) &= \boldsymbol{X_2} \boldsymbol{\beta_2} + \ldots.
+\end{aligned}
+\]
+Note that the first linear predictor has a log link, \emph{not} a logit link and the linear predictor predicts group number $n$, not positive observation probability $p$. These get transformed \citep{thorson2018poisson} via
+\[
+\begin{aligned}
+p &= 1 - \exp(- \exp( \log n)),\\
+r &= \frac{n w}{p}.
+\end{aligned}
+\]
+The first part is the complementary-log-log inverse link \citep[][p.~31]{mccullagh1989} but the group number $n$ also enters into the expected positive rate $r$. These probabilities $p$ and positive rates $r$ are then entered into a Bernoulli and positive observation distribution as before
+\[
+\begin{aligned}
+\mathrm{I}(y > 0) &\sim \operatorname{Bernoulli} \left( p \right),\\
+y | y > 0 &\sim \operatorname{Positive-distribution} \left( r, \phi \right).
+\end{aligned}
+\]
+
+\section{break}
+
+\pkg{sdmTMB} fits GLMMs to spatial or spatiotemporal geostatistical data.
+Geostatistical data refers to data observed at specific spatial coordinates
+reflecting some underlying spatial process \citep{rossi1992, diggle2007}. These
+data can be collected across discrete points in time. The process component of
+an \pkg{sdmTMB} model can be formed by any combination of main (``fixed'')
+effects \(\bm{\beta}\), an offset \(O_{\bm{s},t}\), IID (independent and
+identically distributed) random intercepts \(\alpha_g\), spatial intercept
+random fields \(\omega_{\bm{s}}\), spatiotemporal intercept random fields
+\(\epsilon_{\bm{s},t}\), time-varying effects \(\bm{\gamma_t}\), and spatially
+varying effects \(\zeta_{\bm{s}}\) (Figure~\ref{fig:diagram}). These components
+are discussed in more detail via our examples below.
+
+
 This process component is combined with an observation error family (e.g.,
 Gaussian, gamma, binomial, Tweedie) and link function \(g\) (e.g., identity,
 log, logit) as in any generalized linear model (GLM) \citep{mccullagh1989}. Some
@@ -294,6 +413,15 @@ the various fields and the range---the distance at which spatial correlation
 decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields
 or estimated separately (\texttt{share\_range} argument).
 
+TODO INTEGRATE THIS SOMEWHERE: Areal data (data aggregated to polygon or grid
+level) may be analyzed using other spatial models, including conditional (CAR)
+autoregressive models \citep[e.g.,][]{verhoef2018}; \pkg{sdmTMB} can also fit
+models with areal data if each polygon has an associated centroid. A benefit of
+the geostatistical approach over CAR or similar models is that the parameters
+describing spatial covariance can be more easily interpreted \citep{wall2004}
+(e.g., spatial variance and range---the distance at which points are effectively
+independent).
+
 By default, if spatiotemporal fields are included, they are assumed IID;
 however, additional options allow them to be modelled as a random walk or
 first-order autoregressive, AR(1), process (Figure~\ref{fig:diagram}). Turning
@@ -310,6 +438,30 @@ smoothers varying by continuous or categorical variables \texttt{s(x1, by =
 x2)}, cyclical smoothers \texttt{s(x, bs = "cc")}, and smoothers with
 specified basis dimensions \texttt{s(x, k = 4)} \citep{wood2017a}.
 
+\pkg{sdmTMB} models can include penalized likelihoods by assigning priors to
+model parameters (\texttt{?sdmTMBpriors}). These priors may be useful in cases
+where estimation is difficult because of identifiability issues or relatively
+flat likelihood surfaces, or to impart prior information or achieve
+regularization. Following other recent SPDE implementations in \pkg{TMB}
+\citep{breivik2021, osgood-zimmerman2021}, penalized complexity (PC) priors
+\citep{simpson2017, fuglstad2019} (\texttt{?pc\_matern}) can constrain the
+spatial range and variance parameters.
+
+\section{Software}
+
+INLA/fmesher - TMB - R combination - describe here.
++ tmbstan
+
+Describe modular design philosopy
+
+The design goal of...
+
+flexible, modular, familiar, make SPDE accessible and fast
+
+combine functionality commonly needed together
+
+
+
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood. Internally,
 a \pkg{TMB} \citep{kristensen2016} model template is used to calculate the
 marginal log likelihood and its gradient, and the negative log likelihood is
@@ -322,17 +474,25 @@ rapid model exploration with maximum likelihood, one can optionally pass an
 rstan} via \pkg{tmbstan} \citep{monnahan2018} to estimate the joint posterior
 distribution for Bayesian inference.
 
-\pkg{sdmTMB} models can include penalized likelihoods by assigning priors to
-model parameters (\texttt{?sdmTMBpriors}). These priors may be useful in cases
-where estimation is difficult because of identifiability issues or relatively
-flat likelihood surfaces, or to impart prior information or achieve
-regularization. Following other recent SPDE implementations in \pkg{TMB}
-\citep{breivik2021, osgood-zimmerman2021}, penalized complexity (PC) priors
-\citep{simpson2017, fuglstad2019} (\texttt{?pc\_matern}) can constrain the
-spatial range and variance parameters.
-
-The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both modular and familiar to users of widely used \proglang{R} packages (e.g., \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without a fitted model (\texttt{simulate.sdmTMB()}, \texttt{sdmTMB\_simulate()} respectively). Estimation is done via maximum marginal likelihood with the \texttt{sdmTMB()} function, and the resulting fitted model can be used to make predictions (\texttt{predict.sdmTMB()}) or calculate residuals (\texttt{residuals.sdmTMB()}), derive additional quantities of interest, and simulate Bayesian posterior distributions. Common quantities of interest may include summarizing shifts in the center of gravity (\texttt{get\_cog()}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\texttt{get\_index()}). The \texttt{get\_index()} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
-% TODO: describe this in more detail and how it could apply beyond ecology; maybe a derived variables subsection? Expanded this sentence a bit -- COGs are pretty common in other fields, but I don't know about indices -- removed `ecology` from the description
+The \pkg{sdmTMB} package is constructed from S3 classes and designed to be both
+modular and familiar to users of widely used \proglang{R} packages (e.g.,
+\pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). Data may be simulated with or without
+a fitted model (\texttt{simulate.sdmTMB()}, \texttt{sdmTMB\_simulate()}
+respectively). Estimation is done via maximum marginal likelihood with the
+\texttt{sdmTMB()} function, and the resulting fitted model can be used to make
+predictions (\texttt{predict.sdmTMB()}) or calculate residuals
+(\texttt{residuals.sdmTMB()}), derive additional quantities of interest, and
+simulate Bayesian posterior distributions. Common quantities of interest may
+include summarizing shifts in the center of gravity (\texttt{get\_cog()})
+\citep[e.g.,][]{thorson2016cog}, or tracking total densities through time
+(\texttt{get\_index()}). The \texttt{get\_index()} function generates a weighted
+average of densities for the prediction grid, integrating across space; for
+prediction grids with equally sized cells, each cell will contribute equally to
+the total average, however cells may be of unequal size.
+% TODO: describe this in more detail and how it could apply beyond ecology;
+% maybe a derived variables subsection? Expanded this sentence a bit -- COGs are
+% pretty common in other fields, but I don't know about indices -- removed
+% `ecology` from the description
 
 % \begin{landscape}
 \begin{figure}[p]
@@ -872,7 +1032,7 @@ a rapid transition to deeper water. We can use \texttt{plot\_anisotropy()} to
 visually inspect the anisotropy (Figure~\ref{fig:dog-aniso}).
 
 <<dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the space of the X-Y coordinates being modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from the center (zero).", out.width="4in">>=
-plot_anisotropy(fit)
+plot_anisotropy(fit_dpl)
 @
 
 On inspecting the model output with
