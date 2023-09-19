@@ -231,8 +231,7 @@ and spatiotemporal models. Many features of \pkg{sdmTMB} may be found in other
 software (Table 1) but to date no package has included all in a single package.
 One common application in the field of ecology is species distribution models
 (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}). This
-paper describes the basic functionality of this \proglang{R} package and its
-underlying statistical model, illustrates its use through two case studies, and
+paper describes the underlying statistical models, explains how \pkg{sdmTMB} is designed and summarizes its functionality, illustrates its use through three case studies, and
 concludes with a comparison to related software.
 
 \section{Model description}\label{model-description}
@@ -313,7 +312,8 @@ In this case we assume the spatiotemporal random fields are independent at each 
 
 \subsection{Additional model components}
 
-In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or including offsets \citep[][p.~206]{mccullagh1989}. All these components are additive in link space. Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
+In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or adding random intercepts by grouping factors. All these components are additive in link space.
+Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
 \[
 \begin{aligned}
 \mu_{\bm{s},t} &=
@@ -326,11 +326,11 @@ O_{\bm{s},t} +
 \epsilon_{\bm{s},t} \right).
 \end{aligned}
 \]
-where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O$ represents an offset variable (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate these model components in the examples later in this paper.
+where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O$ represents an offset variable \citep[][p.~206]{mccullagh1989} (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate these model components in the examples later in this paper.
 
 \subsection{Delta models}
 
-So far we have described models with one linear predictor and one family. Frequently, observations are better represented with two-part delta or hurdle models, which include linear predictors and observation distributions for two processes: zero vs.\ non-zero values and positive values. Here, we describe two types of delta models. We drop the space and time subscripts for simplicity and use $\bm{X_1} \bm{\beta_1}$ and $\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors for the first and second model components.
+So far we have described models with one linear predictor and one family (common terminology in \proglang{R} packages for the combination of an observation likelihood and link). Frequently, data are better represented with two-part ``delta'' or ``hurdle'' models, which include linear predictors and observation distributions for two processes: zero vs.\ non-zero values and positive values \citep{aitchison1955}. Here, we describe two types of delta models. We drop the space and time subscripts for simplicity and use $\bm{X_1} \bm{\beta_1}$ and $\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors for the first and second model components.
 
 \subsubsection{Traditional delta models}
 
@@ -349,25 +349,25 @@ y | y > 0 &\sim \operatorname{Positive-distribution} \left( r, \phi \right).
 \end{aligned}
 \]
 
-The prediction for a new data point $y$ is then $p \cdot r$.
+The expectation for a new data point $y$ is then $p \cdot r$.
 
 \subsubsection{Poisson-link delta models}
 
-An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}. The primary advantage is that both linear components use a log link so the effects are additive in log space and can be combined. In this case, there are two linear predictors, but they represent a theoretical group number $n$ and a theoretical weight per group $w$ \citep{thorson2018poisson}.
+An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}. The primary advantage is that both linear components use a log link so the effects are additive in log space and can be combined. There are still two linear predictors, but they represent a theoretical group number $n$ and a theoretical weight per group $w$ \citep{thorson2018poisson}.
 \[
 \begin{aligned}
 \log (n) &= \boldsymbol{X_1} \boldsymbol{\beta_1} + \ldots,\\
 \log (w) &= \boldsymbol{X_2} \boldsymbol{\beta_2} + \ldots.
 \end{aligned}
 \]
-Note that the first linear predictor has a log link, \emph{not} a logit link and the linear predictor predicts group number $n$, not positive observation probability $p$. These get transformed \citep{thorson2018poisson} via
+Note that the first linear predictor has a log link, \emph{not} a logit link and the linear predictor predicts group number $n$, \emph{not} positive observation probability $p$. These get transformed \citep{thorson2018poisson} via
 \[
 \begin{aligned}
 p &= 1 - \exp(- \exp( \log n)),\\
 r &= \frac{n w}{p}.
 \end{aligned}
 \]
-The first part is the complementary-log-log inverse link \citep[][p.~31]{mccullagh1989} but the group number $n$ also enters into the expected positive rate $r$. These probabilities $p$ and positive rates $r$ are then entered into a Bernoulli and positive observation distribution as before
+The first part is the complementary-log-log inverse link \citep[][p.~31]{mccullagh1989} (which has its roots in a Poisson process) but the group number $n$ also enters into the expected positive rate $r$. These probabilities $p$ and positive rates $r$ are then entered into a Bernoulli and positive observation distribution as before
 \[
 \begin{aligned}
 \mathrm{I}(y > 0) &\sim \operatorname{Bernoulli} \left( p \right),\\
