@@ -251,29 +251,29 @@ g^{-1} \left( \eta_{\bm{s}} \right),\\
 \end{aligned}
 \]
 
-where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected value of zero that is added to the prediction in link space.
+where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected value of zero that is added to the expectation in link space.
 
 The vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) is assumed drawn from a multivariate normal distribution with covariance matrix $\boldsymbol{\Sigma}_\omega$ constrained by some covariance function that defines the rate that spatial covariance decays with
 distance.
 Various covariance functions are possible, but a popular and flexible function is the Mat\'ern (REF) (FIGURE TODO).
-The Mat\'ern function describes the covariance $\Phi \left( s_j, s_k \right)$ between spatial locations $s_j$ and $s_k$. If we define $\lVert d \rVert$ as the Euclidean distance between $s_j$ and $s_k$, we can define the covariance as
+If we define $\lVert d \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
 \[
-\Phi\left( s_j, s_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
-\left(\kappa \lVert d \rVert \right)^\nu K_\nu \left( \kappa \lVert d \rVert \right),
+\Phi\left( \bm{s}_j, \bm{s}_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
+\left(\kappa \lVert d \rVert \right)^\nu K_\nu \left( \kappa \lVert d \rVert \right).
 \]
-where $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma
+The parameter $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma
 function, $K_\nu$ represents the modified Bessel function of the second kind,
-and $\kappa$ represents the spatial decorrelation rate. The parameter $\nu$
-controls the smoothness of the covariance function, which is fixed at $\nu = 1$, to take advantage of the SPDE \citep{lindgren2011}.
-Internally, the parameters $\kappa$ and $\tau$ are converted to correlation range as $\textrm{range} = \sqrt{8} / \kappa$ and to a marginal standard deviation as $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
-The range is the distance that correlation decays to $\approx 0.13$.
+and $\kappa$ represents the spatial decorrelation rate.
+The parameter $\nu$
+controls the smoothness of the covariance function, but can be fixed at $\nu = 1$ to take advantage of the SPDE \citep{lindgren2011}.
+The parameters $\kappa$ and $\tau$ can be converted to two useful values: (1) correlation range as $\textrm{range} = \sqrt{8} / \kappa$ and (2) marginal standard deviation as $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$. The range is the distance that correlation decays to $\approx 0.13$.
 
 The assumption that correlation decays equally in all directions can be relaxed to allow for geometric anisotropy
 \[
 \Phi\left( s_j, s_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
 \left(\kappa \lVert d \rVert \bm{H} \right)^\nu K_\nu \left( \kappa \lVert d \rVert \bm{H} \right).
 \]
-Here, we add a linear transformation matrix $\bm{H}$ with two estimated parameters governing the major axis direction of geometric anisotropy and the ratio of the major and minor axes \citep{lindgren2011, thorson2015ices, thorson2018comp}. Again, the smoothness parameter $\nu$ is fixed at 1.
+Here, we add a linear transformation matrix $\bm{H}$ with two estimated parameters governing the major axis direction of geometric anisotropy and the ratio of the major and minor axes \citep{lindgren2011, thorson2015ices, thorson2018comp}.
 
 In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally expensive; methods of working directly with the sparse precision matrix ($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are much more efficient. We introduce the SPDE approach to working with the precision matrix in the software section, but for now, note that we can instead represent our spatial random field as
 \[
@@ -297,21 +297,23 @@ where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
 
 \subsection{Adding spatiotemporal random fields}
 
-We can extend our model to accommodate spatiotemporal data by adding Gaussian random fields for each time step $t$, $\epsilon_{\bm{s},t}$
+We can extend our model to accommodate spatiotemporal data by adding Gaussian random fields for each time step $t$, $\bm{\epsilon}_{t}$
 
 \[
 \begin{aligned}
 \mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
 \mu_{\bm{s},t} &=
 g^{-1} \left( \bm{X}_{\bm{s},t} \bm{\beta} + \omega_{\bm{s}} + \epsilon_{\bm{s},t} \right),\\
-\boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
-\boldsymbol{\epsilon_{t}} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_{\epsilon} \right).
+\bm{\omega} &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_\omega \right),\\
+\bm{\epsilon}_{t} &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_{\epsilon} \right).
 \end{aligned}
 \]
 
-\subsection{Adding additional model components}
+In this case we assume the spatiotemporal random fields are independent at each time step, but we could alternatively assume they are structured as a random walk or autoregressive process (demonstrated in examples below). The spatiotemporal random fields represent latent variables causing spatial correlation that changes with each time step.
 
-In practice, the above models can become considerably more complex by, for example, structuring the spatiotemporal random fields as autoregressive, letting coefficients vary though time, letting coefficients vary through space as random fields (i.e., SVC REF), or including offsets (REF). All these components are additive in link space. Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
+\subsection{Additional model components}
+
+In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or including offsets \citep[][p.~206]{mccullagh1989}. All these components are additive in link space. Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
 \[
 \begin{aligned}
 \mu_{\bm{s},t} &=
@@ -324,7 +326,7 @@ O_{\bm{s},t} +
 \epsilon_{\bm{s},t} \right).
 \end{aligned}
 \]
-where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$, $O$ represents an offset variable (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before. We demonstrate all of these model components in the examples later in this paper.
+where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O$ represents an offset variable (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate these model components in the examples later in this paper.
 
 \subsection{Delta models}
 
@@ -1542,6 +1544,10 @@ more straightforward. Users looking for calculation, with uncertainty, of
 derived variables such as area-weighted population indexes, may favour
 \pkg{sdmTMB} or \pkg{VAST} (although such quantities can be post hoc derived
 with other packages).
+
+TODO add paragraph here on uniting functionality not available in any one package?
+
+% TODO: B9: I kept thinking about potential overlaps with spatial / spatiotemporal econometrics. Maybe a short note on how those methods relate to spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010) may broaden the interest in the paper.
 
 With respect to computational speed, \pkg{sdmTMB} (and due to having the same
 \pkg{TMB} backend, \pkg{VAST}) were fastest with a spatial model up to at least
