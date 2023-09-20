@@ -1706,6 +1706,11 @@ derived variables such as area-weighted population indexes, may favour
 \pkg{sdmTMB} or \pkg{VAST} (although such quantities can be post hoc derived
 with other packages).
 
+TODO add paragraph here on applications to other fields, beyond ecology and fisheries? Specifically thinkgin about:
+- spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010)
+- disease and medicine (e.g. Wakefield work)
+- agriculture (https://link.springer.com/article/10.1007/s00122-019-03424-y)
+
 TODO add paragraph here on uniting functionality not available in any one package?
 
 % TODO: B9: I kept thinking about potential overlaps with spatial / spatiotemporal econometrics. Maybe a short note on how those methods relate to spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010) may broaden the interest in the paper.
@@ -1726,21 +1731,18 @@ Additional functionality in \pkg{sdmTMB} not already mentioned includes
 interpolating across missing time slices and forecasting, the barrier SPDE model
 \citep{bakka2019}, time-varying spatiotemporal covariance parameters
 \citep{ward2022}, and simulation from the parameter joint precision matrix.
-Future development may include additional zero-inflated models, improvements to
-Bayesian sampling efficiency \citep[e.g.,][]{monnahan2021}, continuous-time
-models \citep[e.g.,][]{blangiardo2015book}, multivariate responses, and
-non-Gaussian random fields \citep[e.g.,][]{anderson2019}. The included \pkg{TMB}
-\texttt{.cpp} file provides a tested model template that can be modified to add
-additional features.
 
-There are several planned additions to the \pkg{sdmTMB} model structure.
+There are several planned future additions to the \pkg{sdmTMB} model structure.
 A subset of features to be added in the near future includes (1) multivariate
 models to allow for simultaneous modelling of data from multiple species, (2)
 integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base
 will be written in \proglang{R} rather than \proglang{C++}, (3) inclusion of
-a dispersion formula similar to \pkg{glmmTMB}, and (4) estimation of random
-slopes.
-% TODO random slopes looks gnarly to do generically?
+a dispersion formula similar to \pkg{glmmTMB}, (4) continuous-time
+models \citep[e.g.,][]{blangiardo2015book}, (5) non-Gaussian random fields \citep[e.g.,][]{anderson2019}, and (6) multivariate responses. The included \pkg{TMB}
+\texttt{.cpp} file is flexible and provides a tested model template that can be modified to add
+additional features.
+% TODO random slopes looks gnarly to do generically? EW: -- agree, I mostly have looked at glmmTMB / brms implementations
+% removed random slopes -- another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 
 \section{Acknowledgements}\label{acknowledgements}
 
