@@ -390,7 +390,7 @@ thorson2018comp}.
 In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally
 expensive and methods of working directly with the sparse precision matrix
 ($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are much more efficient. We introduce
-the SPDE approach to working with the precision matrix in the software section,
+the SPDE approach to working with the precision matrix in section \ref{sec:software},
 but for now, note that we can instead represent our spatial random field as
 \[
 \boldsymbol{\omega} \sim
@@ -473,7 +473,7 @@ $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal
 intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate
 these model components in the examples later in this paper.
 
-\subsection{Delta models}
+\subsection{Delta models}\label{sec:delta}
 
 So far we have described models with one linear predictor and one family (common
 terminology in \proglang{R} packages for the combination of an observation
@@ -617,7 +617,7 @@ regularization. Following other recent SPDE implementations in \pkg{TMB}
 \citep{simpson2017, fuglstad2019} (\texttt{?pc\_matern}) can constrain the
 spatial range and variance parameters.
 
-\section{Software}
+\section{Software}\label{sec:software}
 
 INLA/fmesher - TMB - R combination - describe here.
 + tmbstan
@@ -728,8 +728,8 @@ install.packages("sdmTMB", dependencies = TRUE)
 
 Importantly, \texttt{dependencies = TRUE} includes the \proglang{R}-INLA
 package \citep{rue2009, lindgren2011, lindgren2015}, which is not on CRAN but is
-needed for the \texttt{make\_mesh()} function below. Soon, we intend to switch
-to using the \pkg{fmesher} \citep{fmesher} package to eliminate this dependency.
+required to generate matrices for the SPDE.
+%Soon, we intend to switch to using the \pkg{fmesher} \citep{fmesher} package to eliminate this dependency.
 
 Alternatively, the development version can be installed with:
 
@@ -747,7 +747,7 @@ We begin with a simple species distribution model of encounter probability of
 Pacific Cod (\emph{Gadus macrocephalus}) from a trawl survey conducted in Queen
 Charlotte Sound, British Columbia, Canada. The purpose of our example is to
 illustrate the need for spatial random fields. This survey is conducted by
-Fisheries and Oceans Canada (REF) and follows a depth-stratified random sampling
+Fisheries and Oceans Canada and follows a depth-stratified random sampling
 design, resulting in a georeferenced dataset. The data frame \texttt{pcod} is
 available as package data in \pkg{sdmTMB}. Relevant columns include latitude,
 longitude, Universal Transverse Mercator (UTM) coordinates, bottom depth, and
@@ -803,32 +803,33 @@ pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 matrices needed to apply the SPDE approach using \texttt{make\_mesh()}.
 \texttt{make\_mesh()} is a wrapper function for functions in the \pkg{fmesher}
 package. The argument \texttt{cutoff} defines the minimum allowed distance
-between mesh vertices in the units of \texttt{X} and \texttt{Y} (km). We can
-also specify additional arguments, in this case passed to
-\texttt{fmesher::fm\_mesh\_2d\_inla()}: a maximum triangle edge length of 20 km
-and 40 km for the inner and outer mesh, and an offset border width of 5 km and
-40 km for the inner and outer meshes. Alternatively, we could have created any
-mesh via \proglang{R}-\pkg{INLA} or \pkg{fmesher} and supply it to the
-\texttt{mesh} argument in \texttt{make\_mesh()}. We can inspect mesh object with
-the associated plotting method (Figure~\ref{fig:dog-binomial-mesh2}). Our mesh
-has 238 (\texttt{mesh\_pcod\$mesh\$n}) vertices. Guidelines for what makes
-a good mesh are described in TODO.
+between mesh vertices in the units of \texttt{X} and \texttt{Y} (km). We could create a basic mesh just specifying this:
 
 <<dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE>>=
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 @
+
+We can also specify additional arguments, in this case passed to \texttt{fmesher::fm\_mesh\_2d\_inla()}: a maximum triangle edge length of 10 km and 40 km for the inner and outer mesh, and an offset width of 10 km and 40 km for the inner and outer meshes borders. Alternatively, we could have created any mesh via \proglang{R}-\pkg{INLA} or \pkg{fmesher} and supplied it to the \texttt{mesh} argument in \texttt{make\_mesh()}. For more irregularly shaped areas, we could have specified a non-convex hull with \texttt{convex} and \texttt{concave} arguments.
+Recommendations... The triangle edge length should be several times smaller than the range and the outer boundary should extend at least as far as the range (REF).
+
+We can visualize the mesh object with the associated plotting method (Figure~\ref{fig:dog-binomial-mesh2}).
+Our mesh has 563 (\texttt{mesh\_pcod2\$mesh\$n}) vertices.
+Mesh complexity has the single largest influence on the speed of fitting these models...
+
+% https://haakonbakkagit.github.io/btopic104.html
+% https://becarioprecario.bitbucket.io/spde-gitbook/index.html
 
 <<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5>>=
 mesh_pcod2 <- make_mesh(
   pcod, c("X", "Y"),
   fmesher_func = fmesher::fm_mesh_2d_inla,
   cutoff = 8,
-  convex = 10,
-  max.edge = c(20, 40),
-  offset = c(5, 40)
+  max.edge = c(10, 40),
+  offset = c(10, 40)
 )
 plot(mesh_pcod2)
 @
+
 
 \subsection{Fitting the model}
 
@@ -925,8 +926,7 @@ tidy(fit_bin, conf.int = TRUE)
 @
 
 By setting \texttt{effects = "ran\_pars"}, \texttt{tidy()} will return random
-field parameters, where \texttt{sigma\_O} is \(\sigma_O\) in the above
-equations---the standard deviation of the spatial random field \(\bm{\omega}\).
+field parameters, where \texttt{sigma\_O} is the marginal standard deviation of the spatial random field \(\bm{\omega}\) (`O' for `Omega').
 
 <<pcod-eg1-tidy-re, eval=TRUE, echo=TRUE>>=
 tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
@@ -1081,11 +1081,9 @@ mesh$mesh$n
 
 \subsection{Fitting the model}
 
-We can then specify our model. We include an offset for the effort variable log
-area swept such that we are effectively modelling density and our predictions
-will be for an area swept of 1 km\textsuperscript{2}.
+We can then specify our model. We include an offset for the effort variable log area swept such that we are effectively modelling density and our predictions will be for an area swept of 1 km\textsuperscript{2}.
 
-Our model can be written as TODO
+Our model can be written as
 
 \[
 \begin{aligned}
@@ -1099,23 +1097,16 @@ O_{\bm{s},t} +
 \right),
 \end{aligned}
 \]
-
-where \(\bm{\beta}\) are coefficients associated with the main effects,
-\(O_{\bm{s},t}\) represents the offset (here, log area swept), \(\gamma_t\)
-represents the time-varying coefficients, \(\omega_{\bm{s}}\) is the spatial
-field (equivalent to a spatial intercept) and \(\epsilon_{\bm{s},t}\) represents
-spatiotemporal fields.
+where \(\bm{\beta}\) are coefficients associated with the main effects, \(O_{\bm{s},t}\) represents the offset (here, log area swept), \(\gamma_t\) represents the time-varying coefficients, \(\omega_{\bm{s}}\) is the spatial field (equivalent to a spatial intercept) and \(\epsilon_{\bm{s},t}\) represents spatiotemporal fields.
 
 The temporally varying intercepts \(\gamma_t\) are modeled as a stationary AR(1)
 process,
-
 \[
 \begin{aligned}
   \gamma_{t=1} &\sim \operatorname{Normal} \left(0, \sigma^2_{\gamma} \right),\\
   \gamma_{t>1} &\sim \operatorname{Normal} \left(\rho_\gamma\gamma_{t-1}, \sqrt{1 - \rho_\gamma^2} \sigma^2_{\gamma} \right),
 \end{aligned}
 \]
-
 where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\)
 at time $t-1$ and $t$.
 
@@ -1141,18 +1132,9 @@ fit_tw <- sdmTMB(
 \subsection{Exploring delta-model alternative families}
 
 We can explore four alternative families that may better represent the data.
-Each alternative family uses a delta or hurdle distribution: delta-gamma and
-delta-lognormal \citep{aitchison1955}, and delta-Poisson-link-gamma and
-delta-Poisson-link-lognormal \citep{thorson2018poisson}. The Poisson-link models
-depart from conventional delta models in treating the probability of occurrence
-at a given location ($p_i$) as a Poisson process rather than a Bernoulli one,
-$p_i = 1 - \exp(a_i \cdot n_i)$, where $n_i$ is the total number of individuals
-available to be encountered, and $a_i$ is a measure of sampling effort
-\citep{thorson2018poisson}. Note that we choose to omit the spatiotemporal
-random fields from the binomial model component (\texttt{spatiotemporal
-= list("off", "iid")}) because initial fits indicated this random field was
-collapsing to zero indicating minimal changes in encounter spatial distribution
-from year to year.
+Each alternative family uses a delta model formulation as described in Section \ref{sec:delta}.
+% The Poisson-link models depart from conventional delta models in treating the probability of occurrence at a given location ($p_i$) as a Poisson process rather than a Bernoulli one, $p_i = 1 - \exp(a_i \cdot n_i)$, where $n_i$ is the total number of individuals available to be encountered, and $a_i$ is a measure of sampling effort \citep{thorson2018poisson}.
+Note that we choose to omit the spatiotemporal random fields from the binomial model component (\texttt{spatiotemporal = list("off", "iid")}) because initial fits indicated this random field was collapsing to zero indicating minimal changes in encounter spatial distribution from year to year.
 
 % TODO EQUATIONS NEED TO INTRO THE POISSON LINK AS BRIEFLY AS POSSIBLE. SEE sdmTMB VIGNETTE.
 
