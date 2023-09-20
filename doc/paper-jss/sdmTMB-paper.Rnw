@@ -254,8 +254,6 @@ A basic GLMM with spatial Gaussian random fields (GRFs) can be written as
 \mu_{\bm{s}} &=
 g^{-1} \left( \eta_{\bm{s}} \right),\\
 \eta_{\bm{s}} &= \bm{X}_{\bm{s}} \bm{\beta} + \omega_{\bm{s}},\\
-\boldsymbol{\omega} &\sim \operatorname{MVNormal}
-  \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
 \end{aligned}
 \]
 where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in
@@ -267,14 +265,18 @@ GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial
 variables that are not otherwise accounted for in the model. Alternatively,
 $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise.
 More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected
-value of zero that is added to the expectation in link space.
+value of zero that is added to the linear predictor in link space (e.g., Figure~\ref{fig:matern-range}).
 
 The vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) is assumed drawn from
-a multivariate normal distribution with covariance matrix
-$\boldsymbol{\Sigma}_\omega$ constrained by some covariance function that
-defines the rate that spatial covariance decays with distance. Various
-covariance functions are possible, but a popular and flexible function is the
-Mat\'ern (REF) (FIGURE TODO). If we define $\lVert h \rVert$ as the Euclidean
+a multivariate normal distribution with a covariance matrix $\boldsymbol{\Sigma}_\omega$ constrained by some
+function that defines the rate that spatial covariance decays with
+distance,
+\[
+\boldsymbol{\omega} \sim \operatorname{MVNormal}
+  \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right).
+\]
+Various covariance functions are possible, but a popular and flexible one is the
+Mat\'ern \citep{matern1960} (Figure~\ref{fig:matern-range}). If we define $\lVert h \rVert$ as the Euclidean
 distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the
 Mat\'ern covariance $\Phi$ as
 \[
@@ -289,9 +291,9 @@ kind, and $\kappa$ represents the spatial decorrelation rate. The parameter
 $\nu$ controls the smoothness of the covariance function, but can be fixed at
 $\nu = 1$ to take advantage of the SPDE \citep{lindgren2011}. The parameters
 $\kappa$ and $\tau$ can be converted to two useful values: (1) correlation range
-as $\textrm{range} = \sqrt{8} / \kappa$ and (2) marginal standard deviation as
-$\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
-The range is the distance that correlation decays to $\approx 0.13$.
+as $\sqrt{8} / \kappa$ and (2) marginal standard deviation as
+$1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
+The range is the distance that correlation decays to $\approx 0.13$ (Figure~\ref{fig:matern-range}).
 
 <<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="TODO">>=
 predictor_dat <- expand.grid(
