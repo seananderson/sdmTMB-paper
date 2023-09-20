@@ -145,6 +145,7 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.asp = 0.618,
   fig.pos = "ht",
+  fig.align = "center",
   cache.comments = TRUE,
   dev = "pdf",
   dpi = 140,
@@ -156,6 +157,13 @@ options(prompt = "R> ", continue = "+  ", width = 72, useFancyQuotes = FALSE)
 opts_chunk$set(prompt = TRUE)
 options(replace.assign = TRUE, width = 72, prompt = "R> ")
 knitr::render_sweave()
+@
+
+
+<<libraries, echo=FALSE, warning=FALSE, message=FALSE>>=
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
 @
 
 \clearpage
@@ -231,55 +239,162 @@ and spatiotemporal models. Many features of \pkg{sdmTMB} may be found in other
 software (Table 1) but to date no package has included all in a single package.
 One common application in the field of ecology is species distribution models
 (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}). This
-paper describes the underlying statistical models, explains how \pkg{sdmTMB} is designed and summarizes its functionality, illustrates its use through three case studies, and
-concludes with a comparison to related software.
+paper describes the underlying statistical models, explains how \pkg{sdmTMB} is
+designed and summarizes its functionality, illustrates its use through three
+case studies, and concludes with a comparison to related software.
 
 \section{Model description}\label{model-description}
 
 \subsection{A spatial Gaussian random field GLMM}
 
 A basic GLMM with spatial Gaussian random fields (GRFs) can be written as
-
 \[
 \begin{aligned}
 \mathbb{E}[y_{\bm{s}}] &= \mu_{\bm{s}},\\
 \mu_{\bm{s}} &=
 g^{-1} \left( \eta_{\bm{s}} \right),\\
 \eta_{\bm{s}} &= \bm{X}_{\bm{s}} \bm{\beta} + \omega_{\bm{s}},\\
-\boldsymbol{\omega} &\sim \operatorname{MVNormal} \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
+\boldsymbol{\omega} &\sim \operatorname{MVNormal}
+  \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right),\\
 \end{aligned}
 \]
+where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in
+space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse
+link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that
+linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$
+multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial
+GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial
+variables that are not otherwise accounted for in the model. Alternatively,
+$\omega_{\bm{s}}$ can be thought of representing spatially correlated noise.
+More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected
+value of zero that is added to the expectation in link space.
 
-where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial GRF $\omega_{\bm{s}}$. This spatial GRF represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, $\omega_{\bm{s}}$ represents a ``wiggly'' surface with an expected value of zero that is added to the expectation in link space.
-
-The vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) is assumed drawn from a multivariate normal distribution with covariance matrix $\boldsymbol{\Sigma}_\omega$ constrained by some covariance function that defines the rate that spatial covariance decays with
-distance.
-Various covariance functions are possible, but a popular and flexible function is the Mat\'ern (REF) (FIGURE TODO).
-If we define $\lVert d \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
+The vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) is assumed drawn from
+a multivariate normal distribution with covariance matrix
+$\boldsymbol{\Sigma}_\omega$ constrained by some covariance function that
+defines the rate that spatial covariance decays with distance. Various
+covariance functions are possible, but a popular and flexible function is the
+Mat\'ern (REF) (FIGURE TODO). If we define $\lVert h \rVert$ as the Euclidean
+distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the
+Mat\'ern covariance $\Phi$ as
 \[
-\Phi\left( \bm{s}_j, \bm{s}_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
-\left(\kappa \lVert d \rVert \right)^\nu K_\nu \left( \kappa \lVert d \rVert \right).
+\Phi\left( \bm{s}_j, \bm{s}_k \right) =
+  \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
+  \left(\kappa \lVert h \rVert \right)^\nu K_\nu
+  \left( \kappa \lVert h \rVert \right).
 \]
-The parameter $\tau^2$ controls the spatial variance, $\Gamma$ represents the Gamma
-function, $K_\nu$ represents the modified Bessel function of the second kind,
-and $\kappa$ represents the spatial decorrelation rate.
-The parameter $\nu$
-controls the smoothness of the covariance function, but can be fixed at $\nu = 1$ to take advantage of the SPDE \citep{lindgren2011}.
-The parameters $\kappa$ and $\tau$ can be converted to two useful values: (1) correlation range as $\textrm{range} = \sqrt{8} / \kappa$ and (2) marginal standard deviation as $\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$. The range is the distance that correlation decays to $\approx 0.13$.
+The parameter $\tau^2$ controls the spatial variance, $\Gamma$ represents the
+Gamma function, $K_\nu$ represents the modified Bessel function of the second
+kind, and $\kappa$ represents the spatial decorrelation rate. The parameter
+$\nu$ controls the smoothness of the covariance function, but can be fixed at
+$\nu = 1$ to take advantage of the SPDE \citep{lindgren2011}. The parameters
+$\kappa$ and $\tau$ can be converted to two useful values: (1) correlation range
+as $\textrm{range} = \sqrt{8} / \kappa$ and (2) marginal standard deviation as
+$\sigma = 1 / \sqrt{4 \pi \exp \left(2 \log(\tau) + 2 \log(\kappa) \right) }$.
+The range is the distance that correlation decays to $\approx 0.13$.
 
-The assumption that correlation decays equally in all directions can be relaxed to allow for geometric anisotropy
+<<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="TODO">>=
+predictor_dat <- expand.grid(
+  x = seq(0, 1, length.out = 100),
+  y = seq(0, 1, length.out = 100),
+  year = seq_len(6)
+)
+sim_mesh <- make_mesh(predictor_dat, xy_cols = c("x", "y"), cutoff = 0.01)
+s1 <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  mesh = sim_mesh,
+  range = 0.2,
+  phi = 0.1,
+  sigma_O = 0.2,
+  seed = 1,
+  B = 0
+)
+sim_g1 <- ggplot(s1, aes(x, y, fill = mu)) +
+  geom_raster(show.legend = FALSE) +
+  scale_fill_viridis_c(option = "C") +
+  coord_fixed(expand = FALSE) +
+  theme_light() +
+  # theme(axis.title = element_blank()) +
+  ggtitle("Range = 0.2") +
+  labs(x = "X", y = "Y")
+
+s2 <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  mesh = sim_mesh,
+  range = 0.6,
+  phi = 0.1,
+  sigma_O = 0.2,
+  seed = 1,
+  B = 0
+)
+sim_g2 <- ggplot(s2, aes(x, y, fill = mu)) +
+  geom_raster(show.legend = FALSE) +
+  scale_fill_viridis_c(option = "C") +
+  coord_fixed(expand = FALSE) +
+  theme_light() +
+  # theme(axis.title = element_blank()) +
+  ggtitle("Range = 0.6") +
+  labs(x = "X", y = "Y")
+
+x <- seq(0, 1, length.out = 200)
+r <- seq(0.2, 1, 0.2)
+r <- c(0.2, 0.6)
+df <- data.frame(
+  x = rep(x, length(r)),
+  range = rep(r, each = length(x))
+)
+matern <- function(h, sigma = 1, kappa, nu = 1) {
+  ret <- (sigma^2/(2^(nu - 1) * gamma(nu))) *
+    ((kappa * abs(h))^nu) *
+    besselK(kappa * abs(h), nu)
+  ret
+  ret[x == 0] <- sigma^2
+  ret
+}
+blues <- RColorBrewer::brewer.pal(length(r) + 1, "Blues")[-1]
+df$cor <- matern(df$x, kappa = sqrt(8) / df$range)
+sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range))) +
+  geom_line() +
+  theme_light() +
+  xlab("Distance") +
+  ylab("Correlation") +
+  labs(colour = "Range") +
+  coord_cartesian(expand = FALSE, ylim = c(0, 1)) +
+  scale_colour_manual(values = blues) +
+  geom_hline(yintercept = 0.13, col = "grey50", lty = 2) +
+  scale_x_continuous(breaks = r) +
+  theme(legend.position = c(0.7, 0.7)) +
+  ggtitle("Matérn correlation function")
+
+cowplot::plot_grid(sim_g3, sim_g1, sim_g2, align = "h", ncol = 3L)
+@
+
+
+The assumption that correlation decays equally in all directions can be relaxed
+to allow for geometric anisotropy
 \[
-\Phi\left( s_j, s_k \right) = \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
-\left(\kappa \lVert d \rVert \bm{H} \right)^\nu K_\nu \left( \kappa \lVert d \rVert \bm{H} \right).
+\Phi\left( s_j, s_k \right) =
+  \frac{\tau^2}{2^{\nu - 1}\Gamma(\nu)}
+  \left(\kappa \lVert h \rVert \bm{H} \right)^\nu K_\nu
+  \left( \kappa \lVert h \rVert \bm{H} \right).
 \]
-Here, we add a linear transformation matrix $\bm{H}$ with two estimated parameters governing the major axis direction of geometric anisotropy and the ratio of the major and minor axes \citep{lindgren2011, thorson2015ices, thorson2018comp}.
+Here, we add a linear transformation matrix $\bm{H}$ with two estimated
+parameters governing the major axis direction of geometric anisotropy and the
+ratio of the major and minor axes \citep{lindgren2011, thorson2015ices,
+thorson2018comp}.
 
-In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally expensive; methods of working directly with the sparse precision matrix ($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are much more efficient. We introduce the SPDE approach to working with the precision matrix in the software section, but for now, note that we can instead represent our spatial random field as
+In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally
+expensive and methods of working directly with the sparse precision matrix
+($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are much more efficient. We introduce
+the SPDE approach to working with the precision matrix in the software section,
+but for now, note that we can instead represent our spatial random field as
 \[
-\boldsymbol{\omega} \sim \mathrm{MVNormal}\left(\boldsymbol{0}, \boldsymbol{Q}^{-1}_\omega\right),
+\boldsymbol{\omega} \sim
+  \mathrm{MVNormal}\left(\boldsymbol{0}, \boldsymbol{Q}^{-1}_\omega\right),
 \]
 where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
-
 %
 % The SPDE approach does just that, ... have been developed lets us stay with precision and so as precision:
 %
@@ -291,13 +406,25 @@ where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
 % efficiently fit approximations to GRFs to large spatial datasets
 % \citep{lindgren2011}.
 
-% Miller et al:
-% The SPDE approach provides a method to approximate Q without the common substantial computational burden. The SPDE is an equation to be solved. Solutions to this equation are stochastic processes whose covariance structure is chosen to satisfy the relationship the SPDE specifies. The SPDE approach involves finding an SPDE whose solutions have the covariance structure, and implied precision matrix, that is desired for f . Lindgren et al. (2011) show how to find an approximate solution to the SPDE by representing f as a sum of basis functions multiplied by coefficients; this provides a computationally efficient way to compute Q: Lindgren et al. (2011) show that the coefficients of these basis functions form a Gaussian Markov random field, for which methods for fast computation of precision matrices already exist (Rue and Held 2005). These computations make it possible to fit models quickly using integrated nested Laplace approximations (INLA; Rue et al. 2009). Rue et al. (2017) is a comprehensive review of INLA that defines the class of latent
+% Miller et al: The SPDE approach provides a method to approximate Q without the
+% common substantial computational burden. The SPDE is an equation to be solved.
+% Solutions to this equation are stochastic processes whose covariance structure
+% is chosen to satisfy the relationship the SPDE specifies. The SPDE approach
+% involves finding an SPDE whose solutions have the covariance structure, and
+% implied precision matrix, that is desired for f . Lindgren et al. (2011) show
+% how to find an approximate solution to the SPDE by representing f as a sum of
+% basis functions multiplied by coefficients; this provides a computationally
+% efficient way to compute Q: Lindgren et al. (2011) show that the coefficients
+% of these basis functions form a Gaussian Markov random field, for which
+% methods for fast computation of precision matrices already exist (Rue and Held
+% 2005). These computations make it possible to fit models quickly using
+% integrated nested Laplace approximations (INLA; Rue et al. 2009). Rue et al.
+% (2017) is a comprehensive review of INLA that defines the class of latent
 
 \subsection{Adding spatiotemporal random fields}
 
-We can extend our model to accommodate spatiotemporal data by adding Gaussian random fields for each time step $t$, $\bm{\epsilon}_{t}$
-
+We can extend our model to accommodate spatiotemporal data by adding Gaussian
+random fields for each time step $t$, $\bm{\epsilon}_{t}$
 \[
 \begin{aligned}
 \mathbb{E}[y_{\bm{s},t}] &= \mu_{\bm{s},t},\\
@@ -307,13 +434,21 @@ g^{-1} \left( \bm{X}_{\bm{s},t} \bm{\beta} + \omega_{\bm{s}} + \epsilon_{\bm{s},
 \bm{\epsilon}_{t} &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_{\epsilon} \right).
 \end{aligned}
 \]
-
-In this case we assume the spatiotemporal random fields are independent at each time step, but we could alternatively assume they are structured as a random walk or autoregressive process (demonstrated in examples below). The spatiotemporal random fields represent latent variables causing spatial correlation that changes with each time step.
+In this case we assume the spatiotemporal random fields are independent at each
+time step, but we could alternatively assume they are structured as a random
+walk or autoregressive process (demonstrated in examples below). The
+spatiotemporal random fields represent latent variables causing spatial
+correlation that changes with each time step.
 
 \subsection{Additional model components}
 
-In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or adding random intercepts by grouping factors. All these components are additive in link space.
-Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a maximally complex model could be written as
+In practice, the above models can become considerably more complex by, for
+example, letting coefficients vary though time, letting coefficients vary
+through space \citep{hastie1993} as random fields, or adding random intercepts
+by grouping factors. All these components are additive in link space. Adopting
+the notation ``main'' for main effects, ``tvc'' for time-varying coefficients,
+and ``svc'' for spatially varying coefficients, a maximally complex model could
+be written as
 \[
 \begin{aligned}
 \mu_{\bm{s},t} &=
@@ -326,22 +461,43 @@ O_{\bm{s},t} +
 \epsilon_{\bm{s},t} \right).
 \end{aligned}
 \]
-where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are allowed to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O$ represents an offset variable \citep[][p.~206]{mccullagh1989} (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate these model components in the examples later in this paper.
+where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector
+of coefficients that are allowed to vary through time as random walks or AR(1)
+processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following
+a GRF, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim
+\operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O$ represents an
+offset variable \citep[][p.~206]{mccullagh1989} (e.g., log sampling effort), and
+$\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal
+intercept random fields as before (Figure~\ref{fig:diagram}). We demonstrate
+these model components in the examples later in this paper.
 
 \subsection{Delta models}
 
-So far we have described models with one linear predictor and one family (common terminology in \proglang{R} packages for the combination of an observation likelihood and link). Frequently, data are better represented with two-part ``delta'' or ``hurdle'' models, which include linear predictors and observation distributions for two processes: zero vs.\ non-zero values and positive values \citep{aitchison1955}. Here, we describe two types of delta models. We drop the space and time subscripts for simplicity and use $\bm{X_1} \bm{\beta_1}$ and $\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors for the first and second model components.
+So far we have described models with one linear predictor and one family (common
+terminology in \proglang{R} packages for the combination of an observation
+likelihood and link). Frequently, data are better represented with two-part
+``delta'' or ``hurdle'' models, which include linear predictors and observation
+distributions for two processes: zero vs.\ non-zero values and positive values
+\citep{aitchison1955}. Here, we describe two types of delta models. We drop the
+space and time subscripts for simplicity and use $\bm{X_1} \bm{\beta_1}$ and
+$\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors
+for the first and second model components.
 
 \subsubsection{Traditional delta models}
 
-Using $p$ to denote the probability of a non-zero observation and $r$ to represent the expected rate for positive data, we can construct linear predictors in link space
+Using $p$ to denote the probability of a non-zero observation and $r$ to
+represent the expected rate for positive data, we can construct linear
+predictors in link space
 \[
 \begin{aligned}
 \operatorname{logit} (p) &= \boldsymbol{X_1} \boldsymbol{\beta_1} + \ldots,\\
 \log (r) &= \boldsymbol{X_2} \boldsymbol{\beta_2} + \ldots.
 \end{aligned}
 \]
-We can relate $p$ and $r$ to the data via a Bernoulli and positive likelihood distribution (e.g., lognormal or gamma with $\phi$ representing a generic dispersion parameter). We use $\mathrm{I}(.)$ to denote an indicator function, which is $1$ if $y > 0$ and 0 if $y = 0$.
+We can relate $p$ and $r$ to the data via a Bernoulli and positive likelihood
+distribution (e.g., lognormal or gamma with $\phi$ representing a generic
+dispersion parameter). We use $\mathrm{I}(.)$ to denote an indicator function,
+which is $1$ if $y > 0$ and 0 if $y = 0$.
 \[
 \begin{aligned}
 \mathrm{I}(y > 0) &\sim \operatorname{Bernoulli} \left( p \right),\\
@@ -353,21 +509,32 @@ The expectation for a new data point $y$ is then $p \cdot r$.
 
 \subsubsection{Poisson-link delta models}
 
-An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}. The primary advantage is that both linear components use a log link so the effects are additive in log space and can be combined. There are still two linear predictors, but they represent a theoretical group number $n$ and a theoretical weight per group $w$ \citep{thorson2018poisson}.
+An additional delta-model is possible that has several advantages over the
+logit-log delta model \citep{thorson2018poisson}. The primary advantage is that
+both linear components use a log link so the effects are additive in log space
+and can be combined. There are still two linear predictors, but they represent
+a theoretical group number $n$ and a theoretical weight per group $w$
+\citep{thorson2018poisson}.
 \[
 \begin{aligned}
 \log (n) &= \boldsymbol{X_1} \boldsymbol{\beta_1} + \ldots,\\
 \log (w) &= \boldsymbol{X_2} \boldsymbol{\beta_2} + \ldots.
 \end{aligned}
 \]
-Note that the first linear predictor has a log link, \emph{not} a logit link and the linear predictor predicts group number $n$, \emph{not} positive observation probability $p$. These get transformed \citep{thorson2018poisson} via
+Note that the first linear predictor has a log link, \emph{not} a logit link and
+the linear predictor predicts group number $n$, \emph{not} positive observation
+probability $p$. These get transformed \citep{thorson2018poisson} via
 \[
 \begin{aligned}
 p &= 1 - \exp(- \exp( \log n)),\\
 r &= \frac{n w}{p}.
 \end{aligned}
 \]
-The first part is the complementary-log-log inverse link \citep[][p.~31]{mccullagh1989} (which has its roots in a Poisson process) but the group number $n$ also enters into the expected positive rate $r$. These probabilities $p$ and positive rates $r$ are then entered into a Bernoulli and positive observation distribution as before
+The first part is the complementary-log-log inverse link
+\citep[][p.~31]{mccullagh1989} (which has its roots in a Poisson process) but
+the group number $n$ also enters into the expected positive rate $r$. These
+probabilities $p$ and positive rates $r$ are then entered into a Bernoulli and
+positive observation distribution as before
 \[
 \begin{aligned}
 \mathrm{I}(y > 0) &\sim \operatorname{Bernoulli} \left( p \right),\\
@@ -388,7 +555,6 @@ random fields \(\omega_{\bm{s}}\), spatiotemporal intercept random fields
 \(\epsilon_{\bm{s},t}\), time-varying effects \(\bm{\gamma_t}\), and spatially
 varying effects \(\zeta_{\bm{s}}\) (Figure~\ref{fig:diagram}). These components
 are discussed in more detail via our examples below.
-
 
 This process component is combined with an observation error family (e.g.,
 Gaussian, gamma, binomial, Tweedie) and link function \(g\) (e.g., identity,
@@ -461,8 +627,6 @@ The design goal of...
 flexible, modular, familiar, make SPDE accessible and fast
 
 combine functionality commonly needed together
-
-
 
 The \pkg{sdmTMB} model is fit by maximum marginal likelihood. Internally,
 a \pkg{TMB} \citep{kristensen2016} model template is used to calculate the
@@ -634,23 +798,34 @@ pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 \subsection{SPDE mesh creation}
 
 \sloppy We then create a mesh object that contains triangulation and projection
-matrices needed to apply the SPDE approach. The argument \texttt{cutoff} defines
-the minimum allowed distance between mesh vertices in the units of \texttt{X}
-and \texttt{Y}. \texttt{make\_mesh()} is a wrapper function for
-\texttt{INLA::inla.mesh.create()} or \texttt{fmesher::fm\_rcdt\_2d\_inla()} and
-\texttt{cutoff} is passed through to these functions. Alternatively, we could
-have created any mesh via \proglang{R}-\pkg{INLA} or \pkg{fmesher} and supplied
-it to the \texttt{mesh} argument in \texttt{make\_mesh()}. We recommend
-constructing such a mesh for applied analyses to take advantage of additional
-functionality such as coarser mesh triangles in a border around the data and
-control over maximum triangle length and minimum triangle angles. We can inspect
-mesh object with the associated plotting method
-(Figure~\ref{fig:dog-binomial-mesh}). Our mesh has 238
-(\texttt{mesh\_pcod\$mesh\$n}) vertices.
+matrices needed to apply the SPDE approach using \texttt{make\_mesh()}.
+\texttt{make\_mesh()} is a wrapper function for functions in the \pkg{fmesher}
+package. The argument \texttt{cutoff} defines the minimum allowed distance
+between mesh vertices in the units of \texttt{X} and \texttt{Y} (km). We can
+also specify additional arguments, in this case passed to
+\texttt{fmesher::fm\_mesh\_2d\_inla()}: a maximum triangle edge length of 20 km
+and 40 km for the inner and outer mesh, and an offset border width of 5 km and
+40 km for the inner and outer meshes. Alternatively, we could have created any
+mesh via \proglang{R}-\pkg{INLA} or \pkg{fmesher} and supply it to the
+\texttt{mesh} argument in \texttt{make\_mesh()}. We can inspect mesh object with
+the associated plotting method (Figure~\ref{fig:dog-binomial-mesh2}). Our mesh
+has 238 (\texttt{mesh\_pcod\$mesh\$n}) vertices. Guidelines for what makes
+a good mesh are described in TODO.
 
-<<dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. This is a simple mesh created with the convenience function \\code{make\\_mesh()}. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5>>=
+<<dog-binomial-mesh, results='hide', message=FALSE, warning=FALSE, echo=TRUE>>=
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
-plot(mesh_pcod)
+@
+
+<<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly.", fig.width=5>>=
+mesh_pcod2 <- make_mesh(
+  pcod, c("X", "Y"),
+  fmesher_func = fmesher::fm_mesh_2d_inla,
+  cutoff = 8,
+  convex = 10,
+  max.edge = c(20, 40),
+  offset = c(5, 40)
+)
+plot(mesh_pcod2)
 @
 
 \subsection{Fitting the model}
@@ -680,7 +855,7 @@ We can implement this model with \texttt{sdmTMB()}:
 fit_bin_rf <- sdmTMB(
   present ~ poly(log(depth), 2),
   data = pcod,
-  mesh = mesh_pcod,
+  mesh = mesh_pcod2,
   spatial = "on",
   family = binomial(link = "logit")
 )
@@ -893,11 +1068,13 @@ a basic mesh:
 dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
+
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
 @
 
 <<dog-mesh2, eval=FALSE>>=
 plot(mesh)
+mesh$mesh$n
 @
 
 \subsection{Fitting the model}
