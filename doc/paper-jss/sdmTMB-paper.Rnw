@@ -182,6 +182,9 @@ The vector $\bm{\omega}$ is assumed drawn from a multivariate normal distributio
 \boldsymbol{\omega} \sim \operatorname{MVNormal}
   \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right).
 \]
+
+\subsection{The Mat\'ern covariance function}
+
 Various covariance functions are possible, but a popular and flexible one is the Mat\'ern \citep{whittle1954, matern1986} (Figure~\ref{fig:matern-range}). If we define $\lVert h \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
 \[
 \Phi\left( \bm{s}_j, \bm{s}_k \right) =
@@ -191,14 +194,7 @@ Various covariance functions are possible, but a popular and flexible one is the
 \]
 The parameter $\sigma^2$ is the marginal variance (magnitude of the random field ``wiggliness''), $\Gamma$ represents the Gamma function, $K_\nu$ represents the modified Bessel function of the second kind, and $\kappa$ represents the spatial decorrelation rate. The parameter $\nu$ controls the smoothness of the covariance function. In practice, $\nu$ is challenging to estimate and herein is fixed at $\nu = 1$ \citep{lindgren2011}. A more interpretable parameter than the spatial decorrelation rate $\kappa$ is the spatial range---a distance at which two points are effectively independent. A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\sqrt{8} / \kappa$), which has the empirically derived property that correlation decays to $\approx 0.13$ \citep{lindgren2011} (Figure~\ref{fig:matern-range}).
 
-\[
-\bm{Q} = \tau^2 \left(\kappa^4\bm{C} + 2\kappa^2\bm{G}_1 + \bm{G}_2 \right)
-\]
-
-
 % Assuming $\nu = 1$, the parameters $\kappa$ and $\tau$ can be converted to two useful values: correlation range ($\sqrt{8} / \kappa$) and marginal standard deviation The range is the distance that correlation decays to $\approx 0.13$ .
-
-% ($1 / \sqrt{4 \pi \tau^2 \kappa^2} $).
 
 <<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="Example Gaussian random fields for two range values. The range describes the distance at which spatial correlation decays to $\\approx 0.13$ in coordinate units (i.e., the distance at which two points are effectively independent). Panel a shows a shorter range than panel b, which results in a ``wigglier'' surface. Panel c shows the Mat\\'ern function for these two range values. The dashed horizontal line shows a correlation of 0.13.">>=
 predictor_dat <- expand.grid(
@@ -278,6 +274,7 @@ sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range
 cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
 @
 
+\subsection{Geometric anisotropy}
 
 The assumption that correlation decays equally in all directions can be relaxed to allow for geometric anisotropy
 \[
@@ -288,13 +285,58 @@ The assumption that correlation decays equally in all directions can be relaxed 
 \]
 Here, we add a linear transformation matrix $\bm{H}$ with two estimated parameters governing the major axis direction of geometric anisotropy and the ratio of the major and minor axes \citep{lindgren2011, thorson2015ices, thorson2018comp}.
 
-In practice, inversion of the covariance matrix $\bm{\Sigma}$ is computationally expensive and methods for working directly with the sparse precision matrix ($\bm{Q}$; $\bm{Q} = \bm{\Sigma}^{-1}$) are more efficient. We introduce the SPDE approach to working with the precision matrix in Section \ref{sec:software}, but for now, note that we can instead represent our spatial random field as
+\subsection{The SPDE approach}
+
+In practice, working directly with the dense covariance matrix $\bm{\Sigma}$ is computationally expensive
+and methods for working directly with its inverse, the precision matrix $\bm{Q}$, are more efficient ($\bm{Q} = \bm{\Sigma}^{-1}$) \citep{simpson2012}.
+One such approach is the SPDE approach.
+A full description of the SPDE approach is beyond the scope of this paper.
+Instead, we refer to the following literature:
+\citet{lindgren2011} develops the approach.
+\citet{lindgren2015} and \cite{bakka2018review} summarize the SPDE approach for spatial modelling in the context of \INLA.
+The second chapter of \citet{krainski2018} provides an overview of the SPDE approach to spatial modelling with a focus on linking theory to code.
+\citet{miller2019} contains an introduction to the SPDE and illustrates its equivalence to penalized smoothing approaches.
+\citet{lindgren2022ten} provides a recent review of the approach and its applications over the last decade.
+
+For a user of \sdmTMB, the following are the important elements to understand.
+First, the SPDE approach links Mat\'ern Gaussian random fields (GRFs) to Gaussian \emph{Markov} random fields (GMRFs) in such a way that a GMRF can be a good approximation to a GRF \citep{lindgren2011}.
+This means that GRF models can be computationally fit as GMRFs.
+By working with GMRFs, one can take advantage of theory developed to estimate their sparse precision matrix efficiently \citep{rue2005gmrf, lindgren2011} and avoid the inversion of large dense matrices.
+Second, the SPDE involves piece-wise linear basis functions that are defined by a triangulation over the spatial area of interest \citep{lindgren2011}.
+Commonly, this is referred to as a ``mesh''.
+The properties of this mesh (e.g., its resolution and how far it extends beyond the data) affect the accuracy of the SPDE approach (and involve a tradeoff between computational burden and accuracy) \citep{lindgren2011}.
+Third, the Mat\'ern precision matrix calculations involve estimating the decorrelation rate parameter ($\kappa$), a parameter that scales the precision matrix ($\tau$) and three sparse matrices associated with the mesh ($\bm{C}$, $\bm{G}_1$, and $\bm{G}_2$) \citep{lindgren2011},
 \[
-\boldsymbol{\omega} \sim
-  \mathrm{MVNormal}\left(\boldsymbol{0}, \boldsymbol{Q}^{-1}_\omega\right),
+\bm{Q} = \tau^2 \left(\kappa^4\bm{C} + 2\kappa^2\bm{G}_1 + \bm{G}_2 \right).
 \]
-where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
-%
+Based on an estimate of $\tau$, we can calculate the marginal variance of the Mat\'ern random field as $\sigma^2 = \left (4 \pi \tau^2 \kappa^2 \right)^{-1}$.
+
+%GMRF
+%is an SPDE whose solution exhibits the desired covariance structure and associated precision matrix.
+%The approach outlined in \citet{lindgren2011} streamlines the computation of Q and he demonstrates that
+%Can then take advantage of methods for rapid precision matrix computation \citep{rue2005}
+
+%The SPDE approach offers an efficient means to estimate Q without the typical computational overhead. It revolves around solving an equation known as the SPDE. The solutions to this equation are stochastic processes, and their covariance structure is tailored to meet the specifications outlined by the SPDE. To employ the SPDE approach effectively for f, the goal is to identify an SPDE whose solutions exhibit the desired covariance structure and implied precision matrix. In the work of Lindgren et al. (2011), a practical solution to the SPDE is presented by representing f as a combination of basis functions multiplied by coefficients. This approach significantly streamlines the computation of Q. Moreover, Lindgren et al. (2011) demonstrate that these coefficients form a Gaussian Markov random field, benefiting from existing methods for swift precision matrix computation (Rue and Held 2005). These computations pave the way for rapid model fitting using integrated nested Laplace approximations (INLA; Rue et al. 2009).
+
+
+%The SPDE approach links
+
+%A user should know that...
+%A GMRF has the advantage that it can be fit modelling the precision matrix, which is computationally much more efficient than working with the covariance matrix.
+
+%Because the parameters and input matrices are revelant to understanding sdmTMB internals, we note that the precision
+
+%a way to approximate Q
+%SPDE = an equation to be solved
+
+
+%We introduce the SPDE approach to working with the precision matrix in Section \ref{sec:software}, but for now, note that we can instead represent our spatial random field as
+%\[
+%\boldsymbol{\omega} \sim
+%  \mathrm{MVNormal}\left(\boldsymbol{0}, \boldsymbol{Q}^{-1}_\omega\right),
+%\]
+%where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
+%%
 % The SPDE approach does just that, ... have been developed lets us stay with precision and so as precision:
 %
 % The approach involves finding an SPDE w
@@ -305,20 +347,9 @@ where $\boldsymbol{Q}_\omega$ is a sparse precision matrix.
 % efficiently fit approximations to GRFs to large spatial datasets
 % \citep{lindgren2011}.
 
-% Miller et al: The SPDE approach provides a method to approximate Q without the
-% common substantial computational burden. The SPDE is an equation to be solved.
-% Solutions to this equation are stochastic processes whose covariance structure
-% is chosen to satisfy the relationship the SPDE specifies. The SPDE approach
-% involves finding an SPDE whose solutions have the covariance structure, and
-% implied precision matrix, that is desired for f . Lindgren et al. (2011) show
-% how to find an approximate solution to the SPDE by representing f as a sum of
-% basis functions multiplied by coefficients; this provides a computationally
-% efficient way to compute Q: Lindgren et al. (2011) show that the coefficients
-% of these basis functions form a Gaussian Markov random field, for which
-% methods for fast computation of precision matrices already exist (Rue and Held
-% 2005). These computations make it possible to fit models quickly using
-% integrated nested Laplace approximations (INLA; Rue et al. 2009). Rue et al.
-% (2017) is a comprehensive review of INLA that defines the class of latent
+% "piece-wise linear basis functions defined by a triangulation of the domain of interest"
+
+% Miller et al: The SPDE approach provides a method to approximate Q without the common substantial computational burden. The SPDE is an equation to be solved. Solutions to this equation are stochastic processes whose covariance structure is chosen to satisfy the relationship the SPDE specifies. The SPDE approach involves finding an SPDE whose solutions have the covariance structure, and implied precision matrix, that is desired for f . Lindgren et al. (2011) show how to find an approximate solution to the SPDE by representing f as a sum of basis functions multiplied by coefficients; this provides a computationally efficient way to compute Q: Lindgren et al. (2011) show that the coefficients of these basis functions form a Gaussian Markov random field, for which methods for fast computation of precision matrices already exist (Rue and Held 2005). These computations make it possible to fit models quickly using integrated nested Laplace approximations (INLA; Rue et al. 2009).
 
 \subsection{Adding spatiotemporal random fields}
 
