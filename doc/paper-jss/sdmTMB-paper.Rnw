@@ -299,17 +299,18 @@ The second chapter of \citet{krainski2018} provides an overview of the SPDE appr
 \citet{lindgren2022ten} provides a recent review of the approach and its applications over the last decade.
 
 For a user of \sdmTMB, the following are the important elements to understand.
-First, the SPDE approach links Mat\'ern Gaussian random fields (GRFs) to Gaussian \emph{Markov} random fields (GMRFs) in such a way that a GMRF can be a good approximation to a GRF \citep{lindgren2011}.
+First, the SPDE approach links Gaussian random fields (GRFs) that have a Mat\'ern covariance function to Gaussian \emph{Markov} random fields (GMRFs) in such a way that a GMRF can be a good approximation to a GRF \citep{lindgren2011}.
 This means that GRF models can be computationally fit as GMRFs.
 By working with GMRFs, one can take advantage of theory developed to estimate their sparse precision matrix efficiently \citep{rue2005gmrf, lindgren2011} and avoid the inversion of large dense matrices.
 Second, the SPDE involves piece-wise linear basis functions that are defined by a triangulation over the spatial area of interest \citep{lindgren2011}.
 Commonly, this is referred to as a ``mesh''.
-The properties of this mesh (e.g., its resolution and how far it extends beyond the data) affect the accuracy of the SPDE approach (and involve a tradeoff between computational burden and accuracy) \citep{lindgren2011}.
-Third, the Mat\'ern precision matrix calculations involve estimating the decorrelation rate parameter ($\kappa$), a parameter that scales the precision matrix ($\tau$) and three sparse matrices associated with the mesh ($\bm{C}$, $\bm{G}_1$, and $\bm{G}_2$) \citep{lindgren2011},
+The properties of this mesh (e.g., its resolution and how far it extends beyond the data) affect the accuracy and computational efficiency of the SPDE approach \citep{lindgren2011}.
+Third, working with the SPDE approach and the precision matrix of a GMRF ($\bm{Q}$) introduces an additional parameter $\tau$, which scales the precision matrix, and involves three sparse matrices associated with the mesh ($\bm{C}$, $\bm{G}_1$, and $\bm{G}_2$) \citep{lindgren2011},
 \[
-\bm{Q} = \tau^2 \left(\kappa^4\bm{C} + 2\kappa^2\bm{G}_1 + \bm{G}_2 \right).
+\bm{Q} = \tau^2 \left(\kappa^4\bm{C} + 2\kappa^2\bm{G}_1 + \bm{G}_2 \right),
 \]
-Based on an estimate of $\tau$, we can calculate the marginal variance of the Mat\'ern random field as $\sigma^2 = \left (4 \pi \tau^2 \kappa^2 \right)^{-1}$.
+where $\kappa$ is the Mat\'ern decorrelation rate as before.
+We can calculate the marginal variance of the Mat\'ern random field as $\sigma^2 = \left (4 \pi \tau^2 \kappa^2 \right)^{-1}$.
 
 %GMRF
 %is an SPDE whose solution exhibits the desired covariance structure and associated precision matrix.
