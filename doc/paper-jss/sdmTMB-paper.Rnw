@@ -404,7 +404,7 @@ The expectation for a new data point is then the probability of a non-zero multi
 \subsubsection{Poisson-link delta models}
 
 An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}.
-The primary advantage is that both linear predictors use a log link so the linear predictors can be added in link space.
+The primary advantage is that both linear predictors use a log link so the linear predictors can be added in link space and the partial effect of a coefficient from both linear predictors can be combined.
 In these models, the linear predictors represent a theoretical group number $n$ and a theoretical weight (e.g., mass) per group $w$ \citep{thorson2018poisson},
 \[
 \begin{aligned}
@@ -459,7 +459,7 @@ y | y > 0 &\sim \operatorname{Positive-distribution} \left( r, \phi \right).
 \section{Software}\label{sec:software}
 
 The design goal of \sdmTMB\ was to develop a flexible, modular, and familiar inteface to fast maximum likelihood inference (or full Bayesian inference) with the SPDE approach to spatial and spatiotemporal GLMMs with random fields.
-The package gathers functionality not found combined in other packages that is particularly useful to species distribution modelling, but is applicable far beyond ecology.
+The package gathers functionality not found combined in other packages that is particularly useful to species distribution modelling, but is applicable beyond ecology to any field that encounters geostatistical data that is continuously referenced in space and (optionally) discretely indexed by time.
 
 \sdmTMB\ relies on several well-established \R\ packages (Figure~\ref{fig:flowchart}).
 \sdmTMB\ uses \pkg{fmesher} \citep{fmesher} and \INLA\ \citep{lindgren2015} to generate the triangulation mesh and input matrices for the SPDE calculations.
@@ -1309,6 +1309,8 @@ fit_owl <- sdmTMB(
 @
 
 \subsection{Inspecting the model}
+
+\texttt{summary()} prints standard model information:
 
 <<owl-sanity, eval=FALSE>>=
 sanity(fit_owl)
