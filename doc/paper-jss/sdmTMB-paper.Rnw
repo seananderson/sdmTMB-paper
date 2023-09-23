@@ -166,7 +166,7 @@ Software packages for specifying statistical models that can include the SPDE, s
 
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \pkg{TMB} for model fitting and \INLA\ to set up SPDE matrices. Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models. Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package. One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and discretely in time.
 
-This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \pkg{sdmTMB} is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \pkg{sdmTMB} to other packages (Section~\ref{package-comparisons}) and concludes with a discussion and comparison to related software (Section~\ref{discussion}).
+This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \pkg{sdmTMB} is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \pkg{sdmTMB} to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of TODO  (Section~\ref{discussion}).
 
 % TODO: there is now some duplication between these two paragraphs!?
 
@@ -1567,18 +1567,12 @@ The included \pkg{TMB} \texttt{.cpp} file is flexible and provides a tested mode
 
 \section{Acknowledgements}\label{acknowledgements}
 
-\pkg{sdmTMB} would not be possible without the \pkg{TMB} \citep{kristensen2016}
-and \proglang{R}-\pkg{INLA} \citep{rue2009, lindgren2011, lindgren2015}
-\proglang{R} packages. \pkg{sdmTMB} is heavily inspired by and in some places
-code has been adapted from both the \pkg{VAST} \citep{thorson2019} and
-\pkg{glmmTMB} \citep{brooks2017} \proglang{R} packages (as described in the
-DESCRIPTION and inst/COPYRIGHTS files). Smoother support was possible thanks to
-\pkg{mgcv} \citep{wood2017a}. We thank the authors of all these packages. We
-thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J.T.
-Thorson, and J. Watson for helpful comments that substantially improved the
-manuscript. Christmas Bird Count data were provided by National Audubon Society
-and through the generous efforts of Bird Studies Canada and countless volunteers
-across the Western Hemisphere.
+\pkg{sdmTMB} would not be possible without the \pkg{TMB} \citep{kristensen2016} and \proglang{R}-\pkg{INLA} \citep{rue2009, lindgren2011, lindgren2015} \proglang{R} packages. 
+\pkg{sdmTMB} is heavily inspired by and in some places code has been adapted from both the \pkg{VAST} \citep{thorson2019} and \pkg{glmmTMB} \citep{brooks2017} \proglang{R} packages (as described in the \texttt{DESCRIPTION} and \texttt{inst/COPYRIGHTS} files). 
+Smoother support was possible thanks to \pkg{mgcv} \citep{wood2017a}. 
+We thank the authors of all these packages. 
+We thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J.T. Thorson, J. Watson, two anonymous reviewers, and the editor for helpful comments that substantially improved the manuscript. 
+Christmas Bird Count data were provided by National Audubon Society and through the generous efforts of Bird Studies Canada and countless volunteers across the Western Hemisphere.
 
 % \clearpage
 
