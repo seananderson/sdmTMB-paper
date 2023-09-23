@@ -155,12 +155,20 @@ library(sdmTMB)
 Data are often collected in space or in space repeatedly over time. While such data are a rich source of information \citep[e.g.,][]{legendre1989a, rossi1992, tilman1997spatial}, they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart due to measured and unmeasured variables \citep{cressie1993, diggle2007, cressie2011}. While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables (e.g., everything influencing species abundance but not explicitly modelled) can cause residual spatial correlation. Accounting for this residual correlation is important because doing so allows for valid statistical inference \citep{legendre1989a, dormann2007}, can improve predictions \citep[e.g.,][]{shelton2014}, and can be of interest itself \citep[e.g.,][]{thorson2019d, barnett2021}.
 
 Geostatistical generalized linear mixed effects models (GLMMs) with spatially correlated random effects are a class of models appropriate for these data \citep{rue2005gmrf, diggle2007, cressie2011}. Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables causing observations to be correlated in space or space and time. A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed to be drawn from a multivariate normal (MVN) distribution, constrained by some covariance function such as the exponential or Matérn \citep{cressie1993, diggle2007, chiles1999}.
+% TODO: decide on using GRF throughout
 
-Such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data \citep[e.g.,][]{rue2005gmrf, latimer2009}. Many solutions have been proposed, such as predictive processes \citep{banerjee2008, latimer2009}, the stochastic partial differential equation (SPDE) approximation to GRFs \citep{lindgren2011}, and nearest-neighbour Gaussian processes \citep{datta2016, finley2022}. These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian \citep{gelfand2017} or maximum likelihood methods. This can greatly improve computational efficiency \citep[e.g.,][]{heaton2019}. The SPDE approach is a solution popularized via the \proglang{R}-\pkg{INLA} package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \pkg{TMB} \citep[Template Model Builder,][]{kristensen2016} that relies on \proglang{R}-\pkg{INLA} to create input matrices \citep[e.g.,][]{thorson2019, osgood-zimmerman2021}. Details are beyond the scope of this paper and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this `trick' enables one to efficiently fit approximations to GRFs to large spatial datasets \citep{lindgren2011}.
+Such models quickly become computationally limiting due to the need to invert large matrices to keep track of covariation among data \citep[e.g.,][]{rue2005gmrf, latimer2009}. Many solutions have been proposed, such as predictive processes \citep{banerjee2008, latimer2009}, the stochastic partial differential equation (SPDE) approximation to GRFs \citep{lindgren2011}, and nearest-neighbour Gaussian processes \citep{datta2016, finley2022}. These approaches reduce the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian \citep{gelfand2017} or maximum likelihood methods. This can greatly improve computational efficiency \citep[e.g.,][]{heaton2019}. The SPDE approach is a solution popularized via the \proglang{R}-\pkg{INLA} package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \pkg{TMB} \citep[Template Model Builder,][]{kristensen2016} that relies on \proglang{R}-\pkg{INLA} to create input matrices \citep[e.g.,][]{thorson2019, osgood-zimmerman2021}. 
+% Details are beyond the scope of this paper and are not necessary to use the software discussed here, but the idea is that the solution to a specific SPDE is a GRF with a Matérn covariance function and this `trick' enables one to efficiently fit approximations to GRFs to large spatial datasets \citep{lindgren2011}.
 
-Software packages for specifying statistical models that can include the SPDE, such as \proglang{R}-\pkg{INLA} and \pkg{TMB}, are flexible and powerful but are challenging to use for many applied researchers. For example, \pkg{TMB} requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code. Packages such as \pkg{lme4} \citep{bates2015} and \pkg{glmmTMB} \citep{brooks2017} let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE functionality. Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl2019} are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used \pkg{lme4} or \pkg{glmmTMB}, or lack some functionality. We provide a more detailed comparison of related software packages in Table \ref{tab:functionality} and the Discussion.
+Software packages for specifying statistical models that can include the SPDE, such as \proglang{R}-\pkg{INLA} and \pkg{TMB}, are flexible and powerful but are challenging to use for many applied researchers. For example, \pkg{TMB} requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code. Packages such as \pkg{lme4} \citep{bates2015} and \pkg{glmmTMB} \citep{brooks2017} let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---but do not have built-in SPDE or spatiotemporal functionality. Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl2019} are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used \pkg{lme4} or \pkg{glmmTMB}, or lack some functionality.
 
-Here, we introduce the \proglang{R} package \pkg{sdmTMB}, which implements geostatistical spatial and spatiotemporal GLMMs using \pkg{TMB} for model fitting and \proglang{R}-\pkg{INLA} to set up SPDE matrices. Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models. Many features of \pkg{sdmTMB} may be found in other software (Table 1) but to date no package has included all in a single package. One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}). This paper describes the underlying statistical models, explains how \pkg{sdmTMB} is designed and summarizes its functionality, illustrates its use through three case studies, and concludes with a comparison to related software.
+% We provide a more detailed comparison of related software packages in Table~\ref{tab:functionality} and the Discussion (Section~\ref{discussion}).
+
+Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \pkg{TMB} for model fitting and \INLA\ to set up SPDE matrices. Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models. Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package. One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \pkg{TMB}: \pkg{sdmTMB}), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and discretely in time. 
+
+This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \pkg{sdmTMB} is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \pkg{sdmTMB} to other packages (Section~\ref{package-comparisons}) and concludes with a discussion and comparison to related software (Section~\ref{discussion}).
+
+% TODO: there is now some duplication between these two paragraphs!?
 
 \section{Model description}\label{model-description}
 
@@ -464,11 +472,14 @@ After rapid model exploration with maximum likelihood, one can optionally pass a
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=3.8in]{flowchart}
+\includegraphics[width=3.4in]{flowchart}
 \caption[]{
-TODO
+  Description of the model fitting procedure in \pkg{sdmTMB}.
 }\label{fig:flowchart}
 \end{figure}
+
+% TODO: () on end of functions!? see flowchart vs. rest
+% TODO: blah.sdmTMB() for S3 methods?
 
 The \sdmTMB\ package is designed to be both modular and familiar to users of widely used \R\ packages (e.g., \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}). 
 The user starts by constructing a triangulation mesh for the SPDE approach with \texttt{make\_mesh()}. 
@@ -516,7 +527,7 @@ and whether to use MCMC samples from a \pkg{tmbstan} model fit (\texttt{mcmc\_sa
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization. 
 Following other recent SPDE implementations in \pkg{TMB} \citep{breivik2021, osgood-zimmerman2021}, penalized complexity (PC) priors \citep{simpson2017, fuglstad2019} (\texttt{?pc\_matern}) can constrain the spatial range and variance parameters.
 These priors or penalties are available both with maximum likelihood estimation and with MCMC sampling.
-If a model will be passed to \pkg{tmbstan}, a \texttt{bayesian} logical argument is available to enable Jacobian adjustments for change of variables (priors applied to parameters that are internally transformed) (REF).
+If a model will be passed to \pkg{tmbstan}, a \texttt{bayesian} logical argument is available to enable Jacobian adjustments for changes of variables (priors applied to parameters that are internally transformed) \citep{carpenter2017}.
 
 % Describe modular design philosopy
 
@@ -582,9 +593,7 @@ Archive Network (CRAN) at
 install.packages("sdmTMB", dependencies = TRUE)
 @
 
-Importantly, \texttt{dependencies = TRUE} includes the \proglang{R}-INLA
-package \citep{rue2009, lindgren2011, lindgren2015}, which is not on CRAN but is
-required to generate matrices for the SPDE.
+Importantly, \texttt{dependencies = TRUE} includes the \INLA\ package \citep{rue2009, lindgren2011, lindgren2015}, which is not on CRAN but is required to generate matrices for the SPDE.
 %Soon, we intend to switch to using the \pkg{fmesher} \citep{fmesher} package to eliminate this dependency.
 
 Alternatively, the development version can be installed with:
@@ -1404,30 +1413,16 @@ ggplot(data = nao_effect_df) +
 
 \section{Package comparisons}\label{package-comparisons}
 
-There are many \proglang{R} packages capable of fitting geostatistical spatial
-or spatiotemporal models \citep[e.g.,][]{heaton2019}. \pkg{sdmTMB}, \pkg{VAST},
-\proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} \citep{rousset2014} are
-the most closely related, as they all provide a user interface to SPDE-based GRF
-models. In our software comparison (Table \ref{tab:functionality}), we also
-include \pkg{mgcv} as it can be adapted to use the SPDE \citep{miller2019} and
-\pkg{spBayes} \citep{finley2007, finley2015} since it is a prominent package
-that can fit related predictive-process models without the SPDE. \pkg{sdmTMB},
-\pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas
-\proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to
-isotropic covariance. \pkg{sdmTMB} and \pkg{mgcv} focus on univariate response
-data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM},
-and \pkg{spBayes} extend to multivariate responses with various limitations. To
-our knowledge, \pkg{VAST} is the only package to implement spatial
-\citep{thorson2015} and spatial dynamic factor analysis \citep{thorson2016} and
-spatial empirical orthogonal function (EOF) regression \citep{thorson2020}. Of
-these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold
-(e.g., hockey-stick) covariate relationships. \pkg{spaMM} is limited to
-a spatial random field (i.e., does not fit spatiotemporal fields) and
-\pkg{spBayes} implements spatiotemporal fields, but only as a random walk. There
-is considerable variability in the available observation likelihoods across
-packages (Table \ref{tab:functionality}). We provide comparisons of the syntax
-and the reproducibility of results from models fit using \pkg{sdmTMB},
-\proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix~\ref{app:inla}.
+There are many \proglang{R} packages capable of fitting geostatistical spatial or spatiotemporal models \citep[e.g.,][]{heaton2019}. 
+\pkg{sdmTMB}, \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, and \pkg{spaMM} \citep{rousset2014} are the most closely related, as they all provide a user interface to SPDE-based GRF models. 
+In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE \citep{miller2019} and \pkg{spBayes} \citep{finley2007, finley2015} since it is a prominent package that can fit related predictive-process models without the SPDE. 
+\pkg{sdmTMB}, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance. 
+\pkg{sdmTMB} and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \proglang{R}-\pkg{INLA}/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations. 
+To our knowledge, \pkg{VAST} is the only package to implement spatial \citep{thorson2015} and spatial dynamic factor analysis \citep{thorson2016} and spatial empirical orthogonal function (EOF) regression \citep{thorson2020}. 
+Of these packages, only \pkg{sdmTMB} and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships. 
+\pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk. 
+There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}). 
+% We provide comparisons of the syntax and the reproducibility of results from models fit using \pkg{sdmTMB}, \proglang{R}-\pkg{INLA}, and \pkg{inlabru} in Appendix~\ref{app:inla}.
 
 \begin{table}
 
@@ -1530,7 +1525,7 @@ libraries.}\label{fig:timing}
 \section{Discussion}\label{discussion}
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs? 
-Assuming a given package can fit the model of interest (Table~\ref{tab:functionality}), we suggest the primary differences are the user interface (Appendix \ref{app:inla}) and speed. 
+Assuming a given package can fit the model of interest (Table~\ref{tab:functionality}), we suggest the primary differences are the user interface and speed. 
 We think users familiar with \texttt{stats::glm()}, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \pkg{sdmTMB} most approachable. 
 Users familiar with \proglang{R}-\pkg{INLA} will find \pkg{inlabru} approachable. 
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \proglang{R}-\pkg{INLA}/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages. 
@@ -1549,7 +1544,7 @@ TODO add paragraph here on uniting functionality not available in any one packag
 % TODO: figure out where to put this paragraph
 The GLMMs underpinning \pkg{sdmTMB} models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance. 
 In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}). 
-The random fields in \pkg{sdmTMB} are structured as MVN constrained by a Matérn covariance function \citep{matern1960}. 
+The random fields in \pkg{sdmTMB} are structured as MVN constrained by a Matérn covariance function \citep{matern1986}. 
 The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
 The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\texttt{share\_range} argument).
 
@@ -1674,7 +1669,7 @@ vertices <- mesh$n
 
 This mesh has \Sexpr{vertices} (\texttt{mesh\$n}) vertices.
 
-<<mesh-vis-timing, fig.width=7, fig.asp=1.1, echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='ht', fig.align='center'>>=
+<<mesh-vis-timing, fig.width=7, fig.asp=1.1, out.width="4in", echo=FALSE, fig.cap="The meshes used in simulations from least to most vertices.", fig.pos='ht', fig.align='center'>>=
 max_edge_vec <- rev(c(0.06, 0.075, 0.1, 0.15, 0.2))
 g <- list()
 for (i in seq_along(max_edge_vec)) {
@@ -1717,7 +1712,7 @@ sim_dat <- sdmTMB_simulate(
 
 % Look at the simulated data:
 
-<<sim-dat-plot-timing, out.width="5in", echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'>>=
+<<sim-dat-plot-timing, out.width="4in", echo=FALSE, fig.cap="Example simulated dataset with a spatial random field.", fig.pos='ht', fig.align='center'>>=
 ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   geom_point() +
   scale_color_gradient2() +
