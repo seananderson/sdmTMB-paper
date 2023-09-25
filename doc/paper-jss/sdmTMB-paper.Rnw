@@ -183,26 +183,12 @@ g^{-1} \left( \eta_{\bm{s}} \right),\\
 \eta_{\bm{s}} &= \bm{X}_{\bm{s}} \bm{\beta} + \omega_{\bm{s}},\\
 \end{aligned}
 \]
-where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial random field $\omega_{\bm{s}}$. This spatial random field represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, the vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) represents a ``wiggly'' surface with an expected value of zero that is added to the linear predictor in link space (e.g., Figure~\ref{fig:matern-range}ab).
-
+where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_s$. That mean is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta$. In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial random field $\omega_{\bm{s}}$. This spatial random field represents the effect of latent spatial variables that are not otherwise accounted for in the model. Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise. More simply, the vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) represents a ``wiggly'' surface with an expected value of zero that is added to the linear predictor in link space (e.g., Figure~\ref{fig:matern-range}).
 The vector $\bm{\omega}$ is assumed drawn from a multivariate normal distribution with a covariance matrix $\boldsymbol{\Sigma}_\omega$ constrained by some function that defines the rate at which spatial covariance decays with distance,
 \[
 \boldsymbol{\omega} \sim \operatorname{MVNormal}
   \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right).
 \]
-
-\subsection{The Mat\'ern covariance function}
-
-Various covariance functions are possible, but a popular and flexible one is the Mat\'ern \citep{whittle1954, matern1986} (Figure~\ref{fig:matern-range}). If we define $\lVert h \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
-\[
-\Phi\left( \bm{s}_j, \bm{s}_k \right) =
-  \frac{\sigma^2}{2^{\nu - 1}\Gamma(\nu)}
-  \left(\kappa \lVert h \rVert \right)^\nu K_\nu
-  \left( \kappa \lVert h \rVert \right).
-\]
-The parameter $\sigma^2$ is the marginal variance (magnitude of the random field ``wiggliness''), $\Gamma$ represents the Gamma function, $K_\nu$ represents the modified Bessel function of the second kind, and $\kappa$ represents the spatial decorrelation rate. The parameter $\nu$ controls the smoothness of the covariance function. In practice, $\nu$ is challenging to estimate and herein is fixed at $\nu = 1$ \citep{lindgren2011}. A more interpretable parameter than the spatial decorrelation rate $\kappa$ is the spatial range---a distance at which two points are effectively independent. A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\sqrt{8} / \kappa$), which has the empirically derived property that correlation decays to $\approx 0.13$ \citep{lindgren2011} (Figure~\ref{fig:matern-range}).
-
-% Assuming $\nu = 1$, the parameters $\kappa$ and $\tau$ can be converted to two useful values: correlation range ($\sqrt{8} / \kappa$) and marginal standard deviation The range is the distance that correlation decays to $\approx 0.13$ .
 
 <<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="Example Gaussian random fields for two range values. The range describes the distance at which spatial correlation decays to $\\approx 0.13$ in coordinate units (i.e., the distance at which two points are effectively independent). Panel a shows a shorter range than panel b, which results in a ``wigglier'' surface. Panel c shows the Mat\\'ern function for these two range values. The dashed horizontal line shows a correlation of 0.13.">>=
 predictor_dat <- expand.grid(
@@ -281,6 +267,19 @@ sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range
 
 cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
 @
+
+\subsection{The Mat\'ern covariance function}
+
+Various covariance functions are possible, but a popular and flexible one is the Mat\'ern \citep{whittle1954, matern1986} (Figure~\ref{fig:matern-range}). If we define $\lVert h \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
+\[
+\Phi\left( \bm{s}_j, \bm{s}_k \right) =
+  \frac{\sigma^2}{2^{\nu - 1}\Gamma(\nu)}
+  \left(\kappa \lVert h \rVert \right)^\nu K_\nu
+  \left( \kappa \lVert h \rVert \right).
+\]
+The parameter $\sigma^2$ is the marginal variance (magnitude of the random field ``wiggliness''), $\Gamma$ represents the Gamma function, $K_\nu$ represents the modified Bessel function of the second kind, and $\kappa$ represents the spatial decorrelation rate. The parameter $\nu$ controls the smoothness of the covariance function. In practice, $\nu$ is challenging to estimate and herein is fixed at $\nu = 1$ \citep{lindgren2011}. A more interpretable parameter than the spatial decorrelation rate $\kappa$ is the spatial range---a distance at which two points are effectively independent. A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\sqrt{8} / \kappa$), which has the empirically derived property that correlation decays to $\approx 0.13$ \citep{lindgren2011} (Figure~\ref{fig:matern-range}).
+
+% Assuming $\nu = 1$, the parameters $\kappa$ and $\tau$ can be converted to two useful values: correlation range ($\sqrt{8} / \kappa$) and marginal standard deviation The range is the distance that correlation decays to $\approx 0.13$ .
 
 \subsection{Geometric anisotropy}
 
