@@ -468,6 +468,7 @@ The statistical model itself is written as a \proglang{C++} template for \TMB.
 \TMB\ returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
 The negative marginal log likelihood is minimized via the non-linear optimization routine \texttt{stats::nlminb()} \citep{gay1990} in \proglang{R} with additional optimization carried out via a Newton optimization step to find the Hessian using \texttt{stats::optimHess()} \citep{gay1990, r2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to samples from the joint posterior distribution for Bayesian inference.
+% TODO: visreg + ggeffects effects, etc.?
 
 \begin{figure}[htbp]
 \centering
