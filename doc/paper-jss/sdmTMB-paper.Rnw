@@ -1482,7 +1482,9 @@ Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with c
 \pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \pkg{sdmTMB} more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \pkg{sdmTMB} or \pkg{VAST} (although such quantities can be post hoc derived with other packages).
 
-While our focus is primarily in applications to biological data, the SPDE approach and functionality of \sdmTMB\ has applications in many other fields. Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}. These examples underscore the versatile nature of the SPDE approach and the potential uses of \sdmTMB\ across various scientific and industrial sectors.
+While our focus is primarily in applications to biological data, the SPDE approach and functionality of \sdmTMB\ has applications in many other fields.
+Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}.
+These examples underscore the versatile nature of the SPDE approach and the potential uses of \sdmTMB\ across various scientific and industrial sectors.
 
 TODO add paragraph here on uniting functionality not available in any one package?
 
