@@ -709,7 +709,7 @@ We could create a basic mesh just specifying this:
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 @
 
-We can also specify additional arguments, in this case passed to \fct{fmesher::fm\_mesh\_2d\_inla}: a maximum triangle edge length of 10 km and 40 km for the inner and outer mesh, and an offset width of 10 km and 40 km for the inner and outer meshes borders.
+We can also specify additional arguments, in this case passed to \fct{fmesher::fm\_mesh\_2d\_inla}: a maximum triangle edge (\code{max.edge}) length of 10 km and 40 km for the inner and outer mesh, and an \code{offset} width of 10 km and 40 km for the inner and outer meshes borders.
 % Alternatively, we could have created any mesh via \INLA\ or \pkg{fmesher} and supplied it to the \code{mesh} argument in \fct{make\_mesh}.
 For more irregularly shaped areas, we could have specified a non-convex hull with \code{convex} and \code{concave} arguments.
 The triangle edge length should be several times smaller than the range and the outer boundary should extend at least as far as the range (REF).
@@ -746,7 +746,7 @@ y_{\bm{s}} &\sim \operatorname{Bernoulli} \left(\mu_{\bm{s}}\right),\\
   \left( \boldsymbol{0}, \boldsymbol{\Sigma}_\omega \right).
 \end{aligned}
 \]
-where \(\bm{X}^{\mathrm{main}}_{\bm{s}}\) represents a matrix of main effect covariates (intercept, quadratic effects of depth), \(\bm{\beta}\) represents a vector of estimated main effect coefficients, and \(\omega_{\bm{s}}\) represents the estimated spatial random field.
+where \(\bm{X}^{\mathrm{main}}_{\bm{s}}\) represents a matrix of main effect covariates (intercept and quadratic effects of depth), \(\bm{\beta}\) represents a vector of estimated main effect coefficients, and \(\omega_{\bm{s}}\) represents the estimated spatial random field at location $\s$.
 
 We can implement this model with \fct{sdmTMB}:
 
@@ -793,7 +793,7 @@ that no extreme or small eigenvalues are detected,
 that no absolute log likelihood gradients with respect to fixed defects are $\le$ 0.001,
 that all fixed effects have reported standard errors that do not look unreasonably large ($<$ 100 by default),
 that random field marginal standard deviations are not unexpectedly small or large ($>$ 0.01 and $<$ 100),
-and that the random field Matérn range parameter does not look unreasonably large ($<$ 1.5 times the largest edge of a bounding box around the observations).
+and that the random field Matérn range parameter does not look unreasonably large ($<$ 1.5 times the largest distance from a bounding box around the observations).
 
 We can get a summary of our model fit:
 
@@ -814,7 +814,7 @@ tidy(fit_bin, conf.int = TRUE)
 @
 
 By setting \code{effects = "ran\_pars"}, \fct{tidy} will return random
-field parameters, where \code{sigma\_O} is the marginal standard deviation of the spatial random field \(\bm{\omega}\) (`O' for `Omega').
+field parameters, where \code{sigma\_O} is the marginal standard deviation of the spatial random field \(\bm{\omega}\) (``O'' for ``Omega'').
 
 <<pcod-eg1-tidy-re, eval=TRUE, echo=TRUE>>=
 tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
@@ -844,7 +844,7 @@ test_autocor <- function(obj) {
 p_rf <- round(t_rf$p.value, 2)
 @
 
-We can also see that the AIC of the model with spatial random fields is
+We can also see that the conditional AIC of the model with spatial random fields is
 lower:
 
 <<pcod-aic, eval=TRUE, echo=TRUE, results='markup'>>=
@@ -873,12 +873,14 @@ cv_bin <- sdmTMB_cv(present ~ poly(log(depth), 2),
 )
 @
 
-Indeed, the log likelihood of left-out data is considerably larger for the model that includes random fields:
+Indeed, the log likelihood of left-out data is considerably larger for the model that includes random fields indicating better out-of-sample predictions:
 
 <<pcod-cv-out, eval=TRUE, echo=TRUE, results='markup'>>=
 cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 @
+
+In practice, we would want to repeat this procedure several times to ensure the rank order is not sensitive to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
 
 \subsection{Making predictions on new data}
 
@@ -912,7 +914,7 @@ cowplot::plot_grid(g1, g2, g3, ncol = 3)
 \section{Example: spatiotemporal species distribution modeling}\label{dogfish}
 
 As a second example, we will construct a spatiotemporal model of catch rates of Pacific Spiny Dogfish (\emph{Squalus suckleyi}) from a trawl survey off the west coast of Vancouver Island, Canada.
-This example extends the spatial model described above by also including (1) spatiotemporal fields allowing the distribution in each year to be unique, (2) a time-varying intercept as an AR(1) process to allow year effects to vary but remain autocorrelated, (3) a smooth effect of depth, allowing catch rates to vary non-linearly with depth, and (4) spatial anisotropy allowing spatial correlation to be directionally dependent.
+This example extends the spatial model described above by including (1) spatiotemporal fields, allowing unique spatially correlated latent effects each year; (2) a time-varying intercept as an AR(1) process, allowing year effects to vary but remain autocorrelated; (3) a smooth effect of depth, allowing catch rates to vary non-linearly with depth; and (4) spatial anisotropy, allowing spatial correlation to be directionally dependent.
 Since catch rates are positive, continuous, and contain zeros, we begin by specifying the response family as a Tweedie distribution \citep{tweedie1984} with a log link.
 We then compare alternative families, spatiotemporal random field structures, and the exclusion of anisotropy to illustrate the flexibility of \sdmTMB.
 
@@ -962,7 +964,7 @@ O_{\bm{s},t} +
 \bm{\epsilon}_{t} &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{aligned}
 \]
-where \(\bm{\beta}\) are coefficients associated with the main effects, \(O_{\bm{s},t}\) represents the offset (here, log area swept), \(\gamma_t\) represents the time-varying coefficients, \(\omega_{\bm{s}}\) is the spatial field (equivalent to a spatial intercept) and \(\epsilon_{\bm{s},t}\) represents spatiotemporal fields.
+where \(\bm{\beta}\) are coefficients associated with the main effects, \(O_{\bm{s},t}\) represents the offset (here, log area swept), \(\gamma_t\) represents the time-varying coefficients, \(\omega_{\bm{s}}\) is the spatial field (representing constant latent spatial effects) and \(\epsilon_{\bm{s},t}\) (representing latent spatial effects that vary by year).
 The temporally varying intercepts \(\gamma_t\) are modeled as a stationary AR(1) process,
 \[
 \begin{aligned}
@@ -1072,7 +1074,7 @@ summary(fit)
 
 The output is more complex compared to our binomial spatial model.
 We now have two model components, which are shown one after the other.
-Starting with the binomial component, we have output from the smoother, which includes a linear component (\code{slog\_depth}) and the standard deviation on the smoother weights (\code{sds(log\_depth)}).
+Starting with the binomial component, we have output from the smoother, which includes a linear parameter (\code{slog\_depth}) and the standard deviation on the smoother weights (\code{sds(log\_depth)}).
 The smoother summary follows the format used in the \pkg{brms} package \citep{burkner2017}.
 Next, we have the time-varying intercepts and information on our anisotropic spatial correlation.
 We then have the second model component (lognormal) with a similar summary structure but with the addition of a dispersion parameter, the AR(1) correlation of the spatiotemporal random fields, and a spatiotemporal random field marginal standard deviation.
@@ -1146,7 +1148,7 @@ g_est <- pred |> filter(year %in% c(2004, 2022)) |>
 
 % TODO component confusing:
 
-<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction components from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field components (here, a smoother for bottom depth and the time-varying year effect) from the first delta model, (b) \\code{omega\\_s1} refers to the spatial random field from the first delta model, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in">>=
+<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction elements from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field elements (here, a smoother for bottom depth and the time-varying year effect) from the first delta model component, (b) \\code{omega\\_s1} refers to the spatial random field from the first delta model component, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model component, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are allowed to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in">>=
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -1170,7 +1172,7 @@ pred_depth <- predict(
 )
 @
 
-<<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are omitted from the prediction.", out.width="4in">>=
+<<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are set to their expected value (zero).", out.width="4in">>=
 ggplot(pred_depth, aes(
   exp(log_depth), exp(est),
   ymin = exp(est - 2 * est_se),
@@ -1212,8 +1214,7 @@ The reasons for this interannual variation in the number of individuals migratin
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe \citep{millon2014}.
 Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
 
-Our data are read in from supplementary data and contain columns for UTM spatial coordinates, year, year as a factor, and the annual NAO value:
-
+Our data are read in from supplementary data and contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, and the annual NAO value:
 <<owl-data>>=
 snow <- readRDS(here::here("data/SNOW_data.rds"))
 @
@@ -1224,7 +1225,7 @@ select(snow, X, Y, year, year_f, nao)
 
 \subsection{Fitting the model}
 
-We fit counts observed in North America during annual Christmas Bird Counts \citep{cbc} using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
+We will fit counts observed in North America during annual Christmas Bird Counts \citep{cbc} using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
 
 We can write the model as
 \[
