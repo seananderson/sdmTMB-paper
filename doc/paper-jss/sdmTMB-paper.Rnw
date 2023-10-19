@@ -399,13 +399,12 @@ We demonstrate these model components in Sections~\ref{pcod}, \ref{dogfish}, and
 \caption[]{
 Components of an \sdmTMB\ model with illustrations, descriptions, examples, notation, and example code.
 An \sdmTMB\ model can be built from any combination of the process components (first six rows) plus an observation component (last row).
-The examples are from an SDM context, but the model can be fit to any spatially referenced point data.
+The examples are from an ecology context, but the model can be fit to any spatially referenced point data.
 Notation: We refer to design matrices as $\bm{X}$.
 The indexes $\bm{s}$, $t$, and $g$ index spatial coordinates, time, and group, respectively.
 The $\sigma$ and $\bm{\Sigma}$ symbols represent standard deviations and covariance matrices, respectively.
 All other symbols refer to the  described model components (e.g., $\bm{\beta}$ and $\bm{\omega}$ refer to a vector of main effects and spatial random field deviations, respectively).
-See the \sdmTMB\ \href{https://pbs-assess.github.io/sdmTMB/articles/}{model description vignette} for a full description of the model.
-Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint `hockey-stick' shape \citep[e.g.,][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{\textasciitilde 0} is used in an \R\ formula to omit an intercept.}\label{fig:diagram}
+Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \code{breakpt()} denotes a breakpoint ``hockey-stick'' shape \citep[e.g.,][]{barrowman2000}, \code{(1|g)} denotes a random intercept by group \code{g}, and \code{\textasciitilde 0} is used in an \R\ formula to omit the intercept.}\label{fig:diagram}
 \end{figure}
 
 \subsection{Delta models}\label{sec:delta}
@@ -435,7 +434,7 @@ y | y > 0 &\sim \operatorname{Positive-distribution} \left( r, \phi \right).
 \end{aligned}
 \]
 
-The expectation for a new data point is then the probability of a non-zero multiplied by the positive rate: $p \cdot r$.
+The expectation for a new data point is then the probability of a non-zero event multiplied by the positive rate: $p \cdot r$.
 
 \subsubsection{Poisson-link delta models}
 
@@ -510,34 +509,34 @@ The package gathers functionality not found combined in other packages that is p
 % TODO: blah.sdmTMB() for S3 methods?
 
 The \sdmTMB\ package is designed to be both modular and familiar to users of widely used \R\ packages (e.g., \pkg{glmmTMB}, \pkg{lme4}, \pkg{mgcv}).
-The user starts by constructing a triangulation mesh for the SPDE approach with \fct{make\_mesh()} (Figure~\ref{fig:flowchart}).
-\fct{make\_mesh()} is a wrapper for \pkg{fmesher} \citep{fmesher} triangulation mesh functions and users can also construct any mesh with \pkg{fmesher} or \INLA\ and pass it to \fct{make\_mesh()}.
+The user starts by constructing a triangulation mesh for the SPDE approach with \fct{make\_mesh} (Figure~\ref{fig:flowchart}).
+\fct{make\_mesh} is a wrapper for \pkg{fmesher} \citep{fmesher} triangulation mesh functions and users can also construct any mesh with \pkg{fmesher} or \INLA\ and pass it to \fct{make\_mesh}.
 
-Fitting is accomplished with \fct{sdmTMB()}, which has arguments similar to \pkg{glmmTMB}'s \fct{glmmTMB()} but with additional arguments for how any spatial and spatiotemporal random fields are structured, what column defines time, any time-varying formulas, and any spatially varying formulas.
-Observation distributions and links are specified with standard \R\ family functions (e.g., \fct{binomial()}) plus several \sdmTMB-specific families not available in the \R\ stats library (e.g., \fct{nbinom2()}, \fct{delta\_lognormal()}, see \fct{?sdmTMB::Families}).
+Fitting is accomplished with \fct{sdmTMB}, which has arguments similar to \pkg{glmmTMB}'s \fct{glmmTMB} but with additional arguments for how any spatial and spatiotemporal random fields are structured, what column defines time, any time-varying formulas, and any spatially varying formulas.
+Observation distributions and links are specified with standard \R\ family functions (e.g., \fct{binomial}) plus several \sdmTMB-specific families not available in the \R\ stats library (e.g., \fct{nbinom2}, \fct{delta\_lognormal}, see \code{?sdmTMB::Families}).
 
 The \sdmTMB\ formula syntax (\code{formula} argument) follows a standard format that is similar to \pkg{glmmTMB}, \pkg{lme4}, and \pkg{mgcv}.
-In addition to standard main effects, the user can include random intercepts (e.g., \code{+ (1 | group)}), threshold shaped hockey-stick models \fct{breakpt()} \citep{barrowman2000}, logistic functions \fct{logistic()}, and penalized smoothers \fct{s()} for generalized additive models, GAMS \citep{wood2017a}.
-Penalized smoothers use the same \fct{s()} and \fct{t2()} syntax as in \pkg{mgcv} \citep{wood2017a}.
-Supported functionality includes bivarate smoothers \fct{s(x, y)},
-smoothers varying by continuous or categorical variables \fct{s(x1, by = x2)},
-cyclical smoothers \fct{s(x, bs = "cc")},
-and smoothers with specified basis dimensions \fct{s(x, k = 4)} \citep{wood2017a}.
-Beyond the main formula, \fct{sdmTMB()} accepts one-sided formulas for coefficients that should vary through time (\code{time\_varying}) according to a random walk or AR(1) process (\code{time\_varying\_type}) or vary through space as random fields (\code{spatial\_varying}).
+In addition to standard main effects, the user can include random intercepts (e.g., \code{+ (1 | group)}), threshold shaped hockey-stick models \fct{breakpt} \citep{barrowman2000}, logistic functions \fct{logistic}, and penalized smoothers \fct{s} for generalized additive models, GAMS \citep{wood2017a}.
+Penalized smoothers use the same \fct{s} and \fct{t2} syntax as in \pkg{mgcv} \citep{wood2017a}.
+Supported functionality includes bivarate smoothers \code{s(x, y)},
+smoothers varying by continuous or categorical variables \code{s(x1, by = x2)},
+cyclical smoothers \code{s(x, bs = "cc")},
+and smoothers with specified basis dimensions \code{s(x, k = 4)} \citep{wood2017a}.
+Beyond the main formula, \fct{sdmTMB} accepts one-sided formulas for coefficients that should vary through time (\code{time\_varying}) according to a random walk or AR(1) process (\code{time\_varying\_type}) or vary through space as random fields (\code{spatial\_varying}).
 
-Once the user makes a call to \fct{sdmTMB()}, input data structures for a \TMB\ model are constructed internally (Figure~\ref{fig:flowchart}).
-If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random()} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
-\fct{sdmTMB()} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
+Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ model are constructed internally (Figure~\ref{fig:flowchart}).
+If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
+\fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
 The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
-The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb()} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess()} \citep{gay1990, r2021}.
+The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess} \citep{gay1990, r2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to samples from the joint posterior distribution for Bayesian inference.
 
-A fitted model summary can be viewed with \fct{print()} or \fct{summary()} and a set of basic ``sanity'' checks can be run with \fct{sanity()}.
-\fct{tidy()} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
-Others standard S3 methods are also available such as \fct{fixef()}, \fct{confint()}, and \fct{vcov()}.
+A fitted model summary can be viewed with \fct{print} or \fct{summary} and a set of basic ``sanity'' checks can be run with \fct{sanity}.
+\fct{tidy} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
+Others standard S3 methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
 
-Prediction on fitted or new data is accomplished with \fct{predict()} (\fct{?predict.sdmTMB}).
-The \fct{predict.sdmTMB()} method is flexible and includes the option to specify a new data frame (\fct{newdata}),
+Prediction on fitted or new data is accomplished with \fct{predict} (\code{?predict.sdmTMB}).
+The predict method is flexible and includes the option to specify a new data frame (\code{newdata}),
 whether to return predictions on the link or response scale (type),
 whether to return standard errors (\code{se\_fit},
 can be slow if conditioned on random fields),
@@ -548,22 +547,22 @@ whether to take draws from the joint parameter precision matrix (\code{nsim}),
 and whether to use MCMC samples from a \pkg{tmbstan} model fit (\code{mcmc\_samples}).
 
 A variety of model evaluation tools are available.
-A \fct{residuals()} method calculates various types of residuals.
-New observations can be simulated from a fitted model with \fct{simulate()} or new data can be simulated without a fitted model (``de novo'') with \fct{sdmTMB\_simulate()}.
-\fct{sdmTMB\_cv()} facilitates cross validation.
+A \fct{residuals} method calculates various types of residuals.
+New observations can be simulated from a fitted model with \fct{simulate} or new data can be simulated without a fitted model (``de novo'') with \fct{sdmTMB\_simulate}.
+\fct{sdmTMB\_cv} facilitates cross validation.
 
 % Derived quantities can be calculated on the fitted model.
 % TODO: more COG refs
-% Common quantities of interest include summarizing shifts in the center of gravity (\fct{get\_cog()}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\fct{get\_index()}).
+% Common quantities of interest include summarizing shifts in the center of gravity (\fct{get\_cog}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\fct{get\_index}).
 
-% The \fct{get\_index()} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
+% The \fct{get\_index} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
 
-% Data may be simulated with or without a fitted model (\fct{simulate.sdmTMB()}, \fct{sdmTMB\_simulate()} respectively).
-% Estimation is done via maximum marginal likelihood with the \fct{sdmTMB()} function, and the resulting fitted model can be used to make predictions (\fct{predict.sdmTMB()}) or calculate residuals (\fct{residuals.sdmTMB()}), derive additional quantities of interest, and simulate Bayesian posterior distributions.
-% Common quantities of interest may include summarizing shifts in the center of gravity (\fct{get\_cog()}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\fct{get\_index()}).
-% The \fct{get\_index()} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
+% Data may be simulated with or without a fitted model (\fct{simulate.sdmTMB}, \fct{sdmTMB\_simulate} respectively).
+% Estimation is done via maximum marginal likelihood with the \fct{sdmTMB} function, and the resulting fitted model can be used to make predictions (\fct{predict.sdmTMB}) or calculate residuals (\fct{residuals.sdmTMB}), derive additional quantities of interest, and simulate Bayesian posterior distributions.
+% Common quantities of interest may include summarizing shifts in the center of gravity (\fct{get\_cog}) \citep[e.g.,][]{thorson2016cog}, or tracking total densities through time (\fct{get\_index}).
+% The \fct{get\_index} function generates a weighted average of densities for the prediction grid, integrating across space; for prediction grids with equally sized cells, each cell will contribute equally to the total average, however cells may be of unequal size.
 
-\sdmTMB\ models can include penalized likelihoods by assigning priors (penalties) to model parameters through the \fct{sdmTMB()} \code{prior} argument (\code{?sdmTMBpriors}).
+\sdmTMB\ models can include penalized likelihoods by assigning priors (penalties) to model parameters through the \fct{sdmTMB} \code{prior} argument (\code{?sdmTMBpriors}).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in \TMB\ \citep{breivik2021, osgood-zimmerman2021}, penalized complexity (PC) priors \citep{simpson2017, fuglstad2019} (\code{?pc\_matern}) can constrain the spatial range and variance parameters.
 These priors or penalties are available both with maximum likelihood estimation and with MCMC sampling.
@@ -601,24 +600,24 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 % Validation and selection of state-space models is challenging, particularly when
 % using the Laplace approximation \citep{thygesen2017a}. We provide several
 % approaches to assist this process: (1) The Akaike Information Criterion
-% \citep[AIC,][]{akaike1974} can be calculated with \fct{AIC()}, although AIC
+% \citep[AIC,][]{akaike1974} can be calculated with \fct{AIC}, although AIC
 % has well-documented biases with mixed-effects models \citep{liang2008}. (2)
-% Alternatively, k-fold cross validation with \fct{sdmTMB\_cv()} can be used
+% Alternatively, k-fold cross validation with \fct{sdmTMB\_cv} can be used
 % with user-specified or randomly chosen folds for model selection or to evaluate
 % goodness of fit according to user-calculated criteria (e.g., mean squared error,
 % area under the curve). (3) An \sdmTMB\ model can be passed to the
 % \pkg{tmbstan} package \citep{monnahan2018} to sample from the joint posterior
 % with Stan \citep{carpenter2017}, evaluate the accuracy of the Laplace
 % approximation, or perform posterior predictive checks (see
-% \code{?extract\_mcmc}). (4) The \fct{residuals()} method by default returns
+% \code{?extract\_mcmc}). (4) The \fct{residuals} method by default returns
 % randomized quantile \citep{dunn1996} or probability integral transform (PIT)
 % \citep{smith1985} residuals. For state-space models, these residuals have known
 % statistical issues with the Laplace approximation \citep{thygesen2017a} but are
 % quick to calculate. A version that uses Markov chain Monte Carlo (MCMC) sampling
 % of the random effects to avoid this issue \citep{rufener2021} is recommended but
 % slower (\code{?residuals.sdmTMB}). Simulation-based residuals \citep{dharma}
-% are also possible. (5) The \fct{simulate.sdmTMB()} method can simulate from
-% fitted models and the \fct{sdmTMB\_simulate()} function facilitates
+% are also possible. (5) The \fct{simulate.sdmTMB} method can simulate from
+% fitted models and the \fct{sdmTMB\_simulate} function facilitates
 % simulating data without starting from a fitted model. Models can be fit to these
 % simulated data to ensure identifiability, evaluate bias and precision in
 % parameter estimation, or evaluate the consequences of model misspecification.
@@ -628,17 +627,16 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 % \sdmTMB\ relies on several well-established \R\ packages (Figure~\ref{fig:flowchart}).
 % \sdmTMB\ uses \pkg{fmesher} \citep{fmesher} and \INLA\ \citep{lindgren2015} to generate the triangulation mesh and input matrices for the SPDE calculations.
 % The SPDE precision matrix calculations themselves are performed by functions within \TMB\ \citep{kristensen2016} (\code{R\_inla} namespace).
-% Data structures required to implement penalized smoothers are constructed with \fct{smooth2random()} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
+% Data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 % The statistical model itself is written as a \proglang{C++} template for \TMB.
 % \TMB\ returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
-% The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb()} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess()} \citep{gay1990, r2021}.
+% The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess} \citep{gay1990, r2021}.
 % After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to samples from the joint posterior distribution for Bayesian inference.
 % % TODO: visreg + ggeffects effects, etc.?
 
 \subsection{Installation}\label{installation}
 
-\sdmTMB\ can be installed from the Comprehensive \R
-Archive Network (CRAN) at
+\sdmTMB\ can be installed from the Comprehensive \R\ Archive Network (CRAN) at
 \url{https://CRAN.R-project.org/package=sdmTMB}
 
 <<sdmTMB-install, eval=FALSE, echo=TRUE>>=
@@ -652,7 +650,7 @@ As an alternative to the CRAN version, the development version can be installed 
 remotes::install_github("pbs-assess/sdmTMB")
 @
 
-Additional utilities are maintained in the \pkg{sdmTMBextra} package at\\
+Additional utilities that require heavier package dependencies (such as \INLA\ and \pkg{rstan}) are maintained in the \pkg{sdmTMBextra} package at\\
 \url{https://github.com/pbs-assess/sdmTMBextra}
 
 \section{Example: spatial species distribution modelling}\label{pcod}
@@ -684,7 +682,6 @@ theme_set(theme_light())
 options(ggplot2.continuous.fill = "viridis")
 @
 
-
 <<pcod-head, echo=TRUE>>=
 select(pcod, lat, lon, X, Y, depth, present)
 @
@@ -692,8 +689,8 @@ select(pcod, lat, lon, X, Y, depth, present)
 \subsection{Adding UTM columns}
 
 An \sdmTMB\ model requires a data frame that contains a response column, columns for any predictors, and columns for spatial coordinates.
-Usually it makes sense to convert the spatial coordinates to an equidistant projection such as UTMs to ensure that distance remains constant throughout the study region \citep[e.g., using \fct{sf::st\_transform()},][]{pebesma2018}.
-Here we use the helper function \fct{add\_utm\_columns()} to add UTM coordinates with km units (so our estimated spatial range parameter is not too big or small).
+Usually it makes sense to convert the spatial coordinates to an equidistant projection such as UTMs to ensure that distance remains constant throughout the study region \citep[e.g., using \fct{sf::st\_transform},][]{pebesma2018}.
+Here we use the helper function \fct{add\_utm\_columns} to add UTM coordinates with km units (so our estimated spatial range parameter is not too big or small).
 By default, the function will guess the UTM zone and create new columns \code{X} and \code{Y}.
 Since our example data already has these UTM columns, we can skip running this code.
 
@@ -703,8 +700,8 @@ pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 
 \subsection{SPDE mesh creation}
 
-\sloppy We then create a mesh object that contains triangulation and projection matrices needed to apply the SPDE approach using \fct{make\_mesh()}.
-% \fct{make\_mesh()} is a wrapper function for functions in the \pkg{fmesher} package.
+\sloppy We then create a mesh object that contains triangulation and projection matrices needed to apply the SPDE approach using \fct{make\_mesh}.
+% \fct{make\_mesh} is a wrapper function for functions in the \pkg{fmesher} package.
 The argument \code{cutoff} defines the minimum allowed distance between mesh vertices in the units of \code{X} and \code{Y} (km).
 We could create a basic mesh just specifying this:
 
@@ -712,8 +709,8 @@ We could create a basic mesh just specifying this:
 mesh_pcod <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 8)
 @
 
-We can also specify additional arguments, in this case passed to \fct{fmesher::fm\_mesh\_2d\_inla()}: a maximum triangle edge length of 10 km and 40 km for the inner and outer mesh, and an offset width of 10 km and 40 km for the inner and outer meshes borders.
-% Alternatively, we could have created any mesh via \INLA\ or \pkg{fmesher} and supplied it to the \code{mesh} argument in \fct{make\_mesh()}.
+We can also specify additional arguments, in this case passed to \fct{fmesher::fm\_mesh\_2d\_inla}: a maximum triangle edge length of 10 km and 40 km for the inner and outer mesh, and an offset width of 10 km and 40 km for the inner and outer meshes borders.
+% Alternatively, we could have created any mesh via \INLA\ or \pkg{fmesher} and supplied it to the \code{mesh} argument in \fct{make\_mesh}.
 For more irregularly shaped areas, we could have specified a non-convex hull with \code{convex} and \code{concave} arguments.
 The triangle edge length should be several times smaller than the range and the outer boundary should extend at least as far as the range (REF).
 
@@ -724,7 +721,7 @@ Mesh complexity has the single largest influence on the speed of fitting these m
 % https://haakonbakkagit.github.io/btopic104.html
 % https://becarioprecario.bitbucket.io/spde-gitbook/index.html
 
-<<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly and supplying the resulting object to \\code{make\\_mesh()}.", fig.width=4.5, fig.asp=1, out.width="3in">>=
+<<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly and supplying the object to \\code{make\\_mesh()}.", fig.width=4.5, fig.asp=1, out.width="3in">>=
 mesh_pcod2 <- make_mesh(
   pcod, c("X", "Y"),
   fmesher_func = fmesher::fm_mesh_2d_inla,
@@ -751,7 +748,7 @@ y_{\bm{s}} &\sim \operatorname{Bernoulli} \left(\mu_{\bm{s}}\right),\\
 \]
 where \(\bm{X}^{\mathrm{main}}_{\bm{s}}\) represents a matrix of main effect covariates (intercept, quadratic effects of depth), \(\bm{\beta}\) represents a vector of estimated main effect coefficients, and \(\omega_{\bm{s}}\) represents the estimated spatial random field.
 
-We can implement this model with \fct{sdmTMB()}:
+We can implement this model with \fct{sdmTMB}:
 
 <<pcod-fit, echo=TRUE>>=
 fit_bin_rf <- sdmTMB(
@@ -764,7 +761,7 @@ fit_bin_rf <- sdmTMB(
 @
 
 We can also fit a version that omits the spatial random field by setting \code{spatial = "off"}.
-We will use the \fct{update()} S3 method to refit the model while updating any specified arguments:
+We will use the \fct{update} S3 method to refit the model while updating any specified arguments:
 
 <<pcod-fit-off, echo=TRUE>>=
 fit_bin <- update(fit_bin_rf, spatial = "off")
@@ -772,7 +769,7 @@ fit_bin <- update(fit_bin_rf, spatial = "off")
 
 \subsection{Inspecting the model}
 
-We can run some basic checks on our model with the \fct{sanity()} function:
+We can run some basic checks on our model with the \fct{sanity} function:
 
 <<pcod-eg1-sanity, eval=TRUE, echo=TRUE, message=FALSE>>=
 sanity(fit_bin_rf)
@@ -790,7 +787,7 @@ sanity(fit_bin_rf)
 #> ✓ Range parameter doesn't look unreasonably large
 \end{verbatim}
 
-This does not flag any issues. \fct{sanity()} is checking that the \fct{nlminb()} optimizer reported successful convergence,
+This does not flag any issues. \fct{sanity} is checking that the \fct{nlminb} optimizer reported successful convergence,
 that the Hessian matrix is positive definite,
 that no extreme or small eigenvalues are detected,
 that no absolute log likelihood gradients with respect to fixed defects are $\le$ 0.001,
@@ -808,7 +805,7 @@ The output indicates our model was fit by maximum (marginal) likelihood (\code{M
 We also see the formula, mesh, fitted data, and family.
 Next we see any estimated main effects, the Matérn range distance, the spatial random field standard deviation, and the negative log likelihood at convergence.
 
-We can use the \fct{tidy()} function to obtain a data frame with parameter estimates (standard methods such as \fct{fixef()}, \fct{confint()}, and \fct{vcov()} are also available).
+We can use the \fct{tidy} function to obtain a data frame with parameter estimates (standard methods such as \fct{fixef}, \fct{confint}, and \fct{vcov} are also available).
 The standard errors on our fixed effects have increased with the spatial random field:
 
 <<pcod-tidy, eval=TRUE, echo=TRUE, results='markup'>>=
@@ -816,7 +813,7 @@ tidy(fit_bin_rf, conf.int = TRUE)
 tidy(fit_bin, conf.int = TRUE)
 @
 
-By setting \code{effects = "ran\_pars"}, \fct{tidy()} will return random
+By setting \code{effects = "ran\_pars"}, \fct{tidy} will return random
 field parameters, where \code{sigma\_O} is the marginal standard deviation of the spatial random field \(\bm{\omega}\) (`O' for `Omega').
 
 <<pcod-eg1-tidy-re, eval=TRUE, echo=TRUE>>=
@@ -825,7 +822,7 @@ tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 \subsection{Checking the effect of including a random field}
 
-We can test for spatial autocorrelation with a Moran's I test or with a visual inspection of the residuals calculated from the \fct{residuals()} S3 method.
+We can test for spatial autocorrelation with a Moran's I test or with a visual inspection of the residuals calculated from the \fct{residuals} S3 method.
 We omit example code for Moran's I calculation for brevity but include it in the code supplement.
 % TODO: reword this?
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but no evidence for the model with a random field (p = 0.84) suggesting that residual spatial autocorrelation is alleviated by including the random field.
@@ -856,7 +853,7 @@ AIC(fit_bin_rf, fit_bin)
 
 \subsection{Comparing models with cross validation}
 
-We can do additional model comparison with cross validation via \fct{sdmTMB\_cv()}.
+We can do additional model comparison with cross validation via \fct{sdmTMB\_cv}.
 We will do 10-fold cross validation with the folds constructed randomly.
 Using the \code{fold\_ids} argument, we could supply our own folds and conduct spatially blocked cross validation. If we set a parallel plan with the \pkg{future} package \citep{bengtsson2021future}, our folds will be fit in parallel.
 
@@ -885,11 +882,11 @@ cv_bin$sum_loglik
 
 \subsection{Making predictions on new data}
 
-\sloppy To visualize our model, we can make predictions with the \fct{predict()} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
+\sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
-The output of \fct{predict()} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
-We can plot these with \fct{geom\_raster()} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
+The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
+We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
 p <- predict(fit_bin_rf, newdata = qcs_grid)
@@ -1046,13 +1043,13 @@ AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 
 % TODO: Need description of anisotropy and why it's important here or somewhere else
 
-We find that the anisotropic AR(1) is favoured. It makes sense that anisotropy is important here given the elongated shape of the continental shelf with a rapid transition to deeper water. We can use \fct{plot\_anisotropy()} to visually inspect the anisotropy (Figure~\ref{fig:dog-aniso}).
+We find that the anisotropic AR(1) is favoured. It makes sense that anisotropy is important here given the elongated shape of the continental shelf with a rapid transition to deeper water. We can use \fct{plot\_anisotropy} to visually inspect the anisotropy (Figure~\ref{fig:dog-aniso}).
 
 <<dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the space of the X-Y coordinates being modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from the center (zero).", out.width="4in">>=
 plot_anisotropy(fit_dpl)
 @
 
-On inspecting the model output with \fct{summary()}, we notice that the spatial random field SD in the positive model component has become very small once AR(1) spatiotemporal fields were added.
+On inspecting the model output with \fct{summary}, we notice that the spatial random field SD in the positive model component has become very small once AR(1) spatiotemporal fields were added.
 We therefore consider a model where these are turned off in the second component of the delta model and choose this model.
 
 <<dog-ar1-2, echo=TRUE, results="hide">>=
@@ -1065,7 +1062,7 @@ AIC(fit_dpl_ar1_only, fit_dpl_ar1, fit_dpl)
 
 \subsection{Inspecting the model}
 
-We save our chosen model to the object \code{fit} to simplify subsequent code, run the \fct{sanity()} check (suppressed for brevity), and inspect \fct{summary()}:
+We save our chosen model to the object \code{fit} to simplify subsequent code, run the \fct{sanity} check (suppressed for brevity), and inspect \fct{summary}:
 
 <<dog-print, echo=TRUE>>=
 fit <- fit_dpl_ar1_only
@@ -1084,7 +1081,7 @@ We then have the second model component (lognormal) with a similar summary struc
 
 Similarly to the first example, we can visualize model predictions on a grid covering the area of interest.
 Because this is a spatiotemporal model, we first need to replicate our grid for each year we will predict on.
-Since this is a common operation, we include the function \fct{replicate\_df()} to replicate a data frame.
+Since this is a common operation, we include the function \fct{replicate\_df} to replicate a data frame.
 We then ensure our data frame contains all the predictors used in the model (here \code{log\_depth}).
 
 % TODO Propose moving this to a short paragraph `Prediction` to highlight modularity
@@ -1104,7 +1101,7 @@ names(pred)
 @
 
 Our prediction data frame is similar to the binomial spatial model, but includes columns for the two delta model components (labelled with suffixes \code{1} and \code{2}) and adds an \code{epsilon\_st} column for spatiotemporal random effects.
-We can easily generate plots from this data frame using \pkg{ggplot2} code with \fct{geom\_raster()} similar to our spatial example with Pacific Cod (Figure~\ref{fig:dog-wcvi-pred}).
+We can easily generate plots from this data frame using \pkg{ggplot2} code with \fct{geom\_raster} similar to our spatial example with Pacific Cod (Figure~\ref{fig:dog-wcvi-pred}).
 We suppress that code for brevity.
 
 <<plot-map, echo=FALSE>>=
@@ -1186,7 +1183,7 @@ ggplot(pred_depth, aes(
 
 \subsection{Calculating an area-weighted index}
 
-We can generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from the model on a grid covering the area of interest and summing the predicted biomass with the \fct{get\_index()} function (Figure \ref{fig:dog-index-plot}).
+We can generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from the model on a grid covering the area of interest and summing the predicted biomass with the \fct{get\_index} function (Figure \ref{fig:dog-index-plot}).
 We supply the grid cell area (4 km\textsuperscript{2}) to the \code{area} argument and specify \code{bias\_correct = TRUE} to enable a bias correction needed due to the non-linear transformation of the random effects \citep{thorson2016bias}.
 % TODO and the Laplace?
 
@@ -1276,7 +1273,7 @@ fit_owl <- sdmTMB(
 
 \subsection{Inspecting the model}
 
-\fct{summary()} prints standard model information:
+\fct{summary} prints standard model information:
 
 <<owl-sanity, eval=FALSE>>=
 sanity(fit_owl)
@@ -1292,14 +1289,14 @@ Given our model specification, all random fields are sharing a single Matérn ra
 \subsection{Extracting the spatially varying coefficient effects}
 
 The spatially varying coefficient effect at any point in space is the combination of the main effect and spatially varying random effect for \code{nao}.
-Mean estimates of the spatially varying random effect are available in the output of \fct{predict.sdmTMB()} in a column starting with \code{zeta\_s} (here, \code{zeta\_s\_nao}).
+Mean estimates of the spatially varying random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (here, \code{zeta\_s\_nao}).
 However, we wish to combine the fixed and random effects with uncertainty on the combined predictions.
 We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
-We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB()}.
+We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
 By default, \code{nsim > 0} will return a matrix of draws from the overall prediction.
 Here, we instead specify that we want to return draws from the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the spatially varying random field.
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
-We then use the function \fct{spread\_sims()} to draw 200 simulations from the parameters themselves, combine the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}, and calculate the median for each column of data so we can plot them.
+We then use the function \fct{spread\_sims} to draw 200 simulations from the parameters themselves, combine the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}, and calculate the median for each column of data so we can plot them.
 
 <<p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
 zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
@@ -1437,7 +1434,7 @@ $^4$Spatiotemporal fields as random walk only.
 $^5$SPDE approach as in \citet{miller2019}.
 $^6$Does have predictive process knots.
 $^7$Zero-inflated NB2 only.
-$^8$Tweedie power parameter fixed for \fct{mgcv::gamm()}.
+$^8$Tweedie power parameter fixed for \fct{mgcv::gamm}.
 $^9$Possible as log-linked Poisson GLMM with aggregated data.
 $^{10}$Hurdle models possible by fitting components separately.
 }
@@ -1457,8 +1454,8 @@ Comparison of time to fit an SPDE spatial random field model with 1000 observati
 Lines represent means and ribbons 95\% quantiles across 50 random iterations.
 Note the log-distributed x axis.
 \pkg{VAST} should be similar to \sdmTMB\ and so is not shown.
-\pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \code{bru\_max\_iter = 1}, and the \fct{like()} formulation.
-\pkg{mgcv} used \fct{bam()}, \code{method = `fREML'}, and discretized covariates \citep{miller2019}.
+\pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \code{bru\_max\_iter = 1}, and the \fct{like} formulation.
+\pkg{mgcv} used \fct{bam}, \code{method = `fREML'}, and discretized covariates \citep{miller2019}.
 Note that \pkg{spaMM} only fits spatial, not spatiotemporal, models.
 All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.}
 \label{fig:timing}
@@ -1468,7 +1465,7 @@ All platforms were restricted to one core and could be faster with parallel comp
 
 How does one choose among the related packages mentioned in this paper to fit SPDE-based geostatistical GLMMs?
 Assuming a given package can fit the model of interest (Table~\ref{tab:functionality}), we suggest the primary differences are the user interface and speed.
-We think users familiar with \fct{stats::glm()}, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \sdmTMB\ most approachable.
+We think users familiar with \fct{stats::glm}, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \sdmTMB\ most approachable.
 Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \sdmTMB\ more straightforward.
@@ -1772,7 +1769,7 @@ Predict.matrix.spde.smooth <- function(object, data) {
 # -------------------------------------------------------------------------
 @
 
-First define \fct{smooth.construct.spde.smooth.spec()} and \fct{Predict.matrix.spde.smooth()} from the supplement of \citet{miller2019}, then:
+First define \fct{smooth.construct.spde.smooth.spec} and \fct{Predict.matrix.spde.smooth} from the supplement of \citet{miller2019}, then:
 
 <<mgcvfit-timing, echo=TRUE, eval=TRUE>>=
 class(mesh) <- "inla.mesh"
