@@ -531,6 +531,8 @@ The objective function returns the marginal log likelihood and its gradient, int
 The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess} \citep{gay1990, r2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to samples from the joint posterior distribution for Bayesian inference.
 
+\textbf{TODO: generalized delta method! and \citep{zheng2021}}
+
 A fitted model summary can be viewed with \fct{print} or \fct{summary} and a set of basic ``sanity'' checks can be run with \fct{sanity}.
 \fct{tidy} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
 Others standard methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
