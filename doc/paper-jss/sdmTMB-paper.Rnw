@@ -1444,8 +1444,9 @@ $^{10}$Hurdle models possible by fitting components separately.
 We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
 In this test, \sdmTMB\ was the fastest across all mesh resolutions; however, \INLA/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \sdmTMB.
 \pkg{mgcv} was most affected by mesh resolution.
-Our test was restricted to one core and default \R\ algebra libraries; all packages could run faster with optimized libraries and parallel processing.
-Results with optimized math libraries on one core (\pkg{openBLAS}: \citet{openblas} and \pkg{PARDISO}: \citet{pardiso7.2a}) resulted in a \textasciitilde10\% speed increase for \sdmTMB\ and \pkg{inlabru} and a \textasciitilde7--9-fold speed increase for \pkg{mgcv}.
+Our test was restricted to one core and default \R\ algebra libraries.
+% all packages could run faster with optimized libraries and parallel processing.
+% Results with optimized math libraries on one core (\pkg{openBLAS}: \citet{openblas} and \pkg{PARDISO}: \citet{pardiso7.2a}) resulted in a \textasciitilde10\% speed increase for \sdmTMB\ and \pkg{inlabru} and a \textasciitilde7--9-fold speed increase for \pkg{mgcv}.
 
 \begin{figure}[htb]
 \centering
@@ -1472,11 +1473,11 @@ Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with c
 \pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be post hoc derived with other packages).
 
-While our focus is primarily in applications to biological data, the SPDE approach and functionality of \sdmTMB\ has applications in many other fields.
+While our examples focused on applications to ecological data, the SPDE approach and the functionality of \sdmTMB\ has applications in many other fields.
 Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}.
 These examples underscore the versatile nature of the SPDE approach and the potential uses of \sdmTMB\ across various scientific and industrial sectors.
 
-TODO add paragraph here on uniting functionality not available in any one package?
+\textbf{TODO add paragraph here on uniting functionality not available in any one package?}
 
 % TODO: B9: I kept thinking about potential overlaps with spatial / spatiotemporal econometrics. Maybe a short note on how those methods relate to spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010) may broaden the interest in the paper.
 
@@ -1488,21 +1489,21 @@ In contrast, semi- and non-parametric approaches do not estimate spatial covaria
 % The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
 % The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\code{share\_range} argument).
 % TODO: figure out where to put this paragraph
-Approaches such as conditional autoregressive models (CAR) require continuous spatial data to be aggregated to polygons or grids...
+Approaches such as conditional autoregressive models (CAR) require continuous spatial data to be aggregated to polygons or grids.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models \citep[e.g.,][]{verhoef2018}; \sdmTMB\ can also fit models with areal data if each polygon has an associated centroid.
-A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted \citep{wall2004} (e.g., spatial variance and range---the distance at which points are effectively independent).
+A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted \citep{wall2004}.
 
 With respect to computational speed, \sdmTMB\ (and due to having the same \TMB\ backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \INLA/\pkg{inlabru}.
 These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 However, for users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be considerably faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full Bayesian inference.
 
-Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, time-varying spatiotemporal covariance parameters \citep{ward2022}, and simulation from the parameter joint precision matrix.
+Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, and time-varying spatiotemporal covariance parameters \citep{ward2022}.
 
 There are several planned future additions to the \sdmTMB\ model structure.
-A subset of features to be added in the future include (1) multivariate models to allow for simultaneous modelling of data from multiple groups, (2) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++}, (3) inclusion of a dispersion formula similar to \pkg{glmmTMB},
-(4) The ability to specify observation-level likelihoods to integrate different data types (e.g. REF).
-(5) Conditional autoregressive (CAR) models as an alternative to random fields for large datasets that are already areal in nature.
-(6) Improved visualization methods and integration
+A subset of features to be added include (1) multivariate models to allow for simultaneous modelling of data from multiple groups, (2) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++}, (3) inclusion of a dispersion formula similar to \pkg{glmmTMB},
+(4) the ability to specify observation-level likelihoods to integrate different data types (e.g. REF),
+(5) conditional autoregressive (CAR) models as an alternative to random fields for large datasets that are already areal in nature, and
+(6) improved integration with existing visualization methods such as \pkg{ggeffects} \citep{ggeffects}.
 
 % (4) continuous-time models \citep[e.g.,][]{blangiardo2015book}, (5) non-Gaussian random fields \citep[e.g.,][]{anderson2019}, and (6) multivariate responses.
 % The included \TMB\ \code{.cpp} file is flexible and provides a tested model template that can be modified to add additional features.
