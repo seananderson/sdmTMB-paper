@@ -533,7 +533,7 @@ After rapid model exploration with maximum likelihood, one can optionally pass a
 
 A fitted model summary can be viewed with \fct{print} or \fct{summary} and a set of basic ``sanity'' checks can be run with \fct{sanity}.
 \fct{tidy} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
-Others standard S3 methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
+Others standard methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
 
 Prediction on fitted or new data is accomplished with \fct{predict} (\code{?predict.sdmTMB}).
 The predict method is flexible and includes the option to specify a new data frame (\code{newdata}),
@@ -643,11 +643,17 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 install.packages("sdmTMB")
 @
 
-As an alternative to the CRAN version, the development version can be installed with:
+Users who wish to automatically install suggested packages as well may wish to use
+
+<<sdmTMB-install-suggest, eval=FALSE, echo=TRUE>>=
+install.packages("sdmTMB", dependencies = TRUE)
+@
+
+As an alternative to the CRAN version, the development version can be installed with
 
 <<remotes, eval=FALSE, echo=TRUE>>=
-# install.packages("remotes")
-remotes::install_github("pbs-assess/sdmTMB")
+install.packages("remotes")
+remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
 @
 
 Additional utilities that require heavier package dependencies (such as \INLA\ and \pkg{rstan}) are maintained in the \pkg{sdmTMBextra} package at\\
@@ -723,11 +729,12 @@ Mesh complexity has the single largest influence on the speed of fitting these m
 
 <<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly and supplying the object to \\code{make\\_mesh()}.", fig.width=4.5, fig.asp=1, out.width="3in">>=
 mesh_pcod2 <- make_mesh(
-  pcod, c("X", "Y"),
+  pcod,
+  xy_cols = c("X", "Y"),
   fmesher_func = fmesher::fm_mesh_2d_inla,
-  cutoff = 8, # minimum triangle edge length
-  max.edge = c(10, 40), # max triangle edge length; inner and outer meshes
-  offset = c(10, 40) # inner and outer border widths
+  cutoff = 8,
+  max.edge = c(10, 40),
+  offset = c(10, 40)
 )
 plot(mesh_pcod2)
 @
@@ -761,7 +768,7 @@ fit_bin_rf <- sdmTMB(
 @
 
 We can also fit a version that omits the spatial random field by setting \code{spatial = "off"}.
-We will use the \fct{update} S3 method to refit the model while updating any specified arguments:
+We will use the \fct{update} method to refit the model while updating any specified arguments:
 
 <<pcod-fit-off, echo=TRUE>>=
 fit_bin <- update(fit_bin_rf, spatial = "off")
@@ -822,7 +829,7 @@ tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 \subsection{Checking the effect of including a random field}
 
-We can test for spatial autocorrelation with a Moran's I test or with a visual inspection of the residuals calculated from the \fct{residuals} S3 method.
+We can test for spatial autocorrelation with a Moran's I test or with a visual inspection of the residuals calculated from the \fct{residuals} method.
 We omit example code for Moran's I calculation for brevity but include it in the code supplement.
 % TODO: reword this?
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but no evidence for the model with a random field (p = 0.84) suggesting that residual spatial autocorrelation is alleviated by including the random field.
