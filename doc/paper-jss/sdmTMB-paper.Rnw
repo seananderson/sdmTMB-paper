@@ -1430,7 +1430,6 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \bottomrule
 \end{tabular}
 \end{threeparttable}
-\label{tab:functionality}
 
 \caption{Comparison of functionality between several \R\ packages that
   can fit geostatistical GLMMs.
@@ -1446,6 +1445,7 @@ $^8$Tweedie power parameter fixed for \fct{mgcv::gamm}.
 $^9$Possible as log-linked Poisson GLMM with aggregated data.
 $^{10}$Hurdle models possible by fitting components separately.
 }
+\label{tab:functionality}
 \end{table}
 
 We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1000 data points with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
