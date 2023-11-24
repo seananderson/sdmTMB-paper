@@ -1134,7 +1134,8 @@ In addition, we illustrate using restricted maximum likelihood (REML), which int
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe \citep{millon2014}.
-Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on winter abundance across the southern boundary of their winter distribution.
+Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on the end of year's abundance across the southern boundary of their winter distribution.
+Annual mean NAO captures the preceding winter's conditions, combined with breeding season and early winter climate.
 
 Our data are read in from supplementary data and contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, and the annual NAO value:
 
@@ -1220,14 +1221,17 @@ We do this by specifying a non-null number of simulation draws to \code{nsim} in
 By default, \code{nsim > 0} will return a matrix of draws from the overall prediction.
 Here, we instead specify that we want to return draws from the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the spatially varying random field.
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
-We then use the function \fct{spread\_sims} to draw 200 simulations from the parameters themselves, combine the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}, and calculate the median for each column of data so we can plot them.
+We then use the function \fct{spread\_sims} to draw 200 simulations from the parameters themselves, combine the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}, and calculate the median, and upper and lower quantiles for each column of data so we can plot them.
+For this example we use thresholds of 0.1 and 0.9 representing confidence invervals (CI) of 80\%.
 
 <<p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
 zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
 dim(zeta_s)
 sims <- spread_sims(fit_owl, nsim = 200)
 combined <- sims$nao + t(zeta_s)
-snow$nao_effect <- apply(exp(combined), 2, median)
+snow$nao_effect <- exp(apply(combined, 2, median))
+snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
+snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 @
 
 We can make a basic plot using the following code. A more elaborate version is shown in Figure~\ref{fig:owl-plot-fancy}.
@@ -1236,10 +1240,9 @@ We can make a basic plot using the following code. A more elaborate version is s
 ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 @
 
-Overall, we find a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
+Overall, we find a weak average positive effect of annual mean NAO on overall counts with a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
-
-% TODO keep this? We provide an extended version of this example in Appendix \ref{app:owls}.
+However, if we recalculated the CI at 95\% level the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
 
 <<shapes, echo=FALSE>>=
 if (!file.exists(here::here("data/ne_10m_lakes"))) {
@@ -1265,10 +1268,11 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
-<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. Points represent all count locations and circle area is scaled to the mean number of owls observed per year (range: 0 to 8). The effect is multiplicative on owl count per NAO unit. In the west, the values are near 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=5, fig.pos="htbp", out.width="4in">>=
-nao_effect_df <- select(snow, X, Y, nao_effect) |> distinct() |>
+<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=5, out.width="5.25in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
+nao_effect_df <- select(snow, X, Y, nao_effect, nao_effect_lwr, nao_effect_upr) |> distinct() |>
   mutate(X = X * 100000, Y = Y * 100000) # to match CRS
-ggplot(data = nao_effect_df) +
+
+snow_g1 <- ggplot(data = nao_effect_df) +
   geom_point(aes(X, Y, colour = nao_effect)) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
@@ -1276,11 +1280,51 @@ ggplot(data = nao_effect_df) +
     xlim = c(min(snow2$X), max(snow2$X)),
     ylim = c(min(snow2$Y), max(snow2$Y))
   ) +
-   scale_colour_viridis_c(
+  scale_colour_viridis_c(
+    limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr)),
     guide = guide_colourbar(direction = "horizontal", title.position = "left")
   ) +
+  ggtitle("(a) Median") +
   labs(colour = "Estimated multiplicative effect\nof NAO on Snowy Owl count") +
-    theme(legend.position = "bottom", axis.title = element_blank())
+  theme(legend.position = "top",
+          plot.title = element_text(size = 10, hjust = -0.2),
+          axis.title = element_blank())
+
+
+snow_g2 <- ggplot(data = nao_effect_df) +
+  geom_point(aes(X, Y, colour = nao_effect_lwr)) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  coord_sf(
+    xlim = c(min(snow2$X), max(snow2$X)),
+    ylim = c(min(snow2$Y), max(snow2$Y))
+  ) +
+  scale_colour_viridis_c(
+    limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
+  ) +
+  ggtitle(paste0("(b) Lower 80% CI: ", round(min(snow$nao_effect_lwr),2), " to ", round(max(snow$nao_effect_lwr),2))) +
+  theme(legend.position = "none",
+          plot.title = element_text(size = 10), axis.ticks = element_blank(),
+          axis.title = element_blank(), axis.text = element_blank())
+
+snow_g3 <- ggplot(data = nao_effect_df) +
+  geom_point(aes(X, Y, colour = nao_effect_upr)) +
+  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  coord_sf(
+    xlim = c(min(snow2$X), max(snow2$X)),
+    ylim = c(min(snow2$Y), max(snow2$Y))
+  ) +
+  scale_colour_viridis_c(
+    limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
+  ) +
+  ggtitle(paste0("(c) Upper 80% CI: ", round(min(snow$nao_effect_upr),2), " to ", round(max(snow$nao_effect_upr),2))) +
+  theme(legend.position = "none",
+          plot.title = element_text(size = 10), axis.ticks = element_blank(),
+          axis.title = element_blank(), axis.text = element_blank())
+
+bottom_row <- cowplot::plot_grid(snow_g2, snow_g3, label_size = 12)
+cowplot::plot_grid(snow_g1, bottom_row, ncol = 1, rel_heights = c(2.18, 1))
 @
 
 \newpage
