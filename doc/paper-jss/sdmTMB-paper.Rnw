@@ -1234,7 +1234,7 @@ snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
 snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 @
 
-We can make a basic plot using the following code. A more elaborate version is shown in Figure~\ref{fig:owl-plot-fancy}.
+We can make a basic plot using the following code. A more elaborate version including the CIs is shown in Figure~\ref{fig:owl-plot-fancy}a.
 
 <<owl-plot-basic, echo=TRUE, eval=FALSE>>=
 ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
@@ -1259,6 +1259,8 @@ coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
 lakes <- sf::st_read(here::here("data/ne_10m_lakes"), quiet = TRUE)
 lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
+land <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+land <- land %>% sf::st_transform(crs = Albers)
 @
 
 <<owl-proj2>>=
@@ -1268,13 +1270,17 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
-<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive.", fig.width=5, out.width="5.25in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
-nao_effect_df <- select(snow, X, Y, nao_effect, nao_effect_lwr, nao_effect_upr) |> distinct() |>
+<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficients for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, out.width="5.25in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
+nao_effect_df <- select(snow, X, Y, count, nao_effect, nao_effect_lwr, nao_effect_upr) |>
+  group_by(X,Y) |> mutate(mean_count = mean(count, na.rm = TRUE)) |> select(-count) |>
+  distinct() |>
   mutate(X = X * 100000, Y = Y * 100000) # to match CRS
 
 snow_g1 <- ggplot(data = nao_effect_df) +
-  geom_point(aes(X, Y, colour = nao_effect)) +
-  geom_sf(data = coast, colour = "gray50") +
+  geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
+  geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
+  geom_point(aes(X, Y, colour = nao_effect, size = mean_count), alpha = 0.5) +
+  geom_sf(data = coast, colour = "gray50", fill = NA) +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
   coord_sf(
     xlim = c(min(snow2$X), max(snow2$X)),
@@ -1282,17 +1288,30 @@ snow_g1 <- ggplot(data = nao_effect_df) +
   ) +
   scale_colour_viridis_c(
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr)),
-    guide = guide_colourbar(direction = "horizontal", title.position = "left")
+    guide = guide_colourbar(direction = "horizontal", title.vjust = 1, title.position = "top", label.position = "bottom")
+    # guide = guide_colourbar(direction = "horizontal", title.position = "left")
   ) +
+  guides(size = "none") +
   ggtitle(paste0("(a) Median multiplicative effect: ", round(min(snow$nao_effect),2), " to ", round(max(snow$nao_effect),2))) +
-  labs(colour = "Estimated effect of NAO\non Snowy Owl count") +
-  theme(legend.position = "top",
-          plot.title = element_text(size = 10, hjust = -0.2),
-          axis.title = element_blank())
+  labs(colour = "NAO effect\non Snowy Owl counts") +
+  theme_bw() + theme(
+    legend.position = c(0.25,0.17),
+    legend.title = element_text(size= 9, hjust = 0),
+    plot.margin = unit(c(0, 0.5, 0, 0), "cm"),
+    # legend.position = "top",
+        panel.background = element_rect(fill = "grey90", colour = NA),
+        panel.grid.major = element_line(colour = "white", size = 0.5),
+        legend.background = element_rect(fill = "transparent", colour = NA), # get rid of legend bg
+        legend.box.background = element_rect(fill = "transparent", colour = NA), # get rid of legend panel bg
+        plot.title = element_text(size = 10, hjust = -0.15
+                                  ),
+        axis.title = element_blank())
 
 
 snow_g2 <- ggplot(data = nao_effect_df) +
-  geom_point(aes(X, Y, colour = nao_effect_lwr)) +
+  geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
+  geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
+  geom_point(aes(X, Y, colour = nao_effect_lwr, size = mean_count), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
   coord_sf(
@@ -1303,12 +1322,19 @@ snow_g2 <- ggplot(data = nao_effect_df) +
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
   ggtitle(paste0("(b) Lower 80% CI: ", round(min(snow$nao_effect_lwr),2), " to ", round(max(snow$nao_effect_lwr),2))) +
-  theme(legend.position = "none",
+  theme_bw() + theme(legend.position = "none",
+    # plot.margin = unit(c(0, 0, 0, 0.5), "cm"),
+        panel.background = element_rect(fill = "grey90", colour = NA),
+        panel.grid.major = element_line(colour = "white", size = 0.5),
+        legend.background = element_rect(fill = "transparent", colour = NA), # get rid of legend bg
+        legend.box.background = element_rect(fill = "transparent", colour = NA), # get rid of legend panel bg
           plot.title = element_text(size = 10), axis.ticks = element_blank(),
           axis.title = element_blank(), axis.text = element_blank())
 
 snow_g3 <- ggplot(data = nao_effect_df) +
-  geom_point(aes(X, Y, colour = nao_effect_upr)) +
+  geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
+  geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
+  geom_point(aes(X, Y, colour = nao_effect_upr, size = mean_count), alpha = 0.5) +
   geom_sf(data = coast, colour = "gray50") +
   geom_sf(data = lakes, colour = "gray50", fill = NA) +
   coord_sf(
@@ -1319,7 +1345,12 @@ snow_g3 <- ggplot(data = nao_effect_df) +
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
   ggtitle(paste0("(c) Upper 80% CI: ", round(min(snow$nao_effect_upr),2), " to ", round(max(snow$nao_effect_upr),2))) +
-  theme(legend.position = "none",
+  theme_bw() + theme(legend.position = "none",
+    # plot.margin = unit(c(0, 0, 0, 0.5), "cm"),
+        panel.background = element_rect(fill = "grey90", colour = NA),
+        panel.grid.major = element_line(colour = "white", size = 0.5),
+        legend.background = element_rect(fill = "transparent", colour = NA), # get rid of legend bg
+        legend.box.background = element_rect(fill = "transparent", colour = NA), # get rid of legend panel bg
           plot.title = element_text(size = 10), axis.ticks = element_blank(),
           axis.title = element_blank(), axis.text = element_blank())
 
