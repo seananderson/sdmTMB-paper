@@ -1284,8 +1284,8 @@ snow_g1 <- ggplot(data = nao_effect_df) +
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr)),
     guide = guide_colourbar(direction = "horizontal", title.position = "left")
   ) +
-  ggtitle("(a) Median") +
-  labs(colour = "Estimated multiplicative effect\nof NAO on Snowy Owl count") +
+  ggtitle(paste0("(a) Median multiplicative effect: ", round(min(snow$nao_effect),2), " to ", round(max(snow$nao_effect),2))) +
+  labs(colour = "Estimated effect of NAO\non Snowy Owl count") +
   theme(legend.position = "top",
           plot.title = element_text(size = 10, hjust = -0.2),
           axis.title = element_blank())
