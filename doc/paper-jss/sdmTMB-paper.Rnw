@@ -1144,7 +1144,7 @@ snow <- readRDS(here::here("data/SNOW_data.rds"))
 @
 
 <<owl-data-head, echo=TRUE>>=
-select(snow, X, Y, year, year_f, nao)
+select(snow, X, Y, year, year_f, nao, count)
 @
 
 \subsection{Fitting the model}
