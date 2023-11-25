@@ -1134,22 +1134,23 @@ In addition, we illustrate using restricted maximum likelihood (REML), which int
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe \citep{millon2014}.
-Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on the end of year's abundance across the southern boundary of their winter distribution.
+Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on early winter abundance across the southern boundary of their winter distribution.
 Annual mean NAO captures the preceding winter's conditions, combined with breeding season and early winter climate.
 
-Our data are read in from supplementary data and contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, and the annual NAO value:
+To do this we use counts of Snowy Owls observed by the annual Christmas Bird Counts \citep{cbc} from all locations where they have been recorded and for which there was at least 3 counts conducted between the years 1979 and 2020.
+Our data are read in from supplementary data and also contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, and the annual NAO value:
 
 <<owl-data>>=
 snow <- readRDS(here::here("data/SNOW_data.rds"))
 @
 
 <<owl-data-head, echo=TRUE>>=
-select(snow, X, Y, year, year_f, nao, count)
+select(snow, X, Y, year, year_f, nao, count) |> head(n = 5)
 @
 
 \subsection{Fitting the model}
 
-We will fit counts observed in North America during annual Christmas Bird Counts \citep{cbc} using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
+We will fit counts using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
 
 We can write the model as
 \[
@@ -1211,30 +1212,40 @@ summary(fit_owl)
 In addition to the output seen for other models, we now have a section for random intercepts and a standard deviation for the spatially varying coefficient random field.
 Given our model specification, all random fields are sharing a single Matérn range.
 
-\subsection{Extracting the spatially varying coefficient effects}
+\subsection{Extracting the spatially varying coefficient effects with uncertainty}
 
 The spatially varying coefficient effect at any point in space is the combination of the main effect and spatially varying random effect for \code{nao}.
-Mean estimates of the spatially varying random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (here, \code{zeta\_s\_nao}).
-However, we wish to combine the fixed and random effects with uncertainty on the combined predictions.
+Mean estimates of the spatially varying random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case would appear as \code{zeta\_s\_nao}).
+However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
 We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
-By default, \code{nsim > 0} will return a matrix of draws from the overall prediction.
-Here, we instead specify that we want to return draws from the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the spatially varying random field.
+By default, \code{nsim > 0} will return a matrix of draws for the overall prediction.
+Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the spatially varying random field.
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
-We then use the function \fct{spread\_sims} to draw 200 simulations from the parameters themselves, combine the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}, and calculate the median, and upper and lower quantiles for each column of data so we can plot them.
-For this example we use thresholds of 0.1 and 0.9 representing confidence invervals (CI) of 80\%.
+We then use the function \fct{spread\_sims} to draw 200 simulations for the parameters themselves.
+Because the simulations are stored in different dimensions for these two functions, the random field draws must be transposed \code{t()} before combining the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
+Next, we can calculate the median, and upper and lower quantiles for each column of data, which correspond to the rows in the data provided.
+For this example we use thresholds of 0.1 and 0.9 representing confidence intervals (CI) of 80\%.
 
-<<p-mean, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
+<<owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE>>=
+# not currently including, but might be helpful
+snow <- predict(fit_owl, newdata = snow)
+snow |> select(X, Y, year, nao, count, est, omega_s, epsilon_st, zeta_s_nao) |>
+  head(n = 2)
+@
+
+<<zeta-effect, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
 zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
 dim(zeta_s)
 sims <- spread_sims(fit_owl, nsim = 200)
+dim(sims)
 combined <- sims$nao + t(zeta_s)
 snow$nao_effect <- exp(apply(combined, 2, median))
 snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
 snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 @
 
-We can make a basic plot using the following code. A more elaborate version including the CIs is shown in Figure~\ref{fig:owl-plot-fancy}a.
+We can make a basic plot using the following code. A more elaborate version including separate panels for each of the CIs is shown in Figure~\ref{fig:owl-plot-fancy}a.
 
 <<owl-plot-basic, echo=TRUE, eval=FALSE>>=
 ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
@@ -1270,18 +1281,16 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
-<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficients for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, out.width="5.25in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
-nao_effect_df <- select(snow, X, Y, count, nao_effect, nao_effect_lwr, nao_effect_upr) |>
-  group_by(X,Y) |> mutate(mean_count = mean(count, na.rm = TRUE)) |> select(-count) |>
-  distinct() |>
-  mutate(X = X * 100000, Y = Y * 100000) # to match CRS
+<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficients for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, out.width="4in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
+nao_effect_df <- select(snow2, X, Y, count, nao_effect, nao_effect_lwr, nao_effect_upr) |>
+  group_by(X,Y) |> summarise_all(mean)
 
 snow_g1 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
   geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
-  geom_point(aes(X, Y, colour = nao_effect, size = mean_count), alpha = 0.5) +
-  geom_sf(data = coast, colour = "gray50", fill = NA) +
-  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  geom_point(aes(X, Y, colour = nao_effect, size = count), alpha = 0.5) +
+  geom_sf(data = coast, colour = "gray50", fill = NA, lwd = 0.35) +
+  geom_sf(data = lakes, colour = "gray50", fill = NA, lwd = 0.35) +
   coord_sf(
     xlim = c(min(snow2$X), max(snow2$X)),
     ylim = c(min(snow2$Y), max(snow2$Y))
@@ -1311,9 +1320,9 @@ snow_g1 <- ggplot(data = nao_effect_df) +
 snow_g2 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
   geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
-  geom_point(aes(X, Y, colour = nao_effect_lwr, size = mean_count), alpha = 0.5) +
-  geom_sf(data = coast, colour = "gray50") +
-  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  geom_point(aes(X, Y, colour = nao_effect_lwr, size = count), alpha = 0.5) +
+  geom_sf(data = coast, colour = "gray50", lwd = 0.35) +
+  geom_sf(data = lakes, colour = "gray50", fill = NA, lwd = 0.35) +
   coord_sf(
     xlim = c(min(snow2$X), max(snow2$X)),
     ylim = c(min(snow2$Y), max(snow2$Y))
@@ -1334,9 +1343,9 @@ snow_g2 <- ggplot(data = nao_effect_df) +
 snow_g3 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white",lwd = 0.35) +
   geom_sf(data = lakes, colour= "gray23", fill = "grey90", lwd = 0.35) +
-  geom_point(aes(X, Y, colour = nao_effect_upr, size = mean_count), alpha = 0.5) +
-  geom_sf(data = coast, colour = "gray50") +
-  geom_sf(data = lakes, colour = "gray50", fill = NA) +
+  geom_point(aes(X, Y, colour = nao_effect_upr, size = count), alpha = 0.5) +
+  geom_sf(data = coast, colour = "gray50", lwd = 0.35) +
+  geom_sf(data = lakes, colour = "gray50", fill = NA, lwd = 0.35) +
   coord_sf(
     xlim = c(min(snow2$X), max(snow2$X)),
     ylim = c(min(snow2$Y), max(snow2$Y))
