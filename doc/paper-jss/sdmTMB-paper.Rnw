@@ -1128,7 +1128,7 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 \section{Example: spatially varying coefficients} \label{svc-owls}
 
 In our final example, we demonstrate a model with spatially varying coefficient (SVC) effects and illustrate combining uncertainty from parameters by working with draws from the joint parameter precision matrix.
-Spatially varying coefficient models \citep{hastie1993} are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function.
+SVC models \citep{hastie1993} are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function.
 In addition, we illustrate using restricted maximum likelihood (REML), which integrates over the fixed effects as well as the random effects.
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
@@ -1145,7 +1145,7 @@ snow <- readRDS(here::here("data/SNOW_data.rds"))
 @
 
 <<owl-data-head, echo=TRUE>>=
-select(snow, X, Y, year, year_f, nao, count) |> head(n = 5)
+select(snow, X, Y, year, year_f, nao, count) |> head(n = 6)
 @
 
 \subsection{Fitting the model}
@@ -1290,7 +1290,7 @@ snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 @
 
-<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying coefficients for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, out.width="4in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
+<<owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, out.width="4in", fig.asp=1, fig.pos="htbp", fig.align='center'>>=
 nao_effect_df <- select(snow2, X, Y, count, nao_effect, nao_effect_lwr, nao_effect_upr) |>
   group_by(X,Y) |> summarise_all(mean)
 
