@@ -1211,6 +1211,13 @@ summary(fit_owl)
 
 In addition to the output seen for other models, we now have a section for random intercepts and a standard deviation for the spatially varying coefficient random field.
 Given our model specification, all random fields are sharing a single Matérn range.
+We can also check the confidence intervals (CIs) on the main effect of NAO and see that they overlap zero.
+
+<<owl-tidy, echo=TRUE>>=
+tidy(fit_owl, conf.int = TRUE)
+@
+
+But given that this is only part of the effect of NAO that we include in our model, how do we assess if this variable has a meaningful effect in some locations, even if not overall?
 
 \subsection{Extracting the spatially varying coefficient effects with uncertainty}
 
@@ -1225,7 +1232,7 @@ This returns a matrix where each row matches a row of \code{newdata} and each co
 We then use the function \fct{spread\_sims} to draw 200 simulations for the parameters themselves.
 Because the simulations are stored in different dimensions for these two functions, the random field draws must be transposed \code{t()} before combining the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
 Next, we can calculate the median, and upper and lower quantiles for each column of data, which correspond to the rows in the data provided.
-For this example we use thresholds of 0.1 and 0.9 representing confidence intervals (CI) of 80\%.
+For this example we use thresholds of 0.1 and 0.9 representing CIs of 80\%.
 
 <<owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE>>=
 # not currently including, but might be helpful
