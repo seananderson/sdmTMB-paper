@@ -1151,6 +1151,8 @@ select(snow, X, Y, year, year_f, nao, count) |> head(n = 5)
 \subsection{Fitting the model}
 
 We will fit counts using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
+Centring and scaling variables is especially helpful when estimating spatially varying coefficients.
+NAO is an index so it can be left as is, but including it as a main effect as well ensures that the spatial coefficients will have a mean of 0.
 
 We can write the model as
 \[
