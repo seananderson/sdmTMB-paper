@@ -1150,9 +1150,9 @@ select(snow, X, Y, year, year_f, nao, count) |> head(n = 5)
 
 \subsection{Fitting the model}
 
-We will fit counts using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a spatially varying coefficient associated with the NAO.
-Centring and scaling variables is especially helpful when estimating spatially varying coefficients.
-NAO is an index so it can be left as is, but including it as a main effect as well ensures that the spatial coefficients will have a mean of 0.
+We will fit counts using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a SVC associated with the NAO.
+Centring and scaling variables is especially helpful when estimating SVCs.
+NAO is an index so it can be left as is, but including it as a main effect as well helps ensure that the SVCs will have a mean near 0.
 
 We can write the model as
 \[
@@ -1211,7 +1211,7 @@ sanity(fit_owl)
 summary(fit_owl)
 @
 
-In addition to the output seen for other models, we now have a section for random intercepts and a standard deviation for the spatially varying coefficient random field.
+In addition to the output seen for other models, we now have a section for random intercepts and a standard deviation for the SVC random field.
 Given our model specification, all random fields are sharing a single Matérn range.
 We can also check the confidence intervals (CIs) on the main effect of NAO and see that they overlap zero.
 
@@ -1221,15 +1221,15 @@ tidy(fit_owl, conf.int = TRUE)
 
 But given that this is only part of the effect of NAO that we include in our model, how do we assess if this variable has a meaningful effect in some locations, even if not overall?
 
-\subsection{Extracting the spatially varying coefficient effects with uncertainty}
+\subsection{Extracting the spatially varying effects with uncertainty}
 
-The spatially varying coefficient effect at any point in space is the combination of the main effect and spatially varying random effect for \code{nao}.
-Mean estimates of the spatially varying random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case would appear as \code{zeta\_s\_nao}).
+The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
+Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case would appear as \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
 We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
 By default, \code{nsim > 0} will return a matrix of draws for the overall prediction.
-Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the spatially varying random field.
+Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field.
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
 We then use the function \fct{spread\_sims} to draw 200 simulations for the parameters themselves.
 Because the simulations are stored in different dimensions for these two functions, the random field draws must be transposed \code{t()} before combining the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
