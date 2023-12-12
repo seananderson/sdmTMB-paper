@@ -487,10 +487,14 @@ Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ mo
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
 The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
-The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess} \citep{gay1990, r2021}.
+The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{statsv::optimHess} \citep{gay1990, r2021}.
+% A19
+Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
+bias-corrected versions of derived quantities based on non-linear transformations of random effects are possible \citep{thorson2016bias} (see Section \ref{index-bias-correct} for an example).
+Standard errors on all parameters and derived quantities---including those involving random effects---are calculated using the generalized delta method \citep{kristkristensen2016, zheng2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to samples from the joint posterior distribution for Bayesian inference.
 
-\textbf{TODO: generalized delta method! and \citep{zheng2021}}
+% \textbf{TODO: generalized delta method! and \citep{zheng2021}}
 
 A fitted model summary can be viewed with \fct{print} or \fct{summary} and a set of basic ``sanity'' checks can be run with \fct{sanity}.
 \fct{tidy} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
@@ -820,6 +824,9 @@ In practice, we would want to repeat this procedure several times to ensure the 
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
 The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
+The overall predictions combining fixed and random effects are plug-in predictors combining
+
+
 We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
@@ -1106,7 +1113,7 @@ ggplot(pred_depth, aes(
   labs(x = "Depth (m)", y = "Density")
 @
 
-\subsection{Calculating an area-weighted index}
+\subsection{Calculating an area-weighted index} \label{index-bias-correct}
 
 We can generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from the model on a grid covering the area of interest and summing the predicted biomass with the \fct{get\_index} function (Figure \ref{fig:dog-index-plot}).
 We supply the grid cell area (4 km\textsuperscript{2}) to the \code{area} argument and specify \code{bias\_correct = TRUE} to enable a bias correction needed due to the non-linear transformation of the random effects \citep{thorson2016bias}.
