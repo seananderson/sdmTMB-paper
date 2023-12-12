@@ -1128,31 +1128,32 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 \section{Example: spatially varying coefficients} \label{svc-owls}
 
 In our final example, we demonstrate a model with spatially varying coefficient (SVC) effects and illustrate combining uncertainty from parameters by working with draws from the joint parameter precision matrix.
-SVC models \citep{hastie1993} are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function.
+SVC models are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function \citep{hastie1993}.
 In addition, we illustrate using restricted maximum likelihood (REML), which integrates over the fixed effects as well as the random effects.
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
 The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe \citep{millon2014}.
-Because both productivity and the choice of wintering location could be influenced by climate, we modelled a spatially varying effect of annual mean NAO index on early winter abundance across the southern boundary of their winter distribution.
+Because both productivity and the choice of wintering location could be influenced by climate, we model an SVC effect of annual mean NAO index on early winter abundance across the southern boundary of their winter distribution.
 Annual mean NAO captures the preceding winter's conditions, combined with breeding season and early winter climate.
 
-To do this we use counts of Snowy Owls observed by the annual Christmas Bird Counts \citep{cbc} from all locations where they have been recorded and for which there was at least 3 counts conducted between the years 1979 and 2020.
-Our data are read in from supplementary data and also contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, and the annual NAO value:
+To do this, we use counts of Snowy Owls observed by the annual Christmas Bird Counts \citep{cbc} from all locations where they have been recorded and for which there were at least three counts conducted between 1979 and 2020.
+Our data are read from supplementary data and also contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, the annual NAO value, and own count:
 
 <<owl-data>>=
 snow <- readRDS(here::here("data/SNOW_data.rds"))
 @
 
 <<owl-data-head, echo=TRUE>>=
-select(snow, X, Y, year, year_f, nao, count) |> head(n = 6)
+select(snow, X, Y, year, year_f, nao, count) |> head()
 @
 
 \subsection{Fitting the model}
 
-We will fit counts using a negative binomial \citep[NB2,][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and a SVC associated with the NAO.
-Centring and scaling variables is especially helpful when estimating SVCs.
-NAO is an index so it can be left as is, but including it as a main effect as well helps ensure that the SVCs will have a mean near 0.
+We will fit counts using a negative binomial \citep[NB2;][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and an SVC associated with the NAO.
+Centering and scaling variables (say by there mean and standard deviation) is especially helpful when estimating SVCs.
+Here, NAO is an index with a mean near zero and an SD not too far from 1, so we will leave it as is.
+However, we also include NAO as a main effect since the SVC random field is assumed to have a mean of zero.
 
 We can write the model as
 \[
@@ -1219,12 +1220,12 @@ We can also check the confidence intervals (CIs) on the main effect of NAO and s
 tidy(fit_owl, conf.int = TRUE)
 @
 
-But given that this is only part of the effect of NAO that we include in our model, how do we assess if this variable has a meaningful effect in some locations, even if not overall?
+However, given that this is only part of the effect of NAO that we include in our model, we next assess if this variable has a meaningful effect in some locations, even if not overall.
 
 \subsection{Extracting the spatially varying effects with uncertainty}
 
 The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
-Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case would appear as \code{zeta\_s\_nao}).
+Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case, \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
 We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
@@ -1232,9 +1233,9 @@ By default, \code{nsim > 0} will return a matrix of draws for the overall predic
 Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field.
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
 We then use the function \fct{spread\_sims} to draw 200 simulations for the parameters themselves.
-Because the simulations are stored in different dimensions for these two functions, the random field draws must be transposed \code{t()} before combining the main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
+Because the simulations are stored in different dimensions, the random field draws must be transposed \code{t()} before combining the vector of main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
 Next, we can calculate the median, and upper and lower quantiles for each column of data, which correspond to the rows in the data provided.
-For this example we use thresholds of 0.1 and 0.9 representing CIs of 80\%.
+For this example, we use thresholds of 0.1 and 0.9 representing CIs of 80\%.
 
 <<owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE>>=
 # not currently including, but might be helpful
@@ -1262,7 +1263,7 @@ ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 
 Overall, we find a weak average positive effect of annual mean NAO on overall counts with a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
-However, if we recalculated the CI at 95\% level the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
+However, if we recalculated the CI at 95\% level the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.2, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
 
 <<shapes, echo=FALSE>>=
 if (!file.exists(here::here("data/ne_10m_lakes"))) {
