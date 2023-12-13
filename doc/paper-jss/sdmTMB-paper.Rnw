@@ -1145,7 +1145,7 @@ Because both productivity and the choice of wintering location could be influenc
 Annual mean NAO captures the preceding winter's conditions, combined with breeding season and early winter climate.
 
 To do this, we use counts of Snowy Owls observed by the annual Christmas Bird Counts \citep{cbc} from all locations where they have been recorded and for which there were at least three counts conducted between 1979 and 2020.
-Our data are read from supplementary data and also contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, the annual NAO value, and own count:
+Our data are read from supplementary data and also contain columns for spatial coordinates (in an Albers projection for North America and divided by 100000 to give units of 100 km), year, year as a factor, the annual NAO value, and owl count:
 
 <<owl-data>>=
 snow <- readRDS(here::here("data/SNOW_data.rds"))
