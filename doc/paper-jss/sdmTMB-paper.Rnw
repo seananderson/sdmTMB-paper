@@ -883,7 +883,6 @@ a basic mesh:
 dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
-
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
 @
 
