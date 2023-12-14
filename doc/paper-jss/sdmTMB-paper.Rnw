@@ -1409,7 +1409,7 @@ There are many \R\ packages capable of fitting geostatistical spatial or spatiot
 \sdmTMB, \pkg{VAST}, \INLA/\pkg{inlabru}, and \pkg{spaMM} \citep{rousset2014} are the most closely related, as they all provide a user interface to SPDE-based GMRF models.
 In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE \citep{miller2019} and \pkg{spBayes} \citep{finley2007, finley2015} since it is a prominent package that can fit related predictive-process models without the SPDE.
 \sdmTMB, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \INLA/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
-\sdmTMB\ and \pkg{mgcv} focus on univariate response data, whereas \pkg{VAST}, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
+\pkg{mgcv} and \sdmTMB\ (currently) focus on univariate response data, whereas \pkg{VAST}, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
 To our knowledge, \pkg{VAST} is the only package to implement spatial \citep{thorson2015} and spatial dynamic factor analysis \citep{thorson2016} and spatial empirical orthogonal function (EOF) regression \citep{thorson2020}.
 Of these packages, only \sdmTMB\ and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
 \pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
@@ -1485,7 +1485,7 @@ We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, and \pkg{
 Our test was restricted to one core and default \R\ algebra libraries.
 \sdmTMB\ (and due to having the same \TMB\ backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \INLA/\pkg{inlabru}.
 These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
-However, \INLA/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \sdmTMB and \pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing}).
+However, \INLA/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \sdmTMB\ and \pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing}).
 For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be considerably faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full Bayesian inference.
 
 \begin{figure}[htb]
@@ -1527,19 +1527,19 @@ These examples underscore the versatile nature of the SPDE approach and the pote
 % TODO: figure out where to put this paragraph
 % TODO: rework this paragraph to be advantages of random fields GAMs and CAR
 The GLMMs underpinning \sdmTMB\ models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions (e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}).
+In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}].
 % The random fields in \sdmTMB\ are structured as MVN constrained by a Matérn covariance function \citep{matern1986}.
 % The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
 % The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\code{share\_range} argument).
 % TODO: figure out where to put this paragraph
 Approaches such as conditional autoregressive models (CAR) require continuous spatial data to be aggregated to polygons or grids.
-Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including conditional (CAR) autoregressive models \citep[e.g.,][]{verhoef2018}; \sdmTMB\ can also fit models with areal data if each polygon has an associated centroid.
+Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including CAR models \citep[e.g.,][]{verhoef2018}; \sdmTMB\ can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted \citep{wall2004}.
 
-Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, time-varying spatiotemporal covariance parameters \citep{ward2022}, and integration with visualization tools such as \pkg{ggeffects} \citep{ggeffects}.
+Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, and time-varying spatiotemporal covariance parameters \citep{ward2022}.
 There are several planned future additions to the \sdmTMB\ model structure.
 A subset of features to be added include (1) multivariate models to allow for simultaneous modelling of data from multiple groups, (2) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++}, (3) inclusion of a dispersion formula similar to \pkg{glmmTMB},
-(4) the ability to specify observation-level likelihoods to integrate different data types, and
+(4) the ability to specify observation-specific likelihoods to integrate different data types \citep{gruss2019multiple}, and
 (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
 
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
@@ -1551,7 +1551,8 @@ A subset of features to be added include (1) multivariate models to allow for si
 Smoother support was possible thanks to \pkg{mgcv} \citep{wood2017a}.
 We thank the authors of all these packages.
 We thank S. Kotwicki, M. Lindmark, M. Martin, C.C. Monnahan, P.M. Regular, J. Watson, two anonymous reviewers, and the editor for helpful comments that substantially improved the manuscript.
-Christmas Bird Count data were provided by National Audubon Society and through the generous efforts of Bird Studies Canada and countless volunteers across the Western Hemisphere.
+We thank the many individuals who have contributed to collecting the trawl survey data with Fisheries and Oceans Canada that was used in the Pacific Cod and Pacific Spiny Dogfish examples.
+Christmas Bird Count data for the Snowy Owl example were provided by National Audubon Society and through the generous efforts of Bird Studies Canada and countless volunteers across the Western Hemisphere.
 
 % \clearpage
 
