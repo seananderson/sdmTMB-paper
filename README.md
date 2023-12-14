@@ -14,3 +14,11 @@ sdmTMB:
 <https://CRAN.R-project.org/package=sdmTMB>
 
 The paper source code is in `doc/paper-jss/sdmTMB-paper.Rnw`.
+
+The paper can be built with:
+
+```r
+setwd("doc/paper-jss/")
+knitr::knit("sdmTMB-paper.Rnw")
+tinytex::latexmk("sdmTMB-paper.tex", engine = "xelatex")
+```
