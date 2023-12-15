@@ -20,6 +20,18 @@
 \newcommand{\s}{\bm{s}}
 \newcommand{\R}{\proglang{R}}
 
+% TODO START FOR REVIEW ONLY
+\usepackage{lineno}
+\definecolor{darkgrey}{HTML}{A9A9A9}
+\renewcommand\linenumberfont{\normalfont\bfseries\small\color{darkgrey}}
+\modulolinenumbers[2]
+\usepackage[dvipsnames]{xcolor}
+\definecolor{niceblue}{HTML}{236899}
+\newcommand{\rev}[1]{{\color{niceblue} #1}}
+\newcommand{\Rev}[1]{\label{#1}\linelabel{#1}}
+\newcommand{\lr}[1]{line~\lineref{#1}}
+% TODO END FOR REVIEW ONLY
+
 %% -- Article metainformation (author, title, ...) -----------------------------
 
 %% - \author{} with primary affiliation (and optionally ORCID link)
@@ -95,22 +107,24 @@ We hope \sdmTMB's accessible interface will help open this useful class of model
     Northwest Fisheries Science Center\\
     National Oceanic and Atmospheric Administration, National Marine
     Fisheries Service, Seattle, WA, USA\\
-
+    E-mail: \email{eric.ward@noaa.gov}\\
 
     Philina A. English\\
     Pacific Biological Station\\
     Fisheries and Oceans Canada, Nanaimo, BC, Canada\\
-
+    E-mail: \email{philina.english@dfo-mpo.gc.ca}\\
 
     Lewis A. K. Barnett\\
     Alaska Fisheries Science Center\\
     National Marine Fisheries Service, National Oceanic and
     Atmospheric Administration, Seattle, WA, USA\\
+    E-mail: \email{lewis.barnett@noaa.gov}\\
 
     James T. Thorson\\
     Alaska Fisheries Science Center\\
     National Marine Fisheries Service, National Oceanic and
-    Atmospheric Administration, Seattle, WA, USA
+    Atmospheric Administration, Seattle, WA, USA\\
+    E-mail: \email{james.thorson@noaa.gov}\\
   }
 
 \usepackage{amsmath} \usepackage{amssymb} \usepackage{bm} \usepackage{lscape}
@@ -124,6 +138,8 @@ We hope \sdmTMB's accessible interface will help open this useful class of model
 % \clubpenalty1000
 
 \begin{document}
+
+\linenumbers
 
 <<preliminaries, echo=FALSE, results='hide', include=FALSE, cache=FALSE>>=
 library(knitr)
@@ -190,7 +206,7 @@ Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl20
 
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \TMB\ for model fitting and \pkg{fmesher} or \INLA\ to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models.
-Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package.
+\Rev{B2}Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package.
 One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB: \sdmTMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and discretely in time.
 
 This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \sdmTMB\ is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \sdmTMB\ to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of links to other packages and future development directions (Section~\ref{discussion}).
@@ -328,7 +344,7 @@ Here, we add a linear transformation matrix $\bm{H}$ with two estimated paramete
 
 \subsection{The SPDE approach}
 
-In practice, working with the dense covariance matrix $\bm{\Sigma}$ is computationally expensive
+\Rev{B4a}In practice, working with the dense covariance matrix $\bm{\Sigma}$ is computationally expensive
 and methods for working directly with its inverse, the precision matrix $\bm{Q}$, are more efficient ($\bm{Q} = \bm{\Sigma}^{-1}$) \citep{simpson2012}.
 One such approach is the SPDE approach.
 A full description of the SPDE approach is beyond the scope of this paper.
@@ -339,7 +355,7 @@ The second chapter of \citet{krainski2018} provides an overview of the SPDE appr
 \citet{miller2019} summarizes the approach and illustrates its equivalence to penalized smoothing approaches.
 \citet{lindgren2022ten} provide a recent review of the approach and its applications over the last decade.
 
-For a user of \sdmTMB, the following are the important elements to understand.
+\Rev{B4b}For a user of \sdmTMB, the following are the important elements to understand.
 First, the SPDE approach links Gaussian random fields (GRFs) that have a Mat\'ern covariance function to Gaussian \emph{Markov} random fields (GMRFs) in such a way that a GMRF can be a good approximation to a GRF \citep{lindgren2011}.
 This means that GRF models can be computationally approximated as GMRFs.
 By working with GMRFs, one can take advantage of theory developed to estimate their sparse precision matrix efficiently \citep{rue2005gmrf, lindgren2011} and avoid the inversion of large dense matrices.
@@ -493,8 +509,7 @@ If needed, data structures required to implement penalized smoothers are constru
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
 The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
 The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{statsv::optimHess} \citep{gay1990, r2021}.
-% A19
-Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
+\Rev{A19}Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
 bias-corrected versions of derived quantities based on non-linear transformations of random effects are possible \citep{thorson2016bias} (see Section \ref{index-bias-correct} for an example).
 Standard errors on all parameters and derived quantities---including those involving random effects---are calculated using the generalized delta method \citep{kristensen2016, zheng2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to sample from the joint posterior distribution for Bayesian inference.
@@ -536,7 +551,7 @@ New observations can be simulated from a fitted model with \fct{simulate} or new
 \sdmTMB\ models can include penalized likelihoods by assigning priors (penalties) to model parameters through the \fct{sdmTMB} \code{prior} argument (\code{?sdmTMBpriors}).
 These priors may be useful in cases where estimation is difficult because of identifiability issues or relatively flat likelihood surfaces, or to impart prior information or achieve regularization.
 Following other recent SPDE implementations in \TMB\ \citep{breivik2021, osgood-zimmerman2023}, penalized complexity (PC) priors \citep{simpson2017, fuglstad2019} (\code{?pc\_matern}) can constrain the spatial range and variance parameters.
-These priors or penalties are available both with maximum likelihood estimation and with MCMC sampling.
+\Rev{A4}These priors or penalties are available both with maximum likelihood estimation and with MCMC sampling.
 If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logical argument should be set to \code{TRUE} to enable Jacobian adjustments for changes of variables (priors applied to parameters that are internally transformed) \citep{carpenter2017}.
 
 % TODO: describe this in more detail and how it could apply beyond ecology;
@@ -1127,7 +1142,7 @@ ggplot(pred_depth, aes(
 \subsection{Calculating an area-weighted index} \label{index-bias-correct}
 
 We can generate an area-weighted population index (e.g., a relative or absolute index of abundance or biomass) that is independent of sampling locations by predicting from the model on a grid covering the area of interest and summing the predicted biomass with the \fct{get\_index} function (Figure \ref{fig:dog-index-plot}).
-We supply the grid cell area (4 km\textsuperscript{2}) to the \code{area} argument and specify \code{bias\_correct = TRUE} to enable a bias correction needed due to the non-linear transformation of the random effects \citep{thorson2016bias}.
+\Rev{A19b}We supply the grid cell area (4 km\textsuperscript{2}) to the \code{area} argument and specify \code{bias\_correct = TRUE} to enable a bias correction needed due to the non-linear transformation of the random effects \citep{thorson2016bias}.
 
 <<dog-index, echo=TRUE>>=
 pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
@@ -1242,7 +1257,7 @@ However, given that this is only part of the effect of NAO that we include in ou
 
 \subsection{Extracting the spatially varying effects with uncertainty}
 
-The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
+\Rev{B7}The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
 Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case, \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
 We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
@@ -1511,14 +1526,14 @@ Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be post hoc derived with other packages).
-Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
+\Rev{B3}Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
 % TODO: mention this in response doc
 
 % \textbf{TODO add paragraph here on uniting functionality not available in any one package?}
 
 While our examples focused on applications to ecological data, the SPDE approach and the functionality of \sdmTMB\ has applications in many other fields.
-Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}.
-The \sdmTMB\ model is further relevant to what is commonly referred to as spatial \citep{elhorst2010, lee2010} and dynamic spatial panel data models \citep{elhorst2012} in econometrics.
+\Rev{B9a}Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}.
+\Rev{B9b}The \sdmTMB\ model is further relevant to what is commonly referred to as spatial \citep{elhorst2010, lee2010} and dynamic spatial panel data models \citep{elhorst2012} in econometrics.
 These examples underscore the versatile nature of the SPDE approach and the potential uses of \sdmTMB\ across various scientific and industrial sectors.
 
 % TODO: B9: I kept thinking about potential overlaps with spatial / spatiotemporal econometrics. Maybe a short note on how those methods relate to spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010) may broaden the interest in the paper.
@@ -1717,8 +1732,9 @@ fit_spaMM <- fitme(
 
 \subsection[Example inlabru model fit]{Example \pkg{inlabru} model fit}
 
-<<inlabrufit-timing, echo=TRUE, cache=TRUE>>=
-# convert to sp SpatialPointsDataFrame first:
+% weird eval errors as of 2023-12-14 when in Rnw, hence eval=FALSE
+
+<<inlabrufit-timing, echo=TRUE, cache=TRUE, warning=FALSE, eval=FALSE>>=
 dat_sp <- sp::SpatialPointsDataFrame(
   cbind(sim_dat$X, sim_dat$Y),
   proj4string = sp::CRS(
@@ -1822,6 +1838,8 @@ fit_bam <- bam(
 )
 @
 
-\clearpage
+% \clearpage
+
+% \input{response}
 
 \end{document}
