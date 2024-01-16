@@ -193,11 +193,11 @@ Similarly to how random intercepts can account for correlation among groups, spa
 A common approach to modelling these spatial effects is with Gaussian random fields (GRFs), where the random effects describing the spatial patterning are assumed to be drawn from a multivariate normal distribution, constrained by covariance functions such as the exponential or Matérn \citep{cressie1993, chiles1999, diggle2007}.
 % TODO: decide on using GRF throughout
 
-Such models quickly become computationally challenging due to the need to invert large matrices to account for covariation among data.
+Such models quickly become computationally challenging due to the need to invert large matrices to account for covariation when evaluating the multivariate normal density function.
 Many solutions have been proposed, such as predictive processes \citep{banerjee2008, latimer2009}, the stochastic partial differential equation (SPDE) approximation to GRFs \citep{lindgren2011}, and nearest-neighbour Gaussian processes \citep{datta2016, finley2022}.
 These approaches aim to minimize the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian \citep{gelfand2017} or maximum likelihood methods.
 This can greatly improve computational efficiency \citep[e.g.,][]{heaton2019}.
-The SPDE approach has been widely adopted, especially via the \INLA\ package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \TMB\ \citep[Template Model Builder,][]{kristensen2016} that relies on \INLA\ to create input matrices \citep{thorson2015ecology, thorson2015ices, thorson2019, osgood-zimmerman2023}.
+The SPDE approach has been widely adopted, especially via the \INLA\ package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \TMB\ \citep[Template Model Builder,][]{kristensen2016} that relies on \INLA\ to create input matrices \citep{thorson2015ecology, thorson2015ices, thorson2019, osgood-zimmerman2023}.  This SPDE method approximates a Matérn correlation function as arising mechanistically from local diffusion in space and/or time \citep{lindgren2011} and it results in a sparse precision matrix that permits efficient computation using existing sparse-matrix libraries \citep{rue2005gmrf}.  
 
 Software packages designed for specifying statistical models that incorporate the SPDE, such as \INLA\ and \TMB, are flexible and powerful but can be challenging for many applied researchers.
 For example, \TMB\ requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code.
@@ -207,7 +207,7 @@ Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl20
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \TMB\ for model fitting and \pkg{fmesher} or \INLA\ to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models.
 \Rev{B2}Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package.
-One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB: \sdmTMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and discretely in time.
+One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB: \sdmTMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and approximated in discrete time-intervals.
 
 This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \sdmTMB\ is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \sdmTMB\ to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of links to other packages and future development directions (Section~\ref{discussion}).
 
@@ -228,7 +228,7 @@ where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in
 That mean $\mu_{\bm{s}}$ is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta_{\bm{s}}$.
 In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial random field $\omega_{\bm{s}}$.
 This spatial random field represents the effect of latent spatial variables that are not otherwise accounted for in the model.
-Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise.
+Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise arising from unmodeled processes.  % Jim: Similar to the recent Ives MEE perspectives, I prefer to discuss unmodeled stochastic processes, rather than the term "error" or "noise", so suggesting a compromise wording here. 
 More simply, the vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) represents a ``wiggly'' surface with an expected value of zero that is added to the linear predictor in link space (e.g., Figure~\ref{fig:matern-range}).
 The vector $\bm{\omega}$ is assumed drawn from a multivariate normal distribution with a covariance matrix $\boldsymbol{\Sigma}_\omega$,
 \[
@@ -345,8 +345,8 @@ Here, we add a linear transformation matrix $\bm{H}$ with two estimated paramete
 \subsection{The SPDE approach}
 
 \Rev{B4a}In practice, working with the dense covariance matrix $\bm{\Sigma}$ is computationally expensive
-and methods for working directly with its inverse, the precision matrix $\bm{Q}$, are more efficient ($\bm{Q} = \bm{\Sigma}^{-1}$) \citep{simpson2012}.
-One such approach is the SPDE approach.
+and methods for working directly with its inverse, the precision matrix $\bm{Q}$, are more efficient ($\bm{Q} = \bm{\Sigma}^{-1}$) \citep{rue2005gmrf,simpson2012}.
+One such approach is the SPDE approach, which approximates a mechanistic process of local diffusion using methods drawn from finite-element analysis.
 A full description of the SPDE approach is beyond the scope of this paper.
 Instead, we refer to the following literature:
 \citet{lindgren2011} develop the approach.
@@ -507,10 +507,11 @@ Beyond the main formula, \fct{sdmTMB} accepts one-sided formulas for coefficient
 Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ model are constructed internally (Figure~\ref{fig:flowchart}).
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
-The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016}.
+The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} as interface to the \pkg{Eigen} library in C++.
+% Jim:  I recommend adding a citation to package Matrix ( Bates D, Maechler M, Jagan M (2023). _Matrix: Sparse and Dense Matrix Classes and Methods_. R package version 1.6-4, <https://CRAN.R-project.org/package=Matrix>.)), as central dependency of TMB, given the detailed description of the dependency stack. If really motivated, you could also add the reference for Eigen (Guennebaud G, Jacob B, et al. (2010). “Eigen v3.” http://eigen.tuxfamily.org), although it's less clear what citation to use.
 The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{statsv::optimHess} \citep{gay1990, r2021}.
 \Rev{A19}Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
-bias-corrected versions of derived quantities based on non-linear transformations of random effects are possible \citep{thorson2016bias} (see Section \ref{index-bias-correct} for an example).
+it is also possible to apply the epsilon estimator \citep{thorson2016bias}, which corrects for bias arising from the variance and skewness of random effects when calculating an estimator as a non-linear transformation or random effects (see Section \ref{index-bias-correct} for an example).
 Standard errors on all parameters and derived quantities---including those involving random effects---are calculated using the generalized delta method \citep{kristensen2016, zheng2021}.
 After rapid model exploration with maximum likelihood, one can optionally pass an \sdmTMB\ model to the \R\ package \pkg{rstan} \citep{carpenter2017, rstan} via \pkg{tmbstan} \citep{monnahan2018} to sample from the joint posterior distribution for Bayesian inference.
 
@@ -563,8 +564,8 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 
 % Validation and selection of state-space models is challenging, particularly when
 % using the Laplace approximation \citep{thygesen2017a}. We provide several
-% approaches to assist this process: (1) The Akaike Information Criterion
-% \citep[AIC,][]{akaike1974} can be calculated with \fct{AIC}, although AIC
+% approaches to assist this process: (1) The (marginal) Akaike Information Criterion
+% \citep[AIC,][]{akaike1974} can be calculated from the marginal likelihood with \fct{AIC}, although AIC
 % has well-documented biases with mixed-effects models \citep{liang2008}. (2)
 % Alternatively, k-fold cross validation with \fct{sdmTMB\_cv} can be used
 % with user-specified or randomly chosen folds for model selection or to evaluate
@@ -585,6 +586,10 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 % simulating data without starting from a fitted model. Models can be fit to these
 % simulated data to ensure identifiability, evaluate bias and precision in
 % parameter estimation, or evaluate the consequences of model misspecification.
+
+% Jim:  If this section is re-added, you could also list the \fct{TMB::checkConsistency}
+% which evaluates the accuracy (and provides a bias-correction estimator) for the 
+% Laplace approximation. 
 
 \subsection{Installation}\label{installation}
 
@@ -802,8 +807,9 @@ test_autocor <- function(obj) {
 p_rf <- round(t_rf$p.value, 2)
 @
 
-We can also see that the conditional AIC of the model with spatial random fields is
+We can also see that the marginal AIC of the model with spatial random fields is
 lower:
+% JIM: Please feel free to email me, but if you're using the marginal likelihood to compute AIC then it's using marginal AIC.  I have a paper in revision @ Ecology discussing TMB calculation for conditional AIC, and happy to share or discuss further. 
 
 <<pcod-aic, eval=TRUE, echo=TRUE, results='markup'>>=
 AIC(fit_bin_rf, fit_bin)
@@ -847,9 +853,10 @@ In practice, we would want to repeat this procedure several times to ensure the 
 % TODO: data citation!?
 \sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
-The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
+The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.  We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.  
 The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
 % The overall predictions combining fixed and random effects are plug-in predictions.
+% Jim:  I'm adding a sentence here about catchability/detectability covariates.  I'd be happy to discuss if y'all disagree with including this.  Obviously I'm concerned about people moving back to the fisheries-standard of not carefully considering what is a catchability vs. density covariate, and would love to preserve this as distinction that is highlighted (even if it's not explicit in the model structure itself).
 We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
@@ -976,7 +983,7 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   arrange(delta_AIC)
 @
 
-We find that the Poisson-link delta-lognormal model \citep{thorson2018poisson} is favoured by conditional AIC.
+We find that the Poisson-link delta-lognormal model \citep{thorson2018poisson} is favoured by marginal AIC.
 In an applied situation, we would inspect the distribution of the residuals and consider comparing models with cross validation.
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}\label{sec:dogar1}
@@ -991,7 +998,8 @@ The AR(1) fields can be represented as:
 \bm{\delta}_{t} \sim \operatorname{MVNormal} \left(\bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{aligned}
 \]
-where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.
+where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.  This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.  
+%% Jim:  Feel free to drop the last sentence, but I think statisticians would wanna emphasize that this is a separable space-time formulation.
 
 <<dog-ar1, results='hide', echo=TRUE>>=
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
@@ -1116,6 +1124,7 @@ Here, we pick the last year, specify to include both delta model components (\co
 Alternatively, we could produce a similar plot using \pkg{ggeffects} \citep{ggeffects} with \fct{ggeffects::ggpredict}.
 
 % TODO check if on CRAN yet!
+% Jim:  It might be worth emphasizing that this calculation of marginal effects will differ from a partial dependence plot (PDP) when depth is correlated with other variables, and that package pdp could be used to additionally compute the PDP.  Please tell me if you want me to suggest text or a code-demo, etc.
 
 <<dog-depth, echo=TRUE, out.width="5in">>=
 nd <- data.frame(
@@ -1184,7 +1193,7 @@ select(snow, X, Y, year, year_f, nao, count) |> head()
 \subsection{Fitting the model}
 
 We will fit counts using a negative binomial \citep[NB2;][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and an SVC associated with the NAO.
-Centering and scaling variables (by their mean and standard deviation here) can be especially helpful when estimating SVCs.
+Centering and scaling variables (by their mean and standard deviation here) can be especially helpful to reduce the correlation between the SVC and other random fields that are included in the model when estimating SVCs.
 Here, NAO is an index with a mean near zero and an SD not too far from 1, so we will leave it as is.
 However, we also include NAO as a main effect since the SVC random field is drawn from a multivariate normal distribution with mean zero.
 
@@ -1260,7 +1269,7 @@ However, given that this is only part of the effect of NAO that we include in ou
 \Rev{B7}The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
 Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case, \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
-We illustrate a way of accomplishing this by simulating from the parameter precision matrix assuming the joint parameter covariance matrix is multivariate normal.
+We illustrate a way of accomplishing this by simulating from uncertainty about fixed and random effects while assuming that parametric uncertainty is well approximated using a multivariate normal distribution and the joint precision matrix.  % Jim:  I found the previous wording a bit confusing, so suggested an edit.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
 By default, \code{nsim > 0} will return a matrix of draws for the overall prediction.
 Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field.
@@ -1524,8 +1533,8 @@ Assuming a given package can fit the model of interest (Table~\ref{tab:functiona
 We think users familiar with \fct{stats::glm}, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \sdmTMB\ most approachable.
 Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
-\pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts may find \sdmTMB\ more straightforward.
-Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be post hoc derived with other packages).
+\pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts will likely find \sdmTMB\ more straightforward.
+Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be calculated using other packages post hoc).
 \Rev{B3}Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
 % TODO: mention this in response doc
 
@@ -1540,13 +1549,13 @@ These examples underscore the versatile nature of the SPDE approach and the pote
 
 % TODO: figure out where to put this paragraph
 % TODO: rework this paragraph to be advantages of random fields GAMs and CAR
-The GLMMs underpinning \sdmTMB\ models are spatially explicit---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-In contrast, semi- and non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}].
+The GLMMs underpinning \sdmTMB\ models are spatially explicit and derived from a mechanistic (diffusion) process---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
+In contrast, non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}]. %  I think semi-parametric is defined differently in different contexts, but don't agree with including it in that claim so removing it rather than adding clarifying text. 
 % The random fields in \sdmTMB\ are structured as MVN constrained by a Matérn covariance function \citep{matern1986}.
 % The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
 % The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\code{share\_range} argument).
 % TODO: figure out where to put this paragraph
-Approaches such as conditional autoregressive models (CAR) require continuous spatial data to be aggregated to polygons or grids.
+Approaches such as conditional autoregressive models (CAR) are applicable to areal data, where the spatial domain is discretized into a set of vertices or polygons.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including CAR models \citep[e.g.,][]{verhoef2018}; \sdmTMB\ can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted \citep{wall2004}.
 
@@ -1555,6 +1564,7 @@ There are several planned future additions to the \sdmTMB\ model structure.
 A subset of features to be added include (1) multivariate models to allow for simultaneous modelling of data from multiple groups, (2) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++}, (3) inclusion of a dispersion formula similar to \pkg{glmmTMB},
 (4) the ability to specify observation-specific likelihoods to integrate different data types \citep{gruss2019multiple}, and
 (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
+% Are y'all still planning on multivariate models?  Consider removing, or I'd be happy to discuss further?
 
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 
