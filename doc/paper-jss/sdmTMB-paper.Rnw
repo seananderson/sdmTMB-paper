@@ -228,7 +228,7 @@ where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in
 That mean $\mu_{\bm{s}}$ is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta_{\bm{s}}$.
 In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial random field $\omega_{\bm{s}}$.
 This spatial random field represents the effect of latent spatial variables that are not otherwise accounted for in the model.
-Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise arising from unmodeled processes.  % Jim: Similar to the recent Ives MEE perspectives, I prefer to discuss unmodeled stochastic processes, rather than the term "error" or "noise", so suggesting a compromise wording here. 
+Alternatively, $\omega_{\bm{s}}$ can be thought of representing spatially correlated noise arising from unmodeled processes.
 More simply, the vector of $\omega_{\bm{s}}$ ($\bm{\omega}$) represents a ``wiggly'' surface with an expected value of zero that is added to the linear predictor in link space (e.g., Figure~\ref{fig:matern-range}).
 The vector $\bm{\omega}$ is assumed drawn from a multivariate normal distribution with a covariance matrix $\boldsymbol{\Sigma}_\omega$,
 \[
@@ -508,7 +508,7 @@ Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ mo
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
 The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} as interface to the \pkg{Eigen} library in C++.
-% Jim:  I recommend adding a citation to package Matrix ( Bates D, Maechler M, Jagan M (2023). _Matrix: Sparse and Dense Matrix Classes and Methods_. R package version 1.6-4, <https://CRAN.R-project.org/package=Matrix>.)), as central dependency of TMB, given the detailed description of the dependency stack. If really motivated, you could also add the reference for Eigen (Guennebaud G, Jacob B, et al. (2010). “Eigen v3.” http://eigen.tuxfamily.org), although it's less clear what citation to use.
+% TODO Jim:  I recommend adding a citation to package Matrix ( Bates D, Maechler M, Jagan M (2023). _Matrix: Sparse and Dense Matrix Classes and Methods_. R package version 1.6-4, <https://CRAN.R-project.org/package=Matrix>.)), as central dependency of TMB, given the detailed description of the dependency stack. If really motivated, you could also add the reference for Eigen (Guennebaud G, Jacob B, et al. (2010). “Eigen v3.” http://eigen.tuxfamily.org), although it's less clear what citation to use.
 The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{statsv::optimHess} \citep{gay1990, r2021}.
 \Rev{A19}Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
 it is also possible to apply the epsilon estimator \citep{thorson2016bias}, which corrects for bias arising from the variance and skewness of random effects when calculating an estimator as a non-linear transformation or random effects (see Section \ref{index-bias-correct} for an example).
@@ -809,7 +809,6 @@ p_rf <- round(t_rf$p.value, 2)
 
 We can also see that the marginal AIC of the model with spatial random fields is
 lower:
-% JIM: Please feel free to email me, but if you're using the marginal likelihood to compute AIC then it's using marginal AIC.  I have a paper in revision @ Ecology discussing TMB calculation for conditional AIC, and happy to share or discuss further. 
 
 <<pcod-aic, eval=TRUE, echo=TRUE, results='markup'>>=
 AIC(fit_bin_rf, fit_bin)
@@ -853,10 +852,10 @@ In practice, we would want to repeat this procedure several times to ensure the 
 % TODO: data citation!?
 \sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
-The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.  We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.  
+The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.
+We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.  
 The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
 % The overall predictions combining fixed and random effects are plug-in predictions.
-% Jim:  I'm adding a sentence here about catchability/detectability covariates.  I'd be happy to discuss if y'all disagree with including this.  Obviously I'm concerned about people moving back to the fisheries-standard of not carefully considering what is a catchability vs. density covariate, and would love to preserve this as distinction that is highlighted (even if it's not explicit in the model structure itself).
 We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
@@ -998,8 +997,8 @@ The AR(1) fields can be represented as:
 \bm{\delta}_{t} \sim \operatorname{MVNormal} \left(\bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{aligned}
 \]
-where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.  This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.  
-%% Jim:  Feel free to drop the last sentence, but I think statisticians would wanna emphasize that this is a separable space-time formulation.
+where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.
+This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.  
 
 <<dog-ar1, results='hide', echo=TRUE>>=
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
@@ -1124,7 +1123,7 @@ Here, we pick the last year, specify to include both delta model components (\co
 Alternatively, we could produce a similar plot using \pkg{ggeffects} \citep{ggeffects} with \fct{ggeffects::ggpredict}.
 
 % TODO check if on CRAN yet!
-% Jim:  It might be worth emphasizing that this calculation of marginal effects will differ from a partial dependence plot (PDP) when depth is correlated with other variables, and that package pdp could be used to additionally compute the PDP.  Please tell me if you want me to suggest text or a code-demo, etc.
+% TODO Jim:  It might be worth emphasizing that this calculation of marginal effects will differ from a partial dependence plot (PDP) when depth is correlated with other variables, and that package pdp could be used to additionally compute the PDP.  Please tell me if you want me to suggest text or a code-demo, etc.
 
 <<dog-depth, echo=TRUE, out.width="5in">>=
 nd <- data.frame(
@@ -1269,7 +1268,7 @@ However, given that this is only part of the effect of NAO that we include in ou
 \Rev{B7}The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
 Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case, \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
-We illustrate a way of accomplishing this by simulating from uncertainty about fixed and random effects while assuming that parametric uncertainty is well approximated using a multivariate normal distribution and the joint precision matrix.  % Jim:  I found the previous wording a bit confusing, so suggested an edit.
+We illustrate a way of accomplishing this by simulating from uncertainty about fixed and random effects while assuming that parametric uncertainty is well approximated using a multivariate normal distribution and the joint precision matrix.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
 By default, \code{nsim > 0} will return a matrix of draws for the overall prediction.
 Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field.
@@ -1487,6 +1486,8 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \end{tabular}
 \end{threeparttable}
 
+% TODO: add multivariate responses to mgcv?
+
 \caption{Comparison of functionality between several \R\ packages that
   can fit geostatistical GLMMs.
 Notes:
@@ -1561,11 +1562,15 @@ A benefit of the geostatistical approach over CAR or similar models is that the 
 
 Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, and time-varying spatiotemporal covariance parameters \citep{ward2022}.
 There are several planned future additions to the \sdmTMB\ model structure.
-A subset of features to be added include (1) multivariate models to allow for simultaneous modelling of data from multiple groups, (2) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++}, (3) inclusion of a dispersion formula similar to \pkg{glmmTMB},
-(4) the ability to specify observation-specific likelihoods to integrate different data types \citep{gruss2019multiple}, and
-(5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
-% Are y'all still planning on multivariate models?  Consider removing, or I'd be happy to discuss further?
-
+A subset of features to be added include
+(1) the ability to specify observation-specific likelihoods to integrate different data types \citep{gruss2019multiple},
+(2) inclusion of a dispersion formula similar to \pkg{glmmTMB},
+(3) basic multivariate models to allow for simultaneous modelling of data from multiple groups,
+and
+(4) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++},
+% (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
+% TODO: Jim: Are y'all still planning on multivariate models?  Consider removing, or I'd be happy to discuss further?
+% SA: added 'basic', which should be true (already in a branch... but unlikely to go too far with this
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 
 \section{Acknowledgements}\label{acknowledgements}
