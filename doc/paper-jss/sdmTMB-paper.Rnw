@@ -197,7 +197,7 @@ Such models quickly become computationally challenging due to the need to invert
 Many solutions have been proposed, such as predictive processes \citep{banerjee2008, latimer2009}, the stochastic partial differential equation (SPDE) approximation to GRFs \citep{lindgren2011}, and nearest-neighbour Gaussian processes \citep{datta2016, finley2022}.
 These approaches aim to minimize the scale of the covariance estimation problem while providing a means to evaluate the data likelihood, thereby allowing fitting via Bayesian \citep{gelfand2017} or maximum likelihood methods.
 This can greatly improve computational efficiency \citep[e.g.,][]{heaton2019}.
-The SPDE approach has been widely adopted, especially via the \INLA\ package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \TMB\ \citep[Template Model Builder,][]{kristensen2016} that relies on \INLA\ to create input matrices \citep{thorson2015ecology, thorson2015ices, thorson2019, osgood-zimmerman2023}.  This SPDE method approximates a Matérn correlation function as arising mechanistically from local diffusion in space and/or time \citep{lindgren2011} and it results in a sparse precision matrix that permits efficient computation using existing sparse-matrix libraries \citep{rue2005gmrf}.  
+The SPDE approach has been widely adopted, especially via the \INLA\ package \citep{rue2009, lindgren2011, lindgren2015} and an implementation in \TMB\ \citep[Template Model Builder,][]{kristensen2016} that relies on \INLA\ to create input matrices \citep{thorson2015ecology, thorson2015ices, thorson2019, osgood-zimmerman2023}.  This SPDE method approximates a Matérn correlation function as arising mechanistically from local diffusion in space and/or time \citep{lindgren2011} and it results in a sparse precision matrix that permits efficient computation using existing sparse-matrix libraries \citep{rue2005gmrf}.
 
 Software packages designed for specifying statistical models that incorporate the SPDE, such as \INLA\ and \TMB, are flexible and powerful but can be challenging for many applied researchers.
 For example, \TMB\ requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code.
@@ -588,8 +588,8 @@ If a model will be passed to \pkg{tmbstan} with priors, a \code{bayesian} logica
 % parameter estimation, or evaluate the consequences of model misspecification.
 
 % Jim:  If this section is re-added, you could also list the \fct{TMB::checkConsistency}
-% which evaluates the accuracy (and provides a bias-correction estimator) for the 
-% Laplace approximation. 
+% which evaluates the accuracy (and provides a bias-correction estimator) for the
+% Laplace approximation.
 
 \subsection{Installation}\label{installation}
 
@@ -853,7 +853,7 @@ In practice, we would want to repeat this procedure several times to ensure the 
 \sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.
-We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.  
+We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.
 The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
 % The overall predictions combining fixed and random effects are plug-in predictions.
 We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
@@ -998,7 +998,7 @@ The AR(1) fields can be represented as:
 \end{aligned}
 \]
 where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.
-This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.  
+This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.
 
 <<dog-ar1, results='hide', echo=TRUE>>=
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
@@ -1551,7 +1551,7 @@ These examples underscore the versatile nature of the SPDE approach and the pote
 % TODO: figure out where to put this paragraph
 % TODO: rework this paragraph to be advantages of random fields GAMs and CAR
 The GLMMs underpinning \sdmTMB\ models are spatially explicit and derived from a mechanistic (diffusion) process---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-In contrast, non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}]. %  I think semi-parametric is defined differently in different contexts, but don't agree with including it in that claim so removing it rather than adding clarifying text. 
+In contrast, non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}]. %  I think semi-parametric is defined differently in different contexts, but don't agree with including it in that claim so removing it rather than adding clarifying text.
 % The random fields in \sdmTMB\ are structured as MVN constrained by a Matérn covariance function \citep{matern1986}.
 % The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
 % The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\code{share\_range} argument).
@@ -1855,6 +1855,6 @@ fit_bam <- bam(
 
 % \clearpage
 
-% \input{response}
+\input{response}
 
 \end{document}
