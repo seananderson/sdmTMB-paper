@@ -183,10 +183,10 @@ library(sdmTMB)
 
 \section{Introduction}\label{introduction}
 
-Data are often collected in space or in space repeatedly over time. While such data are a rich source of information across many fields,
+Data are often collected at particular locations in space or in space repeatedly over time. While such data are a rich source of information across many fields,
 they are challenging to properly model---data closer in space and time are usually more similar to each other than data farther apart due to measured and unmeasured variables \citep{cressie1993, diggle2007, cressie2011}.
 While measured variables can be accounted for with predictors in a model (e.g., measuring and modelling temperature effects on species abundance), unmeasured variables can cause residual spatial correlation.
-Accounting for this residual correlation is important because doing so allows for valid statistical inference \citep{legendre1989a, dormann2007}, can improve predictions \citep[e.g.,][]{shelton2014}, and can be of interest itself \citep[e.g.,][]{thorson2019d, barnett2021}.
+Accounting for this residual correlation is important because doing so allows for valid statistical inference \citep{legendre1989a, dormann2007}, can improve predictions \citep[e.g.,][]{shelton2014}, and can provide useful spatial summary statistics \citep[e.g.,][]{thorson2019d, barnett2021}.
 
 Geostatistical generalized linear mixed effects models (GLMMs) with spatially correlated random effects constitute an appropriate class of models for such data \citep{rue2005gmrf, diggle2007, cressie2011}.
 Similarly to how random intercepts can account for correlation among groups, spatial or spatiotemporal random effects can account for unmeasured variables that cause observations to be correlated in space or both space and time.
@@ -206,10 +206,10 @@ Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl20
 
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \TMB\ for model fitting and \pkg{fmesher} or \INLA\ to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models.
-\Rev{B2}Many features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date no package has included all in a single package.
+\Rev{B2}Many individual features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date this full suite of useful features has not been integrated into a single package.
 One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB: \sdmTMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and approximated in discrete time-intervals.
 
-This paper describes the underlying statistical models (Section~\ref{model-description}), explains how \sdmTMB\ is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \sdmTMB\ to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of links to other packages and future development directions (Section~\ref{discussion}).
+This paper describes the statistical models underlying \sdmTMB\ (Section~\ref{model-description}), explains how \sdmTMB\ is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \sdmTMB\ to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of links to other packages and future development directions (Section~\ref{discussion}).
 
 \section{Model description}\label{model-description}
 
@@ -237,7 +237,7 @@ The vector $\bm{\omega}$ is assumed drawn from a multivariate normal distributio
 \]
 constrained by some function that defines the rate at which spatial covariance decays with distance.
 
-<<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="Example Gaussian random fields for two range values. The range describes the distance at which spatial correlation decays to $\\approx 0.13$ in coordinate units (i.e., the distance at which two points are effectively independent). Panel a shows a shorter range than panel b, which results in a ``wigglier'' surface. Panel c shows the Mat\\'ern function for these two range values. The dashed horizontal line shows a correlation of 0.13.">>=
+<<matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="Example Gaussian random fields for two range values. The range describes the distance at which spatial correlation decays to $\\approx 0.13$ in coordinate units (i.e., the distance at which two points are effectively independent). Panel (a) shows a shorter range than panel (b), which results in a ``wigglier'' surface. Panel (c) shows the Mat\\'ern function for these two range values. The dashed horizontal line shows a correlation of 0.13.">>=
 predictor_dat <- expand.grid(
   x = seq(0, 1, length.out = 100),
   y = seq(0, 1, length.out = 100),
@@ -321,11 +321,11 @@ Various covariance functions are possible, but a popular and flexible one is the
 If we define $\lVert h \rVert$ as the Euclidean distance between spatial points $\bm{s}_j$ and $\bm{s}_k$, we can represent the Mat\'ern covariance $\Phi$ as
 \[
 \Phi\left( \bm{s}_j, \bm{s}_k \right) =
-  \frac{\sigma^2}{2^{\nu - 1}\Gamma(\nu)}
+  \frac{\sigma_m^2}{2^{\nu - 1}\Gamma(\nu)}
   \left(\kappa \lVert h \rVert \right)^\nu K_\nu
   \left( \kappa \lVert h \rVert \right).
 \]
-The parameter $\sigma^2$ is the marginal variance (magnitude of the random field ``wiggles''), $\Gamma$ represents the Gamma function, $K_\nu$ represents the modified Bessel function of the second kind, and $\kappa$ represents the spatial decorrelation rate.
+The parameter $\sigma_m^2$ is the marginal variance (magnitude of the random field ``wiggles''), $\Gamma$ represents the Gamma function, $K_\nu$ represents the modified Bessel function of the second kind, and $\kappa$ represents the spatial decorrelation rate.
 The parameter $\nu$ controls the smoothness of the covariance function.
 In practice, $\nu$ is challenging to estimate and herein is fixed at $\nu = 1$ \citep{lindgren2011}.
 A more interpretable derived parameter than the spatial decorrelation rate $\kappa$ is the spatial range---a distance at which two points are effectively independent.
@@ -336,7 +336,7 @@ A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\mathrm{range}
 The assumption that correlation decays equally in all directions can be relaxed to allow for geometric anisotropy
 \[
 \Phi\left( s_j, s_k \right) =
-  \frac{\sigma^2}{2^{\nu - 1}\Gamma(\nu)}
+  \frac{\sigma_m^2}{2^{\nu - 1}\Gamma(\nu)}
   \left(\kappa \lVert h \rVert \bm{H} \right)^\nu K_\nu
   \left( \kappa \lVert h \rVert \bm{H} \right).
 \]
@@ -367,7 +367,7 @@ Third, working with the SPDE approach and the precision matrix of a GMRF ($\bm{Q
 \bm{Q} = \tau^2 \left(\kappa^4\bm{C} + 2\kappa^2\bm{G}_1 + \bm{G}_2 \right),
 \]
 where $\kappa$ is the Mat\'ern decorrelation rate as before.
-We can calculate the marginal variance of the Mat\'ern random field as $\sigma^2 = \left (4 \pi \tau^2 \kappa^2 \right)^{-1}$.
+We can calculate the marginal variance of the Mat\'ern random field as $\sigma_m^2 = \left (4 \pi \tau^2 \kappa^2 \right)^{-1}$.
 
 \subsection{Adding spatiotemporal random fields}
 
@@ -448,7 +448,7 @@ The expectation for a new data point is then the probability of a non-zero event
 
 \subsubsection{Poisson-link delta models}
 
-An additional delta-model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}.
+An additional delta model is possible that has several advantages over the logit-log delta model \citep{thorson2018poisson}.
 The primary advantage is that both linear predictors use a log link so the linear predictors can be added in link space and the partial effect of a coefficient from both linear predictors can be combined.
 In these models, the linear predictors represent a theoretical group number $n$ and a theoretical weight (e.g., mass) per group $w$ \citep{thorson2018poisson},
 \[
@@ -684,7 +684,7 @@ Usually, mesh complexity has the single largest influence on the speed of fittin
 % https://haakonbakkagit.github.io/btopic104.html
 % https://becarioprecario.bitbucket.io/spde-gitbook/index.html
 
-<<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices'' or sometimes ``knots''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation to a point. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly and supplying the object to \\code{make\\_mesh()}.", fig.width=4.5, fig.asp=1, out.width="3in">>=
+<<dog-binomial-mesh2, results='hide', message=FALSE, warning=FALSE, echo=TRUE, fig.cap="SPDE mesh (lines) combined with the trawl survey observations (points). The locations where lines intersect are referred to as ``vertices'' or ``knots''. Finer meshes will be slower to fit but generally increase the accuracy of the SPDE approximation, to a point. A greater degree of control over the mesh construction can be achieved by using \\pkg{fmesher} or \\proglang{R}-\\pkg{INLA} directly and supplying the object to \\code{make\\_mesh()}.", fig.width=4.5, fig.asp=1, out.width="3in">>=
 mesh_pcod2 <- make_mesh(
   pcod,
   xy_cols = c("X", "Y"),
@@ -960,7 +960,7 @@ fit_tw <- sdmTMB(
 )
 @
 
-\subsection{Exploring delta-model alternative families}
+\subsection{Exploring delta model alternative families}
 
 We can explore four alternative families that may better represent the data.
 Each alternative family uses a delta model formulation as described in Section \ref{sec:delta}.
@@ -1016,7 +1016,7 @@ plot_anisotropy(fit_dpl)
 @
 
 On inspecting the model output with \fct{summary}, we notice that the spatial random field SD in the positive model component has become very small once AR(1) spatiotemporal fields were added.
-We therefore consider a model where these are turned off in the second component of the delta model and choose this model.
+We therefore consider a model where these are turned off in the second component of the delta model and choose this model for further evaluation.
 
 <<dog-ar1-2, echo=TRUE, results="hide">>=
 fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
@@ -1136,7 +1136,7 @@ pred_depth <- predict(
 )
 @
 
-<<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are set to their expected value (zero).", out.width="4in">>=
+<<dog-depth-plot, echo=FALSE, fig.cap="The conditional effect of ocean bottom depth on Pacific Spiny Dogfish population density. The line and shaded ribbon represent the mean and 95\\% confidence interval, respectively. Other fixed effects are held at constant values and the random fields are set to their expected value (zero).", out.width="4in">>=
 ggplot(pred_depth, aes(
   exp(log_depth), exp(est),
   ymin = exp(est - 2 * est_se),
