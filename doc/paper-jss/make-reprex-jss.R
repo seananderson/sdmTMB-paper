@@ -82,6 +82,26 @@ d[grepl("here::", d)]
 # i <- grep("## ----inla-knitr-setup", d)
 # d <- c(d[seq(1, i-1)], "\n# INLA comparison appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
+i <- grep("dog-update-old, ", d) + 1
+j <- grep("## fit_dpl <- update", d)
+for (s in i:j) {
+  d[s] <- gsub("^## ", "", d[s])
+}
+
+i <- grep("dog-update,", d) - 1
+j <- grep("dog-update-old,", d) - 2
+d <- c(d[1:i], "if (new_deltas) {", d[(i+1):(j-1)], "}", d[(j):length(d)])
+
+i <- grep("dog-update-old,", d) - 1
+j <- grep("----dog-aic,", d) - 2
+d <- c(d[1:i], "if (!new_deltas) {", d[(i+1):(j-1)], "}", d[(j):length(d)])
+
+i <- grep("inlabrufit-timing", d) + 1
+j <- grep("bru_max_iter = 1, num.threads = \"1:1\"", d) + 2
+for (s in i:j) {
+  d[s] <- gsub("^## ", "", d[s])
+}
+
 # these make figs not show up in html:
 d <- gsub('dev = \\"pdf\\"', 'dev = \\"png\\"', d)
 d <- gsub('out.width=\\"[0-9]+in\\", ', "", d)
@@ -100,7 +120,7 @@ if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-main.R\")'")
 
 d <- readLines(here::here("analysis/timing.R"))
 writeLines(d, "replication-code-timing.R")
-# if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
+if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
 #
 # d <- readLines(here::here("analysis/pcod-fig.R"))
 # # d <- gsub('silent = TRUE', 'silent = FALSE', d)
