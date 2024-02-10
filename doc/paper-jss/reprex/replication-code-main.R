@@ -4,7 +4,7 @@ opts_chunk$set(engine = 'R', tidy = FALSE)
 options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
 
 
-## ----main-setup, include=FALSE, cache=FALSE---------------------------
+## ----main-setup, include=FALSE, cache=FALSE-------------------
 knitr::opts_chunk$set(
   echo = FALSE,
   message = FALSE,
@@ -30,7 +30,7 @@ options(replace.assign = TRUE, width = 72, prompt = "R> ")
 # knitr::render_sweave()
 
 
-## ----libraries, echo=FALSE, warning=FALSE, message=FALSE--------------
+## ----libraries, echo=FALSE, warning=FALSE, message=FALSE------
 library(ggplot2)
 library(dplyr)
 library(sdmTMB)
@@ -114,26 +114,26 @@ sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range
 cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
 
 
-## ----sdmTMB-install, eval=FALSE, echo=TRUE----------------------------
+## ----sdmTMB-install, eval=FALSE, echo=TRUE--------------------
 ## install.packages("sdmTMB")
 
 
-## ----sdmTMB-install-suggest, eval=FALSE, echo=TRUE--------------------
+## ----sdmTMB-install-suggest, eval=FALSE, echo=TRUE------------
 ## install.packages("sdmTMB", dependencies = TRUE)
 
 
-## ----remotes, eval=FALSE, echo=TRUE-----------------------------------
+## ----remotes, eval=FALSE, echo=TRUE---------------------------
 ## install.packages("remotes")
 ## remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
 
 
-## ----libs, warning=FALSE, message=FALSE, echo=TRUE, cache=FALSE-------
+## ----libs, warning=FALSE, message=FALSE, echo=TRUE, cache=FALSE----
 library(sdmTMB)
 library(dplyr)
 library(ggplot2)
 
 
-## ----setoptions, echo=FALSE-------------------------------------------
+## ----setoptions, echo=FALSE-----------------------------------
 options(
   pillar.print_max = 3,
   pillar.print_min = 3,
@@ -143,16 +143,16 @@ options(
 options(width = 80)
 
 
-## ----libs-extras, cache=FALSE, echo=FALSE-----------------------------
+## ----libs-extras, cache=FALSE, echo=FALSE---------------------
 theme_set(theme_light())
 options(ggplot2.continuous.fill = "viridis")
 
 
-## ----pcod-head, echo=TRUE---------------------------------------------
+## ----pcod-head, echo=TRUE-------------------------------------
 select(pcod, lat, lon, X, Y, depth, present)
 
 
-## ----pcod-utms-eval, echo=TRUE, eval=FALSE----------------------------
+## ----pcod-utms-eval, echo=TRUE, eval=FALSE--------------------
 ## pcod <- add_utm_columns(pcod, c("lon", "lat"), units = "km")
 
 
@@ -172,7 +172,7 @@ mesh_pcod2 <- make_mesh(
 plot(mesh_pcod2)
 
 
-## ----pcod-fit, echo=TRUE----------------------------------------------
+## ----pcod-fit, echo=TRUE--------------------------------------
 fit_bin_rf <- sdmTMB(
   present ~ poly(log(depth), 2),
   data = pcod,
@@ -182,28 +182,28 @@ fit_bin_rf <- sdmTMB(
 )
 
 
-## ----pcod-fit-off, echo=TRUE------------------------------------------
+## ----pcod-fit-off, echo=TRUE----------------------------------
 fit_bin <- update(fit_bin_rf, spatial = "off")
 
 
-## ----pcod-eg1-sanity, eval=TRUE, echo=TRUE, message=FALSE-------------
+## ----pcod-eg1-sanity, eval=TRUE, echo=TRUE, message=FALSE-----
 sanity(fit_bin_rf)
 
 
-## ----pcod-bin-summary, echo=TRUE--------------------------------------
+## ----pcod-bin-summary, echo=TRUE------------------------------
 summary(fit_bin_rf)
 
 
-## ----pcod-tidy, eval=TRUE, echo=TRUE, results='markup'----------------
+## ----pcod-tidy, eval=TRUE, echo=TRUE, results='markup'--------
 tidy(fit_bin_rf, conf.int = TRUE)
 tidy(fit_bin, conf.int = TRUE)
 
 
-## ----pcod-eg1-tidy-re, eval=TRUE, echo=TRUE---------------------------
+## ----pcod-eg1-tidy-re, eval=TRUE, echo=TRUE-------------------
 tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 
-## ----morans, echo=FALSE, results='hide'-------------------------------
+## ----morans, echo=FALSE, results='hide'-----------------------
 test_autocor <- function(obj) {
   set.seed(1)
   s <- simulate(obj, nsim = 500)
@@ -220,16 +220,16 @@ test_autocor <- function(obj) {
 p_rf <- round(t_rf$p.value, 2)
 
 
-## ----pcod-aic, eval=TRUE, echo=TRUE, results='markup'-----------------
+## ----pcod-aic, eval=TRUE, echo=TRUE, results='markup'---------
 AIC(fit_bin_rf, fit_bin)
 
 
-## ----pcod-cv-future, eval=FALSE, echo=TRUE----------------------------
+## ----pcod-cv-future, eval=FALSE, echo=TRUE--------------------
 ## library(future)
 ## plan(multisession)
 
 
-## ----pcod-cv, eval=TRUE, echo=TRUE------------------------------------
+## ----pcod-cv, eval=TRUE, echo=TRUE----------------------------
 set.seed(12928)
 cv_bin_rf <- sdmTMB_cv(present ~ poly(log(depth), 2),
   data = pcod, mesh = mesh_pcod, spatial = "on",
@@ -242,12 +242,12 @@ cv_bin <- sdmTMB_cv(present ~ poly(log(depth), 2),
 )
 
 
-## ----pcod-cv-out, eval=TRUE, echo=TRUE, results='markup'--------------
+## ----pcod-cv-out, eval=TRUE, echo=TRUE, results='markup'------
 cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 
 
-## ----pcod-predict, echo=TRUE, results='markup'------------------------
+## ----pcod-predict, echo=TRUE, results='markup'----------------
 p <- predict(fit_bin_rf, newdata = qcs_grid)
 select(p, X, Y, depth, est, est_non_rf, omega_s) |>
   as_tibble() |> head(n = 2)
@@ -268,20 +268,20 @@ g3 <- plot_spatial_map(p, plogis(est), "(c) Combined prediction")
 cowplot::plot_grid(g1, g2, g3, ncol = 3)
 
 
-## ----dog-head-dat, echo=TRUE------------------------------------------
+## ----dog-head-dat, echo=TRUE----------------------------------
 dat <- select(dogfish, lon = longitude, lat = latitude, year,
   catch_weight, area_swept, depth)
 dat
 
 
-## ----dog-utms, echo=TRUE----------------------------------------------
+## ----dog-utms, echo=TRUE--------------------------------------
 dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
 
 
-## ----dog-mesh2, eval=FALSE--------------------------------------------
+## ----dog-mesh2, eval=FALSE------------------------------------
 ## plot(mesh)
 ## mesh$mesh$n
 
@@ -303,39 +303,43 @@ fit_tw <- sdmTMB(
 )
 
 
-## ----check-version, results='hide', echo=FALSE, include=FALSE---------
+## ----check-version, results='hide', echo=FALSE, include=FALSE----
 # delta_poisson_link_gamma() deprecated in favor of delta_gamma(type = "poisson-link")
 new_deltas <- packageVersion("sdmTMB") > '0.4.2.9000'
 
 
+if (new_deltas) {
 ## ----dog-update, results='hide', message=FALSE, warning=FALSE, echo=new_deltas, eval=new_deltas, include=new_deltas----
 fit_dg <- update(fit_tw, family = delta_gamma(),
   spatiotemporal = list("off", "iid"))
 fit_dl <- update(fit_dg, family = delta_lognormal())
 fit_dpg <- update(fit_dg, family = delta_gamma(type = "poisson-link"))
 fit_dpl <- update(fit_dg, family = delta_lognormal(type = "poisson-link"))
+}
 
 
+if (!new_deltas) {
 ## ----dog-update-old, results='hide', message=FALSE, warning=FALSE, echo=!new_deltas, eval=!new_deltas, include=!new_deltas----
-## fit_dg <- update(fit_tw, family = delta_gamma(),
-##   spatiotemporal = list("off", "iid"))
-## fit_dl <- update(fit_dg, family = delta_lognormal())
-## fit_dpg <- update(fit_dg, family = delta_poisson_link_gamma())
-## fit_dpl <- update(fit_dg, family = delta_poisson_link_lognormal())
+fit_dg <- update(fit_tw, family = delta_gamma(),
+  spatiotemporal = list("off", "iid"))
+fit_dl <- update(fit_dg, family = delta_lognormal())
+fit_dpg <- update(fit_dg, family = delta_poisson_link_gamma())
+fit_dpl <- update(fit_dg, family = delta_poisson_link_lognormal())
+}
 
 
-## ----dog-aic, echo=TRUE-----------------------------------------------
+## ----dog-aic, echo=TRUE---------------------------------------
 AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
   mutate(delta_AIC = AIC - min(AIC)) |>
   arrange(delta_AIC)
 
 
-## ----dog-ar1, results='hide', echo=TRUE-------------------------------
+## ----dog-ar1, results='hide', echo=TRUE-----------------------
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
 fit_dpl_ar1 <- update(fit_dpl, spatiotemporal = list("off", "ar1"))
 
 
-## ----dog-aci2, echo=TRUE----------------------------------------------
+## ----dog-aci2, echo=TRUE--------------------------------------
 AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 
 
@@ -343,35 +347,35 @@ AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 plot_anisotropy(fit_dpl)
 
 
-## ----dog-ar1-2, echo=TRUE, results="hide"-----------------------------
+## ----dog-ar1-2, echo=TRUE, results="hide"---------------------
 fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
 
 
-## ----dog-aic3, echo=TRUE----------------------------------------------
+## ----dog-aic3, echo=TRUE--------------------------------------
 AIC(fit_dpl_ar1_only, fit_dpl_ar1, fit_dpl)
 
 
-## ----dog-print, echo=TRUE---------------------------------------------
+## ----dog-print, echo=TRUE-------------------------------------
 fit <- fit_dpl_ar1_only
 sanity(fit)
 summary(fit)
 
 
-## ----dog-grid, echo=TRUE----------------------------------------------
+## ----dog-grid, echo=TRUE--------------------------------------
 grid <- replicate_df(wcvi_grid, "year", time_values = unique(dat$year))
 grid$log_depth <- log(grid$depth)
 head(grid, n = 2)
 
 
-## ----dog-pred1, echo=TRUE---------------------------------------------
+## ----dog-pred1, echo=TRUE-------------------------------------
 pred <- predict(fit, newdata = grid, type = "response")
 
 
-## ----dog-pred2, echo=TRUE---------------------------------------------
+## ----dog-pred2, echo=TRUE-------------------------------------
 names(pred)
 
 
-## ----plot-map, echo=FALSE---------------------------------------------
+## ----plot-map, echo=FALSE-------------------------------------
 plot_map <- function(dat, column) {
   ggplot(dat, aes(X, Y, fill = {{ column }})) +
     geom_raster() +
@@ -382,28 +386,28 @@ plot_map <- function(dat, column) {
 }
 
 
-## ----dog-plot1, echo=FALSE--------------------------------------------
+## ----dog-plot1, echo=FALSE------------------------------------
 g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est_non_rf1) +
   scale_fill_viridis_c(trans = "log10") +
   ggtitle("(a) Non-random-field components; first delta model")
 
 
-## ----dog-plot2, echo=FALSE--------------------------------------------
+## ----dog-plot2, echo=FALSE------------------------------------
 g_omega <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(omega_s1) +
   scale_fill_gradient2() +
   ggtitle("(b) Spatial random field; first delta model")
 
 
-## ----dog-plot3, echo=FALSE--------------------------------------------
+## ----dog-plot3, echo=FALSE------------------------------------
 g_eps <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(epsilon_st2) +
   scale_fill_gradient2() +
   ggtitle("(c) Spatiotemporal random field; second delta model")
 
 
-## ----dog-plot4, echo=FALSE--------------------------------------------
+## ----dog-plot4, echo=FALSE------------------------------------
 g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est) +
   # labs(fill = "Density") +
@@ -421,7 +425,7 @@ cowplot::plot_grid(
 )
 
 
-## ----dog-depth, echo=TRUE, out.width="5in"----------------------------
+## ----dog-depth, echo=TRUE, out.width="5in"--------------------
 nd <- data.frame(
   log_depth = seq(min(dat$log_depth), max(dat$log_depth), length.out = 100),
   year = max(dat$year)
@@ -443,7 +447,7 @@ ggplot(pred_depth, aes(
   labs(x = "Depth (m)", y = "Density")
 
 
-## ----dog-index, echo=TRUE---------------------------------------------
+## ----dog-index, echo=TRUE-------------------------------------
 pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(pred2, bias_correct = TRUE, area = rep(4, nrow(grid)))
 
@@ -455,15 +459,15 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   labs(y = "Biomass", x = "Year")
 
 
-## ----owl-data---------------------------------------------------------
+## ----owl-data-------------------------------------------------
 snow <- readRDS("snow-data.rds")
 
 
-## ----owl-data-head, echo=TRUE-----------------------------------------
+## ----owl-data-head, echo=TRUE---------------------------------
 select(snow, X, Y, year, year_f, nao, count) |> head()
 
 
-## ----owl-fit, echo=TRUE, results = "hide"-----------------------------
+## ----owl-fit, echo=TRUE, results = "hide"---------------------
 mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owl <- sdmTMB(
   count ~ 1 + nao + (1 | year_f),
@@ -479,26 +483,26 @@ fit_owl <- sdmTMB(
 )
 
 
-## ----owl-sanity, eval=FALSE-------------------------------------------
+## ----owl-sanity, eval=FALSE-----------------------------------
 ## sanity(fit_owl)
 
 
-## ----owl-print, echo=TRUE---------------------------------------------
+## ----owl-print, echo=TRUE-------------------------------------
 summary(fit_owl)
 
 
-## ----owl-tidy, echo=TRUE----------------------------------------------
+## ----owl-tidy, echo=TRUE--------------------------------------
 tidy(fit_owl, conf.int = TRUE)
 
 
-## ----owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE---------
+## ----owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE----
 ## # not currently including, but might be helpful
 ## snow <- predict(fit_owl, newdata = snow)
 ## snow |> select(X, Y, year, nao, count, est, omega_s, epsilon_st, zeta_s_nao) |>
 ##   head(n = 2)
 
 
-## ----zeta-effect, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE-----
+## ----zeta-effect, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE----
 zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
 dim(zeta_s)
 sims <- spread_sims(fit_owl, nsim = 200)
@@ -509,11 +513,11 @@ snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
 snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 
 
-## ----owl-plot-basic, echo=TRUE, eval=FALSE----------------------------
+## ----owl-plot-basic, echo=TRUE, eval=FALSE--------------------
 ## ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 
 
-## ----shapes, echo=FALSE-----------------------------------------------
+## ----shapes, echo=FALSE---------------------------------------
 if (!file.exists("ne_10m_lakes")) {
   zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
     "download/10m/physical/ne_10m_lakes.zip")
@@ -522,7 +526,7 @@ if (!file.exists("ne_10m_lakes")) {
 }
 
 
-## ----shapes-read, echo=FALSE------------------------------------------
+## ----shapes-read, echo=FALSE----------------------------------
 Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
   sf::st_transform(crs = Albers)
@@ -532,7 +536,7 @@ land <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 land <- land %>% sf::st_transform(crs = Albers)
 
 
-## ----owl-proj2--------------------------------------------------------
+## ----owl-proj2------------------------------------------------
 # project to get nice axis limits
 snow2 <- snow |> mutate(X = X * 100000, Y = Y * 100000)
 snow2 <- snow2 |> mutate(x = X, y = Y) |>
@@ -629,7 +633,7 @@ bottom_row <- cowplot::plot_grid(snow_g2, snow_g3, label_size = 12)
 cowplot::plot_grid(snow_g1, bottom_row, ncol = 1, rel_heights = c(2.18, 1))
 
 
-## ----pkg-versions, echo=FALSE, eval=FALSE-----------------------------
+## ----pkg-versions, echo=FALSE, eval=FALSE---------------------
 ## packageVersion("INLA")
 ## packageVersion("inlabru")
 ## packageVersion("mgcv")
@@ -637,7 +641,7 @@ cowplot::plot_grid(snow_g1, bottom_row, ncol = 1, rel_heights = c(2.18, 1))
 ## packageVersion("sdmTMB")
 
 
-## ----pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE------
+## ----pkgs, warning=FALSE, message=FALSE, cache=FALSE, echo=FALSE----
 library("INLA")
 library("inlabru")
 library("ggplot2")
@@ -646,7 +650,7 @@ library("mgcv")
 library("spaMM")
 
 
-## ----mesh-timing, echo=TRUE-------------------------------------------
+## ----mesh-timing, echo=TRUE-----------------------------------
 max_edge <- 0.06
 loc_bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
 segm_bnd <- INLA::inla.mesh.segment(loc_bnd)
@@ -657,7 +661,7 @@ mesh <- INLA::inla.mesh.2d(
 )
 
 
-## ----get-vertices, echo=FALSE-----------------------------------------
+## ----get-vertices, echo=FALSE---------------------------------
 vertices <- mesh$n
 
 
@@ -679,7 +683,7 @@ for (i in seq_along(max_edge_vec)) {
 cowplot::plot_grid(plotlist = g, ncol = 2)
 
 
-## ----sim-timing, echo=TRUE--------------------------------------------
+## ----sim-timing, echo=TRUE------------------------------------
 set.seed(123)
 n_obs <- 1000
 predictor_dat <- data.frame(
@@ -708,7 +712,7 @@ ggplot(sim_dat, aes(X, Y, colour = observed, size = abs(observed))) +
   theme_light()
 
 
-## ----sdmTMBfit-timing, echo=TRUE--------------------------------------
+## ----sdmTMBfit-timing, echo=TRUE------------------------------
 fit_sdmTMB <- sdmTMB(
   observed ~ a1,
   data = sim_dat,
@@ -720,7 +724,7 @@ fit_sdmTMB <- sdmTMB(
 )
 
 
-## ----spaMMfit-timing, echo=TRUE, cache=TRUE---------------------------
+## ----spaMMfit-timing, echo=TRUE, cache=TRUE-------------------
 spde <- INLA::inla.spde2.pcmatern(
   mesh = mesh,
   prior.range = c(0.05, 0.05),
@@ -735,29 +739,29 @@ fit_spaMM <- fitme(
 
 
 ## ----inlabrufit-timing, echo=TRUE, cache=TRUE, warning=FALSE, eval=FALSE----
-## dat_sp <- sp::SpatialPointsDataFrame(
-##   cbind(sim_dat$X, sim_dat$Y),
-##   proj4string = sp::CRS(
-##     "+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
-## + +y_0=0 +datum=NAD83 +units=km +no_defs"
-##   ), data = sim_dat
-## )
-## components <- observed ~ -1 + Intercept(1) + a1 +
-##   spatrf(main = coordinates, model = spde)
-## like <- like(observed ~ Intercept + a1 + spatrf,
-##   family = "gaussian", data = dat_sp
-## )
-## fit_bru <- bru(
-##   like,
-##   components = components,
-##   options = bru_options(
-##     control.inla = list(int.strategy = "eb", strategy = "gaussian"),
-##     bru_max_iter = 1, num.threads = "1:1"
-##   )
-## )
+dat_sp <- sp::SpatialPointsDataFrame(
+  cbind(sim_dat$X, sim_dat$Y),
+  proj4string = sp::CRS(
+    "+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
++ +y_0=0 +datum=NAD83 +units=km +no_defs"
+  ), data = sim_dat
+)
+components <- observed ~ -1 + Intercept(1) + a1 +
+  spatrf(main = coordinates, model = spde)
+like <- like(observed ~ Intercept + a1 + spatrf,
+  family = "gaussian", data = dat_sp
+)
+fit_bru <- bru(
+  like,
+  components = components,
+  options = bru_options(
+    control.inla = list(int.strategy = "eb", strategy = "gaussian"),
+    bru_max_iter = 1, num.threads = "1:1"
+  )
+)
 
 
-## ----mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE--------------------
+## ----mgcv-spde-funcs-timing, echo=FALSE, eval=TRUE------------
 # -------------------------------------------------------------------------
 # Code in this chunk is from:
 #
@@ -785,7 +789,7 @@ smooth.construct.spde.smooth.spec <- function(object, data, knots) {
       stop("For 2D, mesh must be supplied as argument xt$mesh in s(...,xt = )")
     }
   } else {
-    if (class(object$xt$mesh) != "inla.mesh") stop("xt must be NULL or an inla.mesh object")
+    if (!inherits(object$xt$mesh, "inla.mesh")) stop("xt must be NULL or an inla.mesh object")
     mesh <- object$xt$mesh
   }
   object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
@@ -819,7 +823,7 @@ Predict.matrix.spde.smooth <- function(object, data) {
 # -------------------------------------------------------------------------
 
 
-## ----mgcvfit-timing, echo=TRUE, eval=TRUE-----------------------------
+## ----mgcvfit-timing, echo=TRUE, eval=TRUE---------------------
 class(mesh) <- "inla.mesh"
 fit_bam <- bam(
   observed ~ a1 + s(X, Y,
