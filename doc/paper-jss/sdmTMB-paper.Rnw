@@ -202,7 +202,7 @@ The SPDE approach has been widely adopted, especially via the \INLA\ package \ci
 Software packages designed for specifying statistical models that incorporate the SPDE, such as \INLA\ and \TMB, are flexible and powerful but can be challenging for many applied researchers.
 For example, \TMB\ requires the user to program in a \proglang{C++} template and it can be slow to experiment with multiple models when writing bespoke model code.
 While packages such as \pkg{lme4} \citep{bates2015} and \pkg{glmmTMB} \citep{brooks2017} let users quickly iterate and explore statistical models---focusing on evaluating fit and comparing models---they lack built-in SPDE or spatiotemporal functionality.
-Packages such as \pkg{VAST} \citep{thorson2019} and \pkg{inlabru} \citep{bachl2019} are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used \pkg{lme4} or \pkg{glmmTMB}, lack some functionality, or may be challenging to learn for some users.
+Packages such as \pkg{VAST} \citep{thorson2019}, \pkg{tinyVAST} \citep{thorson2024tinyvast}, and \pkg{inlabru} \citep{bachl2019} are powerful user interfaces to fit spatial models that use the SPDE, but they either lack a modular interface familiar to those who have used \pkg{lme4} or \pkg{glmmTMB}, lack some functionality, or may be challenging to learn for some users.
 
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \TMB\ for model fitting and \pkg{fmesher} or \INLA\ to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models.
@@ -1039,7 +1039,7 @@ summary(fit)
 The output is more complex compared to our binomial spatial model.
 We now have two model components, which are shown one after the other.
 Starting with the binomial component, we have output from the smoother, which includes a linear parameter (\code{slog\_depth}) and the standard deviation on the smoother weights (\code{sds(log\_depth)}).
-The smoother summary follows the format used in the \pkg{brms} package \citep{burkner2017}.
+The smoother summary follows the format used in the \pkg{brms} package \citep{brms}.
 Next, we have the time-varying intercepts and information on our anisotropic spatial correlation.
 We then have the second model component (lognormal) with a similar summary structure but with the addition of a dispersion parameter, the AR(1) correlation of the spatiotemporal random fields, and a spatiotemporal random field marginal standard deviation.
 
@@ -1296,7 +1296,7 @@ snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
 snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 @
 
-We can make a basic plot using the following code. A more elaborate version including separate panels for each of the CIs is shown in Figure~\ref{fig:owl-plot-fancy}a.
+We can make a basic plot using the following code. A more elaborate version including separate panels for each of the CIs is shown in Figure~\ref{fig:owl-plot-fancy}.
 
 <<owl-plot-basic, echo=TRUE, eval=FALSE>>=
 ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
@@ -1428,11 +1428,11 @@ cowplot::plot_grid(snow_g1, bottom_row, ncol = 1, rel_heights = c(2.18, 1))
 \section{Package comparisons}\label{package-comparisons}
 
 There are many \R\ packages capable of fitting geostatistical spatial or spatiotemporal models \citep[e.g.,][]{heaton2019}.
-\sdmTMB, \pkg{VAST}, \INLA/\pkg{inlabru}, and \pkg{spaMM} \citep{rousset2014} are the most closely related, as they all provide a user interface to SPDE-based GMRF models.
+\sdmTMB, \pkg{VAST}, \pkg{tinyVAST}, \INLA/\pkg{inlabru}, and \pkg{spaMM} \citep{rousset2014} are the most closely related, as they all provide a user interface to SPDE-based GMRF models.
 In our software comparison (Table \ref{tab:functionality}), we also include \pkg{mgcv} as it can be adapted to use the SPDE \citep{miller2019} and \pkg{spBayes} \citep{finley2007, finley2015} since it is a prominent package that can fit related predictive-process models without the SPDE.
 \sdmTMB, \pkg{VAST}, and \pkg{mgcv} can estimate anisotropic covariance whereas \INLA/\pkg{inlabru} and \pkg{spBayes} are currently limited to isotropic covariance.
-\pkg{mgcv} and \sdmTMB\ (currently) focus on univariate response data, whereas \pkg{VAST}, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
-To our knowledge, \pkg{VAST} is the only package to implement spatial \citep{thorson2015} and spatial dynamic factor analysis \citep{thorson2016} and spatial empirical orthogonal function (EOF) regression \citep{thorson2020}.
+% \pkg{mgcv} and \sdmTMB\ (currently) focus on univariate response data, whereas \pkg{VAST}, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{spBayes} extend to multivariate responses with various limitations.
+To our knowledge, \pkg{VAST} and \pkg{tinyVAST} are the only packages to implement spatial \citep{thorson2015} and spatial dynamic factor analysis \citep{thorson2016} and spatial empirical orthogonal function (EOF) regression \citep{thorson2020}.
 Of these packages, only \sdmTMB\ and \pkg{inlabru} can currently fit threshold (e.g., hockey-stick) covariate relationships.
 \pkg{spaMM} is limited to a spatial random field (i.e., does not fit spatiotemporal fields) and \pkg{spBayes} implements spatiotemporal fields, but only as a random walk.
 There is considerable variability in the available observation likelihoods across packages (Table \ref{tab:functionality}).
@@ -1468,7 +1468,7 @@ Tweedie distribution & \checkmark & \checkmark & \checkmark & \checkmark$^8$ & -
 Student-t distribution & \checkmark & -- & \checkmark & \checkmark & -- & --\\
 Censored Poisson distribution & \checkmark & -- & \checkmark & -- & -- & --\\
 log Gaussian Cox processes & --$^9$ & --$^9$ & \checkmark & --$^9$ & --$^9$ & --$^9$\\
-Multivariate responses & -- & \checkmark & \checkmark & -- & \checkmark & \checkmark\\
+Multivariate responses & -- & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
 Built-in delta/hurdle models & \checkmark & \checkmark & \checkmark & --$^{10}$ & -- & \checkmark\\
 Poisson-link delta models & \checkmark & \checkmark & \checkmark & -- & -- & --\\
 Likelihood weights & \checkmark & -- & \checkmark & \checkmark & \checkmark & \checkmark\\
@@ -1486,10 +1486,9 @@ Built-in cross-validation & \checkmark & -- & -- & -- & -- & --\\
 \end{tabular}
 \end{threeparttable}
 
-% TODO: add multivariate responses to mgcv?
-
 \caption{Comparison of functionality between several \R\ packages that
   can fit geostatistical GLMMs.
+  At the time of writing, the feature set of \pkg{tinyVAST} is rapidly evolving and so is not shown here.
 Notes:
 $^1$Technically possible but non-trivial.
 $^2$Penalized smoother GAMs that determine `wiggliness'.
@@ -1519,7 +1518,7 @@ For users ultimately interested in Bayesian inference, the approximate Bayesian 
 Comparison of time to fit an SPDE spatial random field model with 1000 observations, an intercept and one predictor, Gaussian error, and a sequence of SPDE resolutions.
 Lines represent means and ribbons 95\% quantiles across 50 random iterations.
 Note the log-distributed x axis.
-\pkg{VAST} should be similar to \sdmTMB\ and so is not shown.
+\pkg{VAST} and \pkg{tinyVAST} should be similar to \sdmTMB\ and so are not shown.
 \pkg{inlabru} used the empirical Bayes integration strategy and Gaussian approximation with \code{bru\_max\_iter = 1}, and the \fct{like} formulation.
 \pkg{mgcv} used \fct{bam}, \code{method = `fREML'}, and discretized covariates \citep{miller2019}.
 Note that \pkg{spaMM} only fits spatial, not spatiotemporal, models.
@@ -1534,7 +1533,7 @@ Assuming a given package can fit the model of interest (Table~\ref{tab:functiona
 We think users familiar with \fct{stats::glm}, \pkg{lme4}, \pkg{mgcv}, or \pkg{glmmTMB} will find \sdmTMB\ most approachable.
 Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
-\pkg{VAST} is the sole option for fitting some multivariate models; alternatively, because \pkg{VAST} focuses on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs in non-fisheries contexts will likely find \sdmTMB\ more straightforward.
+\pkg{VAST} and \pkg{tinyVAST} are the sole options for fitting some multivariate models; alternatively, because these packages focus on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs will likely find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be calculated using other packages post hoc).
 \Rev{B3}Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
 % TODO: mention this in response doc
@@ -1562,15 +1561,14 @@ A benefit of the geostatistical approach over CAR or similar models is that the 
 
 Additional functionality in \sdmTMB\ not already mentioned includes interpolating across missing time slices and forecasting, the barrier SPDE model \citep{bakka2019}, and time-varying spatiotemporal covariance parameters \citep{ward2022}.
 There are several planned future additions to the \sdmTMB\ model structure.
+% Although we may introduce basic multivariate response modelling, we intend \sdmTMB\ to focus on univariate responses given \pkg{tinyVAST}'s focus on related models in a multivariate context.
 A subset of features to be added include
-(1) the ability to specify observation-specific likelihoods to integrate different data types \citep{gruss2019multiple},
+(1) the ability to specify observation-specific likelihoods to integrate different data types \citep[e.g.,][]{gruss2019multiple},
 (2) inclusion of a dispersion formula similar to \pkg{glmmTMB},
-(3) basic multivariate models to allow for simultaneous modelling of data from multiple groups,
+(3) inclusion of random slopes to complement the existing random intercepts,
 and
 (4) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++},
 % (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
-% TODO: Jim: Are y'all still planning on multivariate models?  Consider removing, or I'd be happy to discuss further?
-% SA: added 'basic', which should be true (already in a branch... but unlikely to go too far with this
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 
 \section{Acknowledgements}\label{acknowledgements}
