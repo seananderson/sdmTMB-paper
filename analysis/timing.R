@@ -80,7 +80,7 @@ smooth.construct.spde.smooth.spec <- function(object, data, knots) {
       stop("For 2D, mesh must be supplied as argument xt$mesh in s(...,xt = )")
     }
   } else {
-    if (class(object$xt$mesh) != "inla.mesh") stop("xt must be NULL or an inla.mesh object")
+    if (!inherits(object$xt$mesh, "inla.mesh")) stop("xt must be NULL or an inla.mesh object")
     mesh <- object$xt$mesh
   }
   object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
