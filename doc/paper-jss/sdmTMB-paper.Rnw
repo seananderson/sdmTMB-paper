@@ -966,7 +966,20 @@ We can explore four alternative families that may better represent the data.
 Each alternative family uses a delta model formulation as described in Section \ref{sec:delta}.
 Note that we choose to omit the spatiotemporal random fields from the binomial model component (\code{spatiotemporal = list("off", "iid")}) because initial experimentation indicated this random field was collapsing to zero indicating minimal changes in encounter spatial distribution from year to year.
 
-<<dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE>>=
+<<check-version, results='hide', echo=FALSE, include=FALSE>>=
+# delta_poisson_link_gamma() deprecated in favor of delta_gamma(type = "poisson-link")
+new_deltas <- packageVersion("sdmTMB") > '0.4.2.9000'
+@
+
+<<dog-update, results='hide', message=FALSE, warning=FALSE, echo=new_deltas, eval=new_deltas, include=new_deltas>>=
+fit_dg <- update(fit_tw, family = delta_gamma(),
+  spatiotemporal = list("off", "iid"))
+fit_dl <- update(fit_dg, family = delta_lognormal())
+fit_dpg <- update(fit_dg, family = delta_gamma(type = "poisson-link"))
+fit_dpl <- update(fit_dg, family = delta_lognormal(type = "poisson-link"))
+@
+
+<<dog-update-old, results='hide', message=FALSE, warning=FALSE, echo=!new_deltas, eval=!new_deltas, include=!new_deltas>>=
 fit_dg <- update(fit_tw, family = delta_gamma(),
   spatiotemporal = list("off", "iid"))
 fit_dl <- update(fit_dg, family = delta_lognormal())
