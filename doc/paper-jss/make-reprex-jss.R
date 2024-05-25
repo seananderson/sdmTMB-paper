@@ -4,11 +4,14 @@ setwd(here::here())
 setwd("doc/paper-jss/")
 dir.create("reprex", showWarnings = FALSE)
 
+# Needed! otherwise can't find chunk option objects
+new_deltas <- TRUE
 knitr::purl("sdmTMB-paper.Rnw", documentation = 1L)
 
 system("mv sdmTMB-paper.R reprex/sdmTMB-paper.R")
 
 d <- readLines("reprex/sdmTMB-paper.R")
+
 # d[grepl("## ----child=", d)]
 # d <- d[!grepl("## ----child=", d)]
 
@@ -72,15 +75,6 @@ d <- gsub("here::here\\(\"ne_10m_lakes\"\\)", "\"ne_10m_lakes\"", d)
 d <- c(d, "sessionInfo()")
 
 d[grepl("here::", d)]
-
-# i <- grep("## ----setup-owls", d)
-# d <- c(d[seq(1, i-1)], "\n# Snowy Owl appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
-
-# i <- grep("## ----setup-pcod", d)
-# d <- c(d[seq(1, i-1)], "\n# Pacific Cod appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
-
-# i <- grep("## ----inla-knitr-setup", d)
-# d <- c(d[seq(1, i-1)], "\n# INLA comparison appendix -----------------------------------------------------------------------\n", d[seq(i, length(d))])
 
 i <- grep("dog-update-old, ", d) + 1
 j <- grep("## fit_dpl <- update", d)
