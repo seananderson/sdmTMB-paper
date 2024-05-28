@@ -799,7 +799,7 @@ tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 We can test for spatial autocorrelation with a visual inspection or a statistical test of the residuals.
 Here, we demonstrate an approach using an implementation of Moran's I from the \pkg{ape} package \citep{gittleman1990, ape}.
-\Rev{A3}We set \code{type = "mle-mvn"} to denote setting fixed effects at their maximum likelihood estimates but taking a single draw from the approximate (multivariate normal) distribution of the random effects \citep{waagepetersen2006, thygesen2017a}.
+\Rev{A3}We set \code{type = "mle-mvn"} to denote setting fixed effects at their maximum likelihood estimate (MLE) but taking a single draw from the approximate (multivariate normal) distribution of the random effects \citep{waagepetersen2006, thygesen2017a}.
 
 <<morans, echo=TRUE>>=
 inv_dist_matrix <- 1 / as.matrix(dist(pcod[,c("X", "Y"), ]))
@@ -817,18 +817,23 @@ ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for the model with a random field (p $>$ 0.01) suggesting that residual spatial autocorrelation is alleviated by including the random field.
 We note that the specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals \citep{dunn1996}.
 
-We can also see that the marginal AIC of the model with spatial random fields is
-lower:
+We can also see that the marginal Akaike information criterion (AIC) \citep{akaike1974} of the model with spatial random fields is lower:
 
 <<pcod-aic, eval=TRUE, echo=TRUE, results='markup'>>=
 AIC(fit_bin_rf, fit_bin)
 @
 
+\Rev{A1}We note that caution is warranted in performing model selection via marginal AIC for models involving penalized smoothing (spatial or otherwise) \citep[e.g.][]{greven2010, safken2021}.
+In marginal AIC calculation, the degrees of freedom is based on the number of fixed effects and does not account for the degree of random effect penalization as conditional AIC would.
+Methods to estimate effective degrees of freedom were recently demonstrated in \citep{thorsonXX}, but are not yet included in \sdmTMB.
+
 \subsection{Comparing models with cross validation}
 
-We can do additional model comparison with cross validation via \fct{sdmTMB\_cv}.
-We will do 10-fold cross validation with the folds constructed randomly. We will set the seed each time to ensure the folds are consistent.
-Using the \code{fold\_ids} argument, we could supply our own folds and conduct spatially blocked cross validation. If we set a parallel plan with the \pkg{future} package \citep{bengtsson2021future}, our folds will be fit in parallel.
+As an alternative to AIC, we can conduct model comparison with cross validation via \fct{sdmTMB\_cv}.
+We will do 10-fold cross validation with the folds constructed randomly.
+We will set the seed each time to ensure the folds are consistent.
+Using the \code{fold\_ids} argument, we could supply our own folds and conduct spatially blocked cross validation \citep[][]{roberts2017}.
+If we set a parallel plan with the \pkg{future} package \citep{bengtsson2021future}, our folds will be fit in parallel.
 
 <<pcod-cv-future, eval=FALSE, echo=TRUE>>=
 library(future)
@@ -848,18 +853,26 @@ cv_bin <- sdmTMB_cv(present ~ poly(log(depth), 2),
 )
 @
 
-Indeed, the log likelihood of left-out data is considerably higher for the model that includes random fields indicating better out-of-sample predictions:
+We can then calculate any performance metric of interest for comparison.
+\Rev{A2}A common metric would be the log score or log predictive (likelihood) density (lpd) of the left-out data \citep[][]{geisser1979, vehtari2017}
+
+$$
+\mathrm{lpd} = \sum_{i=1}^{n} \ell (\widehat{y_i} | y_i),
+$$
+
+where $n$ represents the number of left-out data points, $\ell$ represents the log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLE and random effects at their Empirical Bayes estimate.
+
+Indeed, the log likelihood predictive density for the left-out data is considerably higher for the model that includes random fields indicating better out-of-sample predictions:
 
 <<pcod-cv-out, eval=TRUE, echo=TRUE, results='markup'>>=
 cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 @
 
-In practice, we would repeat this procedure several times to ensure the rank order is not sensitive to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
+In practice, we would repeat this procedure several times to ensure the rank order is insensitive to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
 
 \subsection{Making predictions on new data}
 
-% TODO: data citation!?
 \sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
 The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.
@@ -898,8 +911,7 @@ We then compare alternative families, spatiotemporal random field structures, an
 
 \subsection{Adding UTM columns and creating a mesh}
 
-The dataset includes spatial coordinates, year, dogfish catch weight in kg, area
-swept in km, and bottom depth:
+The dataset includes spatial coordinates, year, dogfish catch weight in kg, area swept in km, and bottom depth:
 
 <<dog-head-dat, echo=TRUE>>=
 dat <- select(dogfish, lon = longitude, lat = latitude, year,
@@ -907,14 +919,13 @@ dat <- select(dogfish, lon = longitude, lat = latitude, year,
 dat
 @
 
-We add UTM zone 9 columns, create a log depth column for convenience, and create
-a basic mesh:
+We add UTM zone 9 columns, create a log depth column for convenience, and create a basic mesh:
 
 <<dog-utms, echo=TRUE>>=
 dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), n_knots = 200)
 @
 
 <<dog-mesh2, eval=FALSE>>=
@@ -950,6 +961,7 @@ The temporally varying intercepts \(\gamma_t\) are modeled as a stationary AR(1)
 \end{aligned}
 \]
 where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\) at time $t-1$ and $t$.
+We include the argument \code{extra\_time}, which represents all time steps to include in the latent process, such that any autoregressive processes represent annual time steps as opposed to the irregular years of data collection.
 
 We can fit this model as:
 
@@ -966,6 +978,7 @@ fit_tw <- sdmTMB(
   spatial = "on",
   spatiotemporal = "iid",
   anisotropy = TRUE,
+  extra_time = seq(min(dat$year), max(dat$year)),
   silent = FALSE
 )
 @
@@ -979,8 +992,7 @@ Note that we need to add an extra Newton optimization step to the delta-lognorma
 
 <<dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE, eval=TRUE>>=
 fit_dg <- update(fit_tw, family = delta_gamma())
-fit_dl <- update(fit_tw, family = delta_lognormal(),
-  control = sdmTMBcontrol(newton_loops = 2))
+fit_dl <- update(fit_tw, family = delta_lognormal())
 fit_dpg <- update(fit_tw, family = delta_gamma(type = "poisson-link"))
 fit_dpl <- update(fit_tw, family = delta_lognormal(type = "poisson-link"))
 @
