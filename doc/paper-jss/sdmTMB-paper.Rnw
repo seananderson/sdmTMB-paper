@@ -180,6 +180,12 @@ library(dplyr)
 library(sdmTMB)
 @
 
+<<check-version, echo=FALSE, cache=FALSE>>=
+if (packageVersion("sdmTMB") < "0.6.0") {
+  stop("Please install a version of sdmTMB >= 0.6.0.", call. = FALSE)
+}
+@
+
 \clearpage
 
 \section{Introduction}\label{introduction}
@@ -210,7 +216,7 @@ Packages such as \pkg{VAST} \citep{thorson2019}, \pkg{tinyVAST} \citep{thorson20
 Here, we introduce the \R\ package \sdmTMB, which implements geostatistical spatial and spatiotemporal GLMMs using \TMB\ for model fitting and \pkg{fmesher} or \INLA\ to set up SPDE matrices.
 Our aim is not to replace the above-mentioned statistical packages, but to provide a fast, flexible, and user-friendly interface that is familiar to users of \pkg{lme4}, \pkg{glmmTMB}, or \pkg{mgcv} \citep{wood2017a} for a specific class of spatial and spatiotemporal models.
 Many individual features of \sdmTMB\ may be found in other software (Table~\ref{tab:functionality}), but to date this full suite of useful features has not been integrated into a single package.
-One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB: \sdmTMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and approximated in discrete time-intervals.
+One common application in the field of ecology is species distribution models (SDMs), hence the package name (i.e., SDMs with \TMB), although the package is widely applicable to other fields and any geostatistical data collected continuously in space and approximated in discrete time-intervals.
 
 This paper describes the statistical models underlying \sdmTMB\ (Section~\ref{model-description}), explains how \sdmTMB\ is designed and summarizes its software functionality (Section~\ref{sec:software}), illustrates its use through three case studies (Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}), compares \sdmTMB\ to other packages (Section~\ref{package-comparisons}) and concludes with a discussion of links to other packages and future development directions (Section~\ref{discussion}).
 
@@ -227,7 +233,7 @@ g^{-1} \left( \eta_{\bm{s}} \right),\\
 \eta_{\bm{s}} &= \bm{X}_{\bm{s}} \bm{\beta} + \omega_{\bm{s}},\\
 \end{aligned}
 \]
-where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is equal to mean $\mu_{\bm{s}}$.
+where the expected value $\mathbb{E}[.]$ of an observation $y$ at coordinates in space $\bm{s}$ is defined as the mean $\mu_{\bm{s}}$.
 That mean $\mu_{\bm{s}}$ is the result of an inverse link function $g^{-1}$ applied to a linear predictor $\eta_{\bm{s}}$.
 In this case, that linear predictor is the combination of a model matrix $\bm{X}_{\bm{s}}$ multiplied by a vector of coefficients $\bm{\beta}$ and a value from a spatial random field $\omega_{\bm{s}}$.
 This spatial random field represents the effect of latent spatial variables that are not otherwise accounted for in the model.
@@ -332,7 +338,7 @@ The parameter $\sigma_m^2$ is the marginal variance (magnitude of the random fie
 The parameter $\nu$ controls the smoothness of the covariance function.
 In practice, $\nu$ is challenging to estimate and herein is fixed at $\nu = 1$ \citep{lindgren2011}.
 A more interpretable derived parameter than the spatial decorrelation rate $\kappa$ is the spatial range---a distance at which two points are effectively independent.
-A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\mathrm{range} = \sqrt{8} / \kappa$), which has the empirically derived property of the distance at which correlation decays to $\approx 0.13$ \citep{lindgren2011} (Figure~\ref{fig:matern-range}).
+A common definition is $\sqrt{8 \nu} / \kappa$ (so if $\nu = 1$, $\mathrm{range} = \sqrt{8} / \kappa$), which has the empirically derived property of the distance at which correlation decays to $\approx 0.13$ \citep{lindgren2011} (Figure~\ref{fig:matern-range}c).
 
 \subsection{Geometric anisotropy}
 
@@ -396,7 +402,7 @@ Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coeffi
 \begin{aligned}
 \mu_{\bm{s},t} &=
 g^{-1} \left( \bm{X}^{\mathrm{main}}_{\bm{s},t} \bm{\beta} +
-\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \bm{\gamma_t} +
+\bm{X}^{\mathrm{tvc}}_{\bm{s},t} \bm{\gamma}_t +
 \bm{X}^{\mathrm{svc}}_{\bm{s},t} \zeta_{\bm{s}} +
 \alpha_g +
 O_{\bm{s},t} +
@@ -404,7 +410,7 @@ O_{\bm{s},t} +
 \epsilon_{\bm{s},t} \right).
 \end{aligned}
 \]
-where the $\bm{X}$ represent model matrices, $\bm{\gamma_t}$ represents a vector of coefficients that are constrained to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a random field, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O_{\bm{s},t}$ represents an offset variable \citep[][p.~206]{mccullagh1989} (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}).
+where the $\bm{X}$ represent model matrices, $\bm{\gamma}_t$ represents a vector of coefficients that are constrained to vary through time as random walks or AR(1) processes, $\zeta_{\bm{s}}$ represents spatially varying coefficients following a random field, $\alpha_g$ represents IID random intercepts by group $g$ ($\alpha_g \sim \operatorname{Normal} \left(0, \sigma_\alpha^2 \right)$), $O_{\bm{s},t}$ represents an offset variable \citep[][p.~206]{mccullagh1989} (e.g., log sampling effort), and $\omega_{\bm{s}}$ and $\epsilon_{\bm{s},t}$ represent spatial and spatiotemporal intercept random fields as before (Figure~\ref{fig:diagram}).
 We demonstrate these model components in Sections~\ref{pcod}, \ref{dogfish}, and \ref{svc-owls}.
 % TODO: add MVN(0, sigma)s
 
@@ -424,7 +430,7 @@ Note that \code{s()} denotes a smoother as in \pkg{mgcv} \citep{wood2017a}, \cod
 
 \subsection{Delta models}\label{sec:delta}
 
-So far we have described models with one linear predictor and one family (common terminology in \R\ packages for the combination of an observation likelihood and link).
+So far, we have described models with one linear predictor and one family (common terminology in \R\ packages for the combination of an observation likelihood and link).
 Frequently, data are better represented with two-part ``delta'' or ``hurdle'' models, which include linear predictors and observation distributions for two processes: zero vs.\ non-zero values and positive values, respectively \citep{aitchison1955}.
 Here, we describe two types of delta models, dropping the space and time subscripts for simplicity.
 % and use $\bm{X_1} \bm{\beta_1}$ and $\bm{X_2} \bm{\beta_2}$ to refer to generic model matrices and parameter vectors for the first and second model components.
@@ -510,9 +516,9 @@ Beyond the main formula, \fct{sdmTMB} accepts one-sided formulas for coefficient
 Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ model are constructed internally (Figure~\ref{fig:flowchart}).
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
-The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} as interface to the \pkg{Eigen} library in \proglang{C++}.
+The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} \citep{Matrix} as an interface to the \pkg{Eigen} library in \proglang{C++}.
 % TODO Jim:  I recommend adding a citation to package Matrix ( Bates D, Maechler M, Jagan M (2023). _Matrix: Sparse and Dense Matrix Classes and Methods_. R package version 1.6-4, <https://CRAN.R-project.org/package=Matrix>.)), as central dependency of TMB, given the detailed description of the dependency stack. If really motivated, you could also add the reference for Eigen (Guennebaud G, Jacob B, et al. (2010). “Eigen v3.” http://eigen.tuxfamily.org), although it's less clear what citation to use.
-The negative marginal log likelihood ivs minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \Rev{A6} \fct{stats::optimHess} \citep{gay1990, r2021}.
+The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \Rev{A6} \fct{stats::optimHess} \citep{gay1990, r2021}.
 Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
 it is also possible to apply an ``epsilon'' estimator \citep{thorson2016bias}, which corrects for bias arising from the variance and skewness caused by non-linear transformations of random effects (see Section \ref{index-bias-correct} for an example).
 Standard errors on all parameters and derived quantities---including those involving random effects---are calculated using the generalized delta method \citep{kristensen2016, zheng2021}.
@@ -527,7 +533,7 @@ Other \Rev{A7} standard methods are also available such as \fct{fixef}, \fct{con
 Prediction on fitted or new data is accomplished with \fct{predict} (\code{?predict.sdmTMB}).
 In this paragraph, we include relevant \fct{predict} arguments in parentheses.
 The predict method is flexible and includes the option to specify a new data frame (\code{newdata}),
-whether to return predictions on the link or response scale (type),
+whether to return predictions on the link or response scale (\code{type}),
 whether to return standard errors (\code{se\_fit},
 which can be slow if conditioned on random fields),
 whether to condition on the random fields (\code{re\_form}),
@@ -538,7 +544,7 @@ and whether to use MCMC samples from a \pkg{tmbstan} model fit (\code{mcmc\_samp
 
 A variety of model evaluation tools are available.
 A \fct{residuals} method calculates various types of residuals.
-The default is a form of randomized quantile residuals \citep{dunn1996}.
+The default is a form of randomized quantile \citep{dunn1996} or probability integral transform \citep{smith1985} residuals.
 New observations can be simulated from a fitted model with \fct{simulate} or new data can be simulated without a fitted model (``de novo'') with \fct{sdmTMB\_simulate}.
 \fct{sdmTMB\_cv} facilitates cross validation.
 
@@ -613,8 +619,8 @@ install.packages("sdmTMB", dependencies = TRUE)
 As an alternative to the CRAN version, the development version can be installed with
 
 <<remotes, eval=FALSE, echo=TRUE>>=
-install.packages("remotes")
-remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
+install.packages("pak")
+pak::pkg_install("pbs-assess/sdmTMB", dependencies = TRUE)
 @
 
 Additional utilities, which require heavier package dependencies (such as \INLA\ and \pkg{rstan}) and are used by only a subset of users, are maintained in the \pkg{sdmTMBextra} package at\\
@@ -622,10 +628,9 @@ Additional utilities, which require heavier package dependencies (such as \INLA\
 
 Users willing to replace the default \R\ \pkg{BLAS} \citep{blas}
 % and \pkg{LAPACK} \citep{lapack}
-library
-with an optimized version \citep[e.g., \pkg{openBLAS};][]{openblas}
-can expect about an order of magnitude increase in model fitting speed.
-Suggestions are included in the package README.
+library with an optimized version \citep[e.g., \pkg{openBLAS};][]{openblas}
+can expect up to an order of magnitude increase in model fitting speed.
+Suggestions are included in the package readme file
 
 \section{Example: spatial species distribution modelling}\label{pcod}
 
@@ -690,7 +695,7 @@ See \citet{krainski2018} chapters 2.6 and 2.7 for guidance on mesh construction.
 
 We can visualize the mesh object with the associated plotting method (Figure~\ref{fig:dog-binomial-mesh2}).
 Our mesh has 563 (\code{mesh\_pcod2\$mesh\$n}) vertices.
-Usually, mesh complexity has the single largest influence on the speed of fitting these models.
+Mesh complexity has a large influence on the speed of fitting these models.
 
 % https://haakonbakkagit.github.io/btopic104.html
 % https://becarioprecario.bitbucket.io/spde-gitbook/index.html
@@ -808,13 +813,12 @@ set.seed(1)
 r_bin <- residuals(fit_bin, type = "mle-mvn")
 set.seed(1)
 r_bin_rf <- residuals(fit_bin_rf, type = "mle-mvn")
-
 ape::Moran.I(r_bin, weight = inv_dist_matrix)$p.value
 ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 @
 
 % We omit example code for Moran's I calculation for brevity but include it in the code supplement.
-We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for the model with a random field (p $>$ 0.01) suggesting that residual spatial autocorrelation is alleviated by including the random field.
+We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field (p $>$ 0.01) suggesting that residual spatial autocorrelation is alleviated by including the random field.
 We note that the specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals \citep{dunn1996}.
 
 We can also see that the marginal Akaike information criterion (AIC) \citep{akaike1974} of the model with spatial random fields is lower:
@@ -825,11 +829,12 @@ AIC(fit_bin_rf, fit_bin)
 
 \Rev{A1}We note that caution is warranted in performing model selection via marginal AIC for models involving penalized smoothing (spatial or otherwise) \citep[e.g.][]{greven2010, safken2021}.
 In marginal AIC calculation, the degrees of freedom is based on the number of fixed effects and does not account for the degree of random effect penalization as conditional AIC would.
-Methods to estimate effective degrees of freedom were recently demonstrated in \citep{thorsonXX}, but are not yet included in \sdmTMB.
+Methods to estimate effective degrees of freedom for similar models were recently demonstrated in \citet{thorson2024cAIC}, but are not yet included in \sdmTMB.
 
 \subsection{Comparing models with cross validation}
 
-As an alternative to AIC, we can conduct model comparison with cross validation via \fct{sdmTMB\_cv}.
+As an alternative to AIC, we can conduct model comparison with cross validation.
+\sdmTMB\ includes the helper function \fct{sdmTMB\_cv} to facilitate this.
 We will do 10-fold cross validation with the folds constructed randomly.
 We will set the seed each time to ensure the folds are consistent.
 Using the \code{fold\_ids} argument, we could supply our own folds and conduct spatially blocked cross validation \citep[][]{roberts2017}.
@@ -860,7 +865,7 @@ $$
 \mathrm{lpd} = \sum_{i=1}^{n} \ell (\widehat{y_i} | y_i),
 $$
 
-where $n$ represents the number of left-out data points, $\ell$ represents the log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLE and random effects at their Empirical Bayes estimate.
+where $n$ represents the number of left-out data points, $\ell$ represents the log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLEs and random effects at their empirical Bayes estimates.
 
 Indeed, the log likelihood predictive density for the left-out data is considerably higher for the model that includes random fields indicating better out-of-sample predictions:
 
@@ -875,11 +880,12 @@ In practice, we would repeat this procedure several times to ensure the rank ord
 
 \sloppy To visualize our model, we can make predictions with the \fct{predict} method (\code{?predict.sdmTMB}) and optionally use the \code{newdata} argument to predict on a new data frame containing locations and all predictor columns.
 Here, we will predict on a 2 \(\times\) 2 km grid (\code{qcs\_grid}) that covers the entire region of interest so we can visualize the predictions spatially.
-The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.  Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.
-We call these covariates \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates that was estimated in fitted data \cite{thorson2019}.
+The grid contains spatial covariate columns and all predictors used in the model set at values for which we want to predict.
+Some covariates might be fixed at a specified value for all predictions, such that we are predicting the expected value for samples conditional on those specified values.
+In the context of fish or animal surveys, these are sometimes called \emph{detectability} or \emph{catchability} covariates, given the model is predicting the target variable while controlling for the additional influence of these detectability covariates \cite{thorson2019}.
 The output of \fct{predict} is a data frame containing overall estimates in link space (\code{est}), estimates from the non-random-field components (\code{est\_non\_rf}; here, intercept and depth), and estimates from the individual random field components (here, \code{omega\_s}---the spatial field).
 % The overall predictions combining fixed and random effects are plug-in predictions.
-We can plot these with \fct{geom\_raster} from the \pkg{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
+We can plot these with \fct{geom\_raster} or \fct{geom\_tile}  from the \pkg{ggplot2} \citep{ggplot2} package (Figure~\ref{fig:pcod-predict-maps}).
 
 <<pcod-predict, echo=TRUE, results='markup'>>=
 p <- predict(fit_bin_rf, newdata = qcs_grid)
@@ -935,7 +941,7 @@ mesh$mesh$n
 
 \subsection{Fitting the model}
 
-We can then specify our model. We include an offset for the effort variable log area swept such that we are effectively modelling density and our predictions will be for an area swept of 1 km\textsuperscript{2}.
+We can then specify our model. We include an offset \citep[][p.~206]{mccullagh1989} for the effort variable log area swept such that we are effectively modelling density and our predictions will be for an area swept of 1 km\textsuperscript{2}.
 
 Our model can be written as
 \[
@@ -960,8 +966,8 @@ The temporally varying intercepts \(\gamma_t\) are modeled as a stationary AR(1)
   \gamma_{t>1} &\sim \operatorname{Normal} \left(\rho_\gamma\gamma_{t-1}, \sqrt{1 - \rho_\gamma^2} \sigma^2_{\gamma} \right),
 \end{aligned}
 \]
-where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\) at time $t-1$ and $t$.
-We include the argument \code{extra\_time}, which represents all time steps to include in the latent process, such that any autoregressive processes represent annual time steps as opposed to the irregular years of data collection.
+where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\) at time $t-1$ and $t$ and $\sigma^2_{\gamma}$ represents the marginal variance of this process.
+We include the argument \code{extra\_time}, which represents all time steps to include in the latent process (and all time steps for which we may wish to predict), such that autoregressive processes are applied to equally spaced annual time steps.
 
 We can fit this model as:
 
@@ -985,10 +991,8 @@ fit_tw <- sdmTMB(
 
 \subsection{Exploring delta model alternative families}
 
-We can explore four alternative families that may better represent the data.
+We next explore four alternative families that may better represent the data.
 Each alternative family uses a delta model formulation as described in Section \ref{sec:delta}.
-Note that we need to add an extra Newton optimization step to the delta-lognormal model to achieve suitable convergence (discovered via a call to \code{sanity(fit\_dl)}).
-% Note that we choose to omit the spatiotemporal random fields from the binomial model component (\code{spatiotemporal = list("off", "iid")}) because initial experimentation indicated this random field was collapsing to zero indicating minimal changes in encounter spatial distribution from year to year.
 
 <<dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE, eval=TRUE>>=
 fit_dg <- update(fit_tw, family = delta_gamma())
@@ -1010,9 +1014,9 @@ In an applied situation, we would inspect the distribution of the residuals and 
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}\label{sec:dogar1}
 
-We next test two additional model formulations: making the spatial correlation isotropic (the default) instead of anisotropic, and structuring the positive model component spatiotemporal random fields as AR(1) to allow spatiotemporal patterns to partially persist from year to year.
+We next test two additional model formulations: making the spatial correlation isotropic (the default) instead of anisotropic, and structuring the spatiotemporal random fields as AR(1) to allow spatiotemporal patterns to partially persist from year to year.
 
-The AR(1) fields can be represented as:
+The AR(1) fields can be represented as
 \[
 \begin{aligned}
 \bm{\epsilon}_{t=1} &\sim \operatorname{MVNormal} (\bm{0}, \bm{\Sigma}_{\epsilon}),\\
@@ -1021,7 +1025,7 @@ The AR(1) fields can be represented as:
 \end{aligned}
 \]
 where $\rho$ represents the estimated autoregressive parameter allowing the spatial field at time $t$ to be correlated with the spatial field at time $t-1$ with deviations created by $\bm{\delta}_t$, which are themselves independent random fields each year.
-This is equivalent to a separable model GMRF with precision arising from the kronecker product of the spatial precision and an AR1 temporal precision.
+This is equivalent to a separable model GMRF with precision arising from the Kronecker product of the spatial precision and an AR(1) temporal precision.
 
 <<dog-ar1, results='hide', echo=TRUE>>=
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
@@ -1058,13 +1062,13 @@ We then have the second model component (lognormal) with a similar summary struc
 We can check simulation-based randomized quantile residuals from our chosen model via the \pkg{DHARMa} package \citep{dharma}.
 To do that, we simulate from our model with the \fct{simulate.sdmTMB} method and pass those simulations to a helper function \fct{dharma\_residuals}.
 
-<<dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.", fig.asp=0.68, echo=TRUE>>=
-set.seed(1)
+<<dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.", fig.asp=0.68, echo=TRUE, out.width="4in">>=
+set.seed(42)
 s <- simulate(fit, nsim = 500, type = "mle-mvn")
-dharma_residuals(s, fit)
+dharma_residuals(s, fit, test_uniformity = TRUE)
 @
 
-The quantile-quantile plot suggests that under the model assumptions, the (transformed) residuals are consistent with an independent uniform(0, 1) distribution.
+The quantile-quantile plot suggests that under the model assumptions, the (transformed) residuals are reasonably consistent with an independent uniform(0, 1) distribution.
 
 \subsection{Visualizing model predictions}
 
@@ -1106,21 +1110,21 @@ plot_map <- function(dat, column) {
 g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est_non_rf1) +
   scale_fill_viridis_c(trans = "log10") +
-  ggtitle("(a) Non-random-field components; first delta model")
+  ggtitle("(a) Non-random-field components; 1st linear predictor")
 @
 
 <<dog-plot2, echo=FALSE>>=
 g_omega <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(omega_s1) +
   scale_fill_gradient2() +
-  ggtitle("(b) Spatial random field; first delta model")
+  ggtitle("(b) Spatial random field; 1st linear predictor")
 @
 
 <<dog-plot3, echo=FALSE>>=
 g_eps <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(epsilon_st2) +
   scale_fill_gradient2() +
-  ggtitle("(c) Spatiotemporal random field; second delta model")
+  ggtitle("(c) Spatiotemporal random field; 2nd linear predictor")
 @
 
 <<dog-plot4, echo=FALSE>>=
@@ -1131,7 +1135,7 @@ g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   ggtitle("(d) Overall prediction")
 @
 
-<<dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction elements from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field elements (here, a smoother for bottom depth and the time-varying year effect) from the first delta model component, (b) \\code{omega\\_s1} refers to the spatial random field from the first delta model component, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model component, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are constrained to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in">>=
+<<dog-wcvi-pred, fig.asp = 0.8, fig.cap= "Example prediction elements from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field elements (here, a smoother for bottom depth and the time-varying year effect) from the first linear predictor, (b) \\code{omega\\_s1} refers to the spatial random field from the first linear predictor, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second linear predictor, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are constrained to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in">>=
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -1215,7 +1219,7 @@ select(snow, X, Y, year, year_f, nao, count) |> head()
 \subsection{Fitting the model}
 
 We will fit counts using a negative binomial \citep[NB2;][]{hilbe2011} distribution, random intercepts for year, spatial and spatiotemporal random fields, and an SVC associated with the NAO.
-Centering and scaling variables (by their mean and standard deviation here) can be especially helpful to reduce the correlation between the SVC and other random fields that are included in the model when estimating SVCs.
+Centering and scaling variables (e.g., by their mean and standard deviation) can be helpful to reduce the correlation between the SVC and other random fields that are included in the model when estimating SVCs.
 Here, NAO is an index with a mean near zero and an SD not too far from 1, so we will leave it as is.
 However, we also include NAO as a main effect since the SVC random field is drawn from a multivariate normal distribution with mean zero.
 
@@ -1252,7 +1256,7 @@ We can then fit this model:
 mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owl <- sdmTMB(
   count ~ 1 + nao + (1 | year_f),
-  spatial_varying = ~ nao,
+  spatial_varying = ~ 0 + nao,
   time = "year",
   data = snow,
   mesh = mesh_snow,
@@ -1290,15 +1294,15 @@ However, given that this is only part of the effect of NAO that we include in ou
 The spatially varying effect at any point in space is the combination of the main effect and SVC random effect for \code{nao}.
 Mean estimates of the SVC random effect are available in the output of \fct{predict.sdmTMB} in a column starting with \code{zeta\_s} (in this case, \code{zeta\_s\_nao}).
 However, we might wish to combine the fixed and random components of a spatially varying effect and assess the uncertainty of these combined predictions.
-We illustrate a way of accomplishing this by simulating from uncertainty about fixed and random effects while assuming that parametric uncertainty is well approximated using a multivariate normal distribution and the joint precision matrix.
+We illustrate a way of accomplishing this by simulating from the fixed and random effects while assuming that parametric uncertainty is well approximated using a multivariate normal distribution and the joint precision matrix.
 We do this by specifying a non-null number of simulation draws to \code{nsim} in \fct{predict.sdmTMB}.
 By default, \code{nsim > 0} will return a matrix of draws for the overall prediction.
-Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field.
+Here, we instead specify that we want to return draws for the \code{zeta\_s} ($\zeta_{\bm{s}}$) random field, which is the SVC random field (\code{sims\_var = "zeta_s"}).
 This returns a matrix where each row matches a row of \code{newdata} and each column is a simulation draw.
 We then use the function \fct{spread\_sims} to draw 200 simulations for the parameters themselves.
 Because the simulations are stored in different dimensions, the random field draws must be transposed \code{t()} before combining the vector of main effect draws (\code{sims\$nao}) with the random field values \code{zeta\_s}.
 Next, we can calculate the median, and upper and lower quantiles for each column of data, which correspond to the rows in the data provided.
-For this example, we use thresholds of 0.1 and 0.9 representing CIs of 80\%.
+For this example, we use thresholds of 0.025 and 0.975 representing a 95\% CI.
 
 <<owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE>>=
 pred_snow <- predict(fit_owl, newdata = snow)
@@ -1308,15 +1312,15 @@ pred_snow |>
 @
 
 <<zeta-effect, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE>>=
-set.seed(1)
-zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
+set.seed(42)
+zeta_s <- predict(fit_owl, newdata = snow, nsim = 300, sims_var = "zeta_s")
 dim(zeta_s)
-sims <- spread_sims(fit_owl, nsim = 200)
+sims <- spread_sims(fit_owl, nsim = 300)
 dim(sims)
 combined <- sims$nao + t(zeta_s)
 snow$nao_effect <- exp(apply(combined, 2, median))
-snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
-snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
+snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.025))
+snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.975))
 @
 
 We can make a basic plot using the following code. A more elaborate version including separate panels for each of the CIs is shown in Figure~\ref{fig:owl-plot-fancy}.
@@ -1328,7 +1332,6 @@ ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 Overall, we find a weak average positive effect of annual mean NAO on overall counts with a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
 At some locations, the lower CI on the exponentiated effect is above 1.
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
-However, if we recalculated the CI at a 95\% level (not shown) the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
 
 <<shapes, echo=FALSE>>=
 if (!file.exists(here::here("data/ne_10m_lakes.shp"))) {
@@ -1528,7 +1531,7 @@ Our test was restricted to one core and default \R\ algebra libraries.
 \sdmTMB\ (and due to having the same \TMB\ backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \INLA/\pkg{inlabru}.
 These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 However, \INLA/\pkg{inlabru} and \pkg{spaMM} were less affected by mesh resolution than \sdmTMB\ and \pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing}).
-For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be considerably faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full Bayesian inference.
+For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be considerably faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full MCMC-based Bayesian inference.
 
 \begin{figure}[htb]
 \centering
@@ -1564,16 +1567,8 @@ Examples include spatial models of disease spread \citep{moraga2021}, spatial ec
 The \sdmTMB\ model is further relevant to what is commonly referred to as spatial \citep{elhorst2010, lee2010} and dynamic spatial panel data models \citep{elhorst2012} in econometrics.
 These examples underscore the versatile nature of the SPDE approach and the potential uses of \sdmTMB\ across various scientific and industrial sectors.
 
-% TODO: B9: I kept thinking about potential overlaps with spatial / spatiotemporal econometrics. Maybe a short note on how those methods relate to spatial econometrics (e.g. Elhorst, 2012; Lee & Yu, 2010) may broaden the interest in the paper.
-
-% TODO: figure out where to put this paragraph
-% TODO: rework this paragraph to be advantages of random fields GAMs and CAR
-The GLMMs underpinning \sdmTMB\ models are spatially explicit and derived from a mechanistic (diffusion) process---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
-In contrast, non-parametric approaches do not estimate spatial covariance functions [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}, and most smooths in \pkg{mgcv} \citep{wood2017a}]. %  I think semi-parametric is defined differently in different contexts, but don't agree with including it in that claim so removing it rather than adding clarifying text.
-% The random fields in \sdmTMB\ are structured as MVN constrained by a Matérn covariance function \citep{matern1986}.
-% The Matérn can accommodate a range of shapes and can be both isotropic (correlation decays the same in all directions) or anisotropic (correlation is directionally dependent) \citep{haskard2007}.
-% The Matérn standard deviations are estimated separately for the various fields and the range---the distance at which spatial correlation decays to \(\sim 0.13\) \citep{lindgren2015}---can be shared among random fields or estimated separately (\code{share\_range} argument).
-% TODO: figure out where to put this paragraph
+The GLMMs underpinning \sdmTMB\ models are spatially explicit and derived from a mechanistic diffusion process---they estimate interpretable parameters of a spatial covariance function: parameters defining the magnitude of spatial variation and the rate of correlation decay with distance.
+In contrast, non-parametric approaches [e.g., \pkg{randomForest} \citep{liaw2002}, \pkg{MaxEnt} \citep{phillips2006}] and most smooths in \pkg{mgcv} \citep{wood2017a} do not estimate spatial covariance functions. 
 Approaches such as conditional autoregressive models (CAR) are applicable to areal data, where the spatial domain is discretized into a set of vertices or polygons.
 Areal data (data aggregated to polygon or grid level) may be analyzed using other spatial models, including CAR models \citep[e.g.,][]{verhoef2018}; \sdmTMB\ can also fit models with areal data if each polygon has an associated centroid.
 A benefit of the geostatistical approach over CAR or similar models is that the parameters describing spatial covariance can be more easily interpreted \citep{wall2004}.
@@ -1586,7 +1581,7 @@ A subset of features to be added include
 (2) inclusion of a dispersion formula similar to \pkg{glmmTMB},
 (3) inclusion of random slopes to complement the existing random intercepts,
 and
-(4) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base will be written in \R\ rather than \proglang{C++},
+(4) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base is written in \R\ rather than \proglang{C++}.
 % (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 

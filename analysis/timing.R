@@ -323,7 +323,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-  # if (max.edge > 0.07) {  # finest mesh too slow and not plotted
+  if (!(max.edge < 0.07 && !optimized_blas)) {  # finest mesh too slow and not plotted
     out <- system.time({
       fit <- tryCatch(
         {
@@ -341,10 +341,10 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
         error = function(e) NA
       )
     })
-  # } else {
-    # print("Too slow, skipping mgcv here")
-    # fit <- NA
-  # }
+  } else {
+    print("Too slow, skipping mgcv here")
+    fit <- NA
+  }
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
   out <- as_tibble(times)
@@ -369,7 +369,7 @@ to_run <- expand.grid(
 # full (slow) run to match paper:
 if (FALSE) {
   # iter <- if (optimized_blas) c(50, 25, 10) else c(25, 10, 5)
-  iter <- if (optimized_blas) c(2, 2, 2) else c(2, 2, 2)
+  iter <- if (optimized_blas) c(25, 10, 10) else c(25, 10, 10)
 
   to_run <- expand.grid(
     n_obs = c(1e3),
@@ -404,8 +404,11 @@ system.time({
   )
 })
 
+saveRDS(out, file = "analysis/timing-cache-2024-05-27-standard-large.rds")
+saveRDS(out, file = "analysis/timing-cache-2024-05-27-optimized-large.rds")
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-standard-large.rds")
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
+out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
 out1 <- readRDS("analysis/timing-cache-parallel-2024-05-26-standard-large.rds")
 out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
 out1$blas_optimized <- FALSE
@@ -484,7 +487,7 @@ g <- out_long_sum |>
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0, 3)) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 4)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
   # facet_wrap(~n_obs)
   # scale_y_log10()
@@ -494,8 +497,10 @@ print(g)
 ggsave("figs/timing-spatial-2024-05-25-xkcd.pdf", width = .width, height = .width / 1.3)
 
 out_long_sum |>
-  filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") |>
-  ggplot(aes(mean_mesh_n, time, colour = model_clean, linetype = blas_optimized)) +
+  mutate(n_obs = paste0(formatC(n_obs, format = "d", big.mark=","), " rows of data")) |>
+  # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") |>
+  filter(model_clean != "spaMM") |>
+  ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
     alpha = 0.2,
     colour = NA
@@ -509,7 +514,7 @@ out_long_sum |>
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  # coord_cartesian(expand = FALSE, ylim = c(0, 3)) +
+  coord_cartesian(expand = FALSE, ylim = c(0.1, 17)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "top") +
   facet_grid(~n_obs) +
   scale_y_log10()
