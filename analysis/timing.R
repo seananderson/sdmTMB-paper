@@ -323,7 +323,7 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-  if (!(max.edge < 0.07 && !optimized_blas)) {  # finest mesh too slow and not plotted
+  # if (!(max.edge < 0.07 && !optimized_blas)) {  # finest mesh too slow and not plotted
     out <- system.time({
       fit <- tryCatch(
         {
@@ -341,10 +341,10 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
         error = function(e) NA
       )
     })
-  } else {
-    print("Too slow, skipping mgcv here")
-    fit <- NA
-  }
+  # } else {
+  #   print("Too slow, skipping mgcv here")
+  #   fit <- NA
+  # }
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
   out <- as_tibble(times)
@@ -395,6 +395,9 @@ if (FALSE) {
 to_run$seed <- to_run$iter * 29212
 nrow(to_run)
 
+to_run <- filter(to_run, n_obs == 1e3)
+nrow(to_run)
+
 # don't run in parallel to ensure all timing is comparable:
 system.time({
   out <- purrr::pmap_dfr(
@@ -404,23 +407,27 @@ system.time({
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-2024-05-27-standard-large.rds")
+saveRDS(out, file = "analysis/timing-cache-2024-05-31-standard-large.rds")
 saveRDS(out, file = "analysis/timing-cache-2024-05-27-optimized-large.rds")
+
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-standard-large.rds")
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
-out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
-out1 <- readRDS("analysis/timing-cache-parallel-2024-05-26-standard-large.rds")
-out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
+# out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
+# out1 <- readRDS("analysis/timing-cache-parallel-2024-05-26-standard-large.rds")
+# out2 <- readRDS("analysis/timing-cache-parallel-2024-05-26-optimized-large.rds")
+out1 <- readRDS("analysis/timing-cache-2024-05-31-standard-large.rds")
+out2 <- readRDS("analysis/timing-cache-2024-05-27-optimized-large.rds")
 out1$blas_optimized <- FALSE
 out2$blas_optimized <- TRUE
 out <- bind_rows(out1, out2)
+out$tag <- NULL
 
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-optimized.rds")
 # saveRDS(out, file = "analysis/timing-cache-parallel-2024-05-26-standard.rds")
 # saveRDS(out, file = "analysis/timing-cache-parallel-2023-03-15.rds")
 
 # out <- readRDS("analysis/timing-cache-parallel-2023-01-24.rds")
-out <- readRDS("analysis/timing-cache-parallel-2024-05-25.rds")
+# out <- readRDS("analysis/timing-cache-parallel-2024-05-25.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
@@ -444,8 +451,8 @@ out_long <- out_long |>
 out_long$mean_mesh_n <- as.factor(out_long$mean_mesh_n)
 out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cutoff)
 filter(out_long,is.na(time), model != "mgcv_disc") |> as.data.frame()
-out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) |>
-  summarise(lwr = quantile(time, probs = 0.025, na.rm = TRUE), upr = quantile(time, probs = 0.975, na.rm = TRUE), time = mean(time, na.rm = TRUE), mean_mesh_n = mean(mesh_n, na.rm = TRUE))
+out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge, blas_optimized) |>
+  summarise(lwr = quantile(time, probs = 0.1, na.rm = TRUE), upr = quantile(time, probs = 0.9, na.rm = TRUE), time = mean(time, na.rm = TRUE), mean_mesh_n = mean(mesh_n, na.rm = TRUE))
 
 cols <- RColorBrewer::brewer.pal(6, "Dark2")
 colour_vect <- c(
@@ -457,22 +464,15 @@ colour_vect <- c(
 
 leg <- tribble(
   ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 173, 0.26,
-  "inlabru EB", 173, 3.5,
-  "spaMM", 500, 2.0,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
-)
-
-leg <- tribble(
-  ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 290, 0.40,
-  "inlabru EB", 155, 3.8,
-  "spaMM", 442, 1.95,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 155, 5
+  "sdmTMB", 290, 0.35,
+  "inlabru EB", 145, 1.6,
+  "spaMM", 520, 0.85,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 410, 3
 )
 
 g <- out_long_sum |>
   filter(n_obs == 1000) |>
+  filter(!blas_optimized) |>
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
     alpha = 0.2,
@@ -493,13 +493,18 @@ g <- out_long_sum |>
   # scale_y_log10()
 print(g)
 
-# .width <- 5
-ggsave("figs/timing-spatial-2024-05-25-xkcd.pdf", width = .width, height = .width / 1.3)
+.width <- 5
+ggsave("figs/timing-spatial-2024-05-31-xkcd.pdf", width = .width, height = .width / 1.3)
 
-out_long_sum |>
+gg <- out_long_sum |>
   mutate(n_obs = paste0(formatC(n_obs, format = "d", big.mark=","), " rows of data")) |>
+  mutate(n_obs = gsub("^1,0", "(a) 1,0", n_obs)) |>
+  mutate(n_obs = gsub("^10,0", "(b) 1,0", n_obs)) |>
+  mutate(n_obs = gsub("^100,0", "(c) 1,0", n_obs)) |>
+  # mutate(blas_optimized = ifelse(blas_optimized, "Optimized BLAS", "Standard BLAS")) |>
   # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") |>
-  filter(model_clean != "spaMM") |>
+  # filter(model_clean != "spaMM") |>
+  filter(!blas_optimized) |>
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
     alpha = 0.2,
@@ -514,17 +519,31 @@ out_long_sum |>
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0.1, 17)) +
+  coord_cartesian(expand = FALSE, ylim = c(0.08, 14)) +
   theme(panel.spacing.x = unit(20, "pt"), legend.position = "top") +
-  facet_grid(~n_obs) +
-  scale_y_log10()
+  facet_grid(~n_obs)
+  # scale_y_log10() +
+  # scale_x_log10()
+# ggsave("figs/timing-spatial-multipanel.pdf", width = 7, height = 5)
+ggsave("figs/timing-spatial-multipanel.pdf", width = 7, height = 3)
+
+gg + scale_y_log10() +
+  scale_x_log10() +
+  coord_cartesian(expand = FALSE, ylim = c(0.08, 17))
+ggsave("figs/timing-spatial-multipanel-log.pdf", width = 7, height = 3)
 
 cat("inlabru to sdmTMB timing ratios\n")
-x <- filter(
-  out_long_sum,
-  model_clean == "inlabru EB"
-)$time /
-  filter(out_long_sum, model_clean == "sdmTMB")$time
+
+out_long_sum <- ungroup(out_long_sum)
+x1 <- filter(out_long_sum, model_clean == "inlabru EB")
+x2 <- filter(out_long_sum, model_clean == "sdmTMB")
+x3 <- data.frame(rename(x1, inla_time = time), select(x2, sdmTMB_time = time)) |>
+  mutate(ratio = inla_time / sdmTMB_time)
+
+filter(x3, !blas_optimized) |>
+  ggplot(aes(mean_mesh_n, ratio, colour = factor(n_obs))) + geom_line() +
+  ylim(0, NA)
+
 round(x, 1)
 
 sessionInfo()
