@@ -837,7 +837,7 @@ AIC(fit_bin_rf, fit_bin)
 @
 
 \added{
-\Rev{A1}We note that caution is warranted in performing model selection via marginal AIC for models involving penalized smoothing (spatial or otherwise) \citep[e.g.][]{greven2010, safken2021}.
+\Rev{A1}Caution is warranted in performing model selection via marginal AIC for models involving penalized smoothing (spatial or otherwise) \citep[e.g.][]{greven2010, safken2021}.
 In marginal AIC calculation, the degrees of freedom is based on the number of fixed effects and does not account for the degree of random effect penalization as conditional AIC would.
 Methods to estimate effective degrees of freedom for similar models were recently demonstrated in \citet{thorson2024cAIC}, but are not yet included in \sdmTMB.
 }
