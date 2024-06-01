@@ -827,7 +827,7 @@ ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 % We omit example code for Moran's I calculation for brevity but include it in the code supplement.
 \added{
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field (p $>$ 0.01) suggesting that residual spatial autocorrelation is alleviated by including the random field.
-We note that the specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals.
+The specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals.
 }
 
 We can also see that the marginal Akaike information criterion (AIC) \citep{akaike1974} of the model with spatial random fields is lower:
@@ -1921,6 +1921,6 @@ fit_bam <- bam(
 
 % \clearpage
 
-\input{../../../sdmTMB-paper-response/response2}
+% \input{../../../sdmTMB-paper-response/response2}
 
 \end{document}
