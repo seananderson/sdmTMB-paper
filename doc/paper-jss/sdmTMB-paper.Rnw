@@ -1558,19 +1558,19 @@ $^{10}$Hurdle models possible by fitting components separately.
 \label{tab:functionality}
 \end{table}
 
-We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1,000, \added{10,000, or 100,000 data points} with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
-Our test was restricted to one core and default \R\ algebra libraries \added{using \R\ 4.4.0 and \pkg{Matrix} version 1.7.0}.
-% \sdmTMB\ (and due to having the same \TMB\ backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \INLA/\pkg{inlabru}.
-% These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
-\added{
+We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1,000, \added{10,000, or 100,000 data points} with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
+Our test was restricted to one core and default \R\ algebra libraries \added{using \R\ 4.4.0 and \pkg{Matrix} version 1.7.0.
 With up to 10,000 rows of data, \sdmTMB\ was fastest at approximately a three- to 13-fold speed increase over \INLA/\pkg{inlabru} (Figure~\ref{fig:timing}a--b).
 At larger sample sizes, \pkg{inlabru} was more affected by mesh resolution than \sdmTMB\ (Figure~\ref{fig:timing}c).
-\pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing})---timing was on par or faster than the other packages at low ($\sim$ 200) mesh resolutions but much slower as mesh complexity grew into commonly used ranges.
-\pkg{spaMM} scaled well to large datasets with high mesh resolutions (Figure~\ref{fig:timing}c), but can only fit spatial GMRFs.
+\pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing})---timing was on par or faster than the other packages at low ($\approx$~200) mesh resolutions but much slower as mesh complexity grew into commonly used ranges.
+The \pkg{mgcv} model was fit with the \fct{bam} function instead of the standard \fct{gam}.
+The \fct{bam} function here uses numerical methods optimized for large datasets, including a discretization of covariate values \citep{wood2015, wood2017b, li2020a}.
+The standard \fct{gam} function was approximately 60 times slower than \fct{bam} for the largest dataset with the most complex mesh (not shown).
+\pkg{spaMM} scaled well to large datasets with high mesh resolutions (Figure~\ref{fig:timing}c), but to our knowledge can only fit spatial GMRFs.
 At low mesh resolutions, a large portion of the differences in timing are likely a result of initial model processing and not estimation itself.
 }
-Speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
-For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be considerably faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full MCMC-based Bayesian inference.
+Speed increases can allow for more rapid and thorough model exploration and experimentation with this class of computationally intensive models.
+For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full MCMC-based Bayesian inference.
 
 \begin{figure}[htb]
 \centering
