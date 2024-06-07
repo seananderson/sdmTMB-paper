@@ -1559,7 +1559,7 @@ $^{10}$Hurdle models possible by fitting components separately.
 \end{table}
 
 We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1,000, \added{10,000, or 100,000 data points} with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
-Our test was restricted to one core and default \R\ algebra libraries.
+Our test was restricted to one core and default \R\ algebra libraries \added{using \R\ 4.4.0 and \pkg{Matrix} version 1.7.0}.
 % \sdmTMB\ (and due to having the same \TMB\ backend, \pkg{VAST}) were fastest with a spatial model up to at least \textasciitilde 1000 mesh vertices at approximately a seven-times (at 1165 vertices) to 30-times (at 125 vertices) speed increase over \INLA/\pkg{inlabru}.
 % These speed increases can allow for more rapid and thorough model exploration and experimentation with a class of computationally intensive models.
 \added{
