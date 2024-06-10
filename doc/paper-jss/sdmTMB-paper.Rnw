@@ -321,7 +321,7 @@ sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range
   scale_colour_manual(values = blues) +
   geom_hline(yintercept = 0.13, col = "grey50", lty = 2) +
   scale_x_continuous(breaks = r) +
-  theme(legend.position = c(0.7, 0.7)) +
+  theme(legend.position = "inside", legend.position.inside = c(0.7, 0.7)) +
   ggtitle("(c) Matérn correlation function")
 
 cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
@@ -826,7 +826,7 @@ ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 
 % We omit example code for Moran's I calculation for brevity but include it in the code supplement.
 \added{
-We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field (p $>$ 0.01) suggesting that residual spatial autocorrelation is alleviated by including the random field.
+We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field suggesting that residual spatial autocorrelation is alleviated by including the random field.
 The specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals.
 }
 
@@ -883,7 +883,7 @@ $$
 }
 
 \added{
-where $n$ represents the number of left-out data points, $\log \mathcal{L}$ represents the log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLEs and random effects at their empirical Bayes estimates.
+where $n$ represents the number of left-out data points, $\log \mathcal{L}$ is a symbol for log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLEs and random effects at their empirical Bayes estimates.
 }
 
 Indeed, the log likelihood predictive density \added{for the left-out data} is considerably \added{higher} for the model that includes random fields indicating better out-of-sample predictions:
@@ -893,7 +893,7 @@ cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 @
 
-In practice, we would \deleted{want to} repeat this procedure several times to ensure the rank order is \added{insensitive} to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
+In practice, we would repeat this procedure several times to ensure the rank order is \added{insensitive} to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
 
 \subsection{Making predictions on new data}
 
@@ -1209,8 +1209,9 @@ We can generate an area-weighted population index (e.g., a relative or absolute 
 We supply the grid cell area (4 km\textsuperscript{2}) to the \code{area} argument and specify \code{bias\_correct = TRUE} to enable a bias correction needed due to the non-linear transformation of the random effects \citep{thorson2016bias}.
 
 <<dog-index, echo=TRUE>>=
+grid$area <- 4 # 2 km x 2 km
 pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(pred2, bias_correct = TRUE, area = rep(4, nrow(grid)))
+ind <- get_index(pred2, bias_correct = TRUE, area = grid$area)
 @
 
 <<dog-index-plot, echo=FALSE, fig.cap="Area-weighted index of relative biomass over time for Pacific Spiny Dogfish. Dots and line segments represent means and 95\\% confidence intervals.", out.width="4in">>=
@@ -1226,7 +1227,7 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 
 In our final example, we demonstrate a model with spatially varying coefficient (SVC) effects and illustrate combining uncertainty from parameters by working with draws from the joint parameter precision matrix.
 SVC models are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function \citep{hastie1993, thorson2023SVC}.
-In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.
+\deleted{In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.}
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
@@ -1418,7 +1419,8 @@ snow_g1 <- ggplot(data = nao_effect_df) +
   labs(colour = "NAO effect\non Snowy Owl counts") +
   theme_bw() +
   theme(
-    legend.position = c(0.25, 0.17),
+    legend.position = "inside",
+    legend.position.inside = c(0.25, 0.17),
     legend.title = element_text(size = 9, hjust = 0),
     plot.margin = unit(c(0, 0.5, 0, 0), "cm"),
     panel.background = element_rect(fill = "grey90", colour = NA),
@@ -1432,7 +1434,7 @@ snow_g1 <- ggplot(data = nao_effect_df) +
 th <- theme(
     legend.position = "none",
     panel.background = element_rect(fill = "grey90", colour = NA),
-    panel.grid.major = element_line(colour = "white", size = 0.5),
+    panel.grid.major = element_line(colour = "white", linewidth = 0.5),
     legend.background = element_rect(fill = "transparent", colour = NA),
     legend.box.background = element_rect(fill = "transparent", colour = NA),
     plot.title = element_text(size = 10), axis.ticks = element_blank(),
@@ -1452,7 +1454,7 @@ snow_g2 <- ggplot(data = nao_effect_df) +
   scale_colour_viridis_c(
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
-  ggtitle(paste0("(b) Lower 80% CI: ", round(min(snow$nao_effect_lwr), 2), " to ", round(max(snow$nao_effect_lwr), 2))) +
+  ggtitle(paste0("(b) Lower 95% CI: ", round(min(snow$nao_effect_lwr), 2), " to ", round(max(snow$nao_effect_lwr), 2))) +
   theme_bw() +
   th
 
@@ -1469,7 +1471,7 @@ snow_g3 <- ggplot(data = nao_effect_df) +
   scale_colour_viridis_c(
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
-  ggtitle(paste0("(c) Upper 80% CI: ", round(min(snow$nao_effect_upr), 2), " to ", round(max(snow$nao_effect_upr), 2))) +
+  ggtitle(paste0("(c) Upper 95% CI: ", round(min(snow$nao_effect_upr), 2), " to ", round(max(snow$nao_effect_upr), 2))) +
   theme_bw() +
   th
 
@@ -1574,8 +1576,7 @@ For users ultimately interested in Bayesian inference, the approximate Bayesian 
 
 \begin{figure}[htb]
 \centering
-% \includegraphics[width=3.5in]{../../figs/timing-spatial-2023-03-16-xkcd.pdf}
-\includegraphics[width=\textwidth]{figs/timing-spatial-multipanel.pdf}
+\includegraphics[width=\textwidth]{../../figs/timing-spatial-multipanel.pdf}
 \caption[]{
 Comparison of time to fit an SPDE spatial random field model with an intercept, one fixed-effect predictor, Gaussian error, and a sequence of SPDE resolutions to \added{three dataset sizes}.
 Lines represent means and ribbons 90\% quantiles across 50 random iterations.
@@ -1598,8 +1599,7 @@ Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} and \pkg{tinyVAST} are the sole options for fitting some multivariate models; alternatively, because these packages focus on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs will likely find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be calculated using other packages post hoc).
-Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
-% TODO: mention this in response doc
+Overall, \deleted{we think there is value in that} \sdmTMB\ unites functionality useful in many applied settings into a single package.
 
 % \textbf{TODO add paragraph here on uniting functionality not available in any one package?}
 
@@ -1679,7 +1679,7 @@ The models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-cor
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=\textwidth]{figs/timing-spatial-multipanel-log.pdf}
+\includegraphics[width=\textwidth]{../../figs/timing-spatial-multipanel-log.pdf}
 \caption[]{
   \added{
   Same as Figure~\ref{fig:timing} but with both axes log distributed.
@@ -1920,7 +1920,6 @@ fit_bam <- bam(
 @
 
 % \clearpage
-
 % \input{../../../sdmTMB-paper-response/response2}
 
 \end{document}
