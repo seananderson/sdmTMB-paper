@@ -7,8 +7,21 @@ library("INLA")
 library("inlabru")
 library("mgcv")
 library("spaMM")
+# install.packages("RSpectra") # for faster spaMM
+
 dir.create("figs", showWarnings = FALSE)
 dir.create("analysis", showWarnings = FALSE)
+
+if (FALSE) {
+  is_optimized <- function() {
+    m <- 1e4; n <- 1e3; k <- 3e2
+    X <- matrix(rnorm(m*k), nrow=m)
+    Y <- matrix(rnorm(n*k), ncol=n)
+    s <- system.time(X %*% Y)
+    s[[3]] < 0.5
+  }
+  (optimized_blas <- is_optimized())
+}
 
 INLA::inla.setOption(num.threads = "1:1")
 
@@ -192,28 +205,13 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
       data = sim_dat,
       mesh = mesh,
       family = family,
-      control = sdmTMBcontrol(newton_loops = 0L),
+      control = sdmTMBcontrol(newton_loops = 0L, multiphase = FALSE),
       priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 0.05, sigma_lt = 2))
     )
   })
   times$sdmTMB <- out[["elapsed"]]
 
-  dat_sp <- sp::SpatialPointsDataFrame(cbind(sim_dat$X, sim_dat$Y),
-    proj4string = sp::CRS("+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000
-+ +y_0=0 +datum=NAD83 +units=km +no_defs"), data = sim_dat
-  )
-  loc.bnd <- matrix(c(0, 0, 1, 0, 1, 1, 0, 1), 4, 2, byrow = TRUE)
-  segm.bnd <- INLA::inla.mesh.segment(loc.bnd)
-  mesh2 <- INLA::inla.mesh.2d(
-    boundary = segm.bnd,
-    max.edge = c(max.edge, 0.2),
-    offset = c(0.1, 0.05)
-  )
-  spde <- INLA::inla.spde2.pcmatern(
-    mesh = mesh2,
-    prior.range = c(0.05, 0.05),
-    prior.sigma = c(2, 0.05)
-  )
+  cat("inlabru EB\n")
 
   dat <- s$dat
   dat_sp <- sp::SpatialPointsDataFrame(cbind(dat$X, dat$Y),
@@ -304,23 +302,23 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
     max.edge = c(max.edge, 0.2),
     offset = c(0.1, 0.05)
   )
-  out <- system.time({
-    fit <- tryCatch(
-      {
-        bam(
-          observed ~ a1 + s(X, Y,
-            bs = "spde", k = mesh2$n,
-            xt = list(mesh = mesh2)
-          ),
-          data = sim_dat,
-          family = family,
-          method = "fREML",
-          control = gam.control(scalePenalty = FALSE), discrete = TRUE
-        )
-      },
-      error = function(e) NA
-    )
-  })
+    out <- system.time({
+      fit <- tryCatch(
+        {
+          bam(
+            observed ~ a1 + s(X, Y,
+              bs = "spde", k = mesh2$n,
+              xt = list(mesh = mesh2)
+            ),
+            data = sim_dat,
+            family = family,
+            method = "fREML",
+            control = gam.control(scalePenalty = FALSE), discrete = TRUE
+          )
+        },
+        error = function(e) NA
+      )
+    })
   times$mgcv_disc <- if (all(is.na(fit))) NA else out[["elapsed"]]
 
   out <- as_tibble(times)
@@ -331,23 +329,40 @@ sim_fit_time <- function(n_obs = 1000, cutoff = 0.1, iter = 1, phi = 0.3, tweedi
   out$mesh_n <- as.integer(mesh$n)
   out$max.edge <- max.edge
   out$inla_eb_error <- inla_eb_error
+  # out$inla_error <- inla_error
   out
 }
 
 # fast run:
 to_run <- expand.grid(
-  n_obs = c(1000L),
-  max.edge = c(0.06, 0.1, 0.2),
+  n_obs = c(1e3),
+  max.edge = c(0.075, 0.1, 0.15, 0.2),
   iter = seq_len(2L)
 )
 
 # full (slow) run to match paper:
 if (FALSE) {
+  iter <- c(25, 25, 25)
+
   to_run <- expand.grid(
-    n_obs = c(1000L),
+    n_obs = c(1e3),
     max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
-    iter = seq_len(50L)
+    iter = seq_len(iter[1])
   )
+  to_run_bigger_data <- expand.grid(
+    n_obs = c(1e4),
+    max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
+    iter = seq_len(iter[2])
+  )
+  to_run_biggish_data <- expand.grid(
+    n_obs = c(1e5),
+    max.edge = c(0.06, 0.075, 0.1, 0.15, 0.2),
+    iter = seq_len(iter[3])
+  )
+  to_run <- bind_rows(to_run, to_run_bigger_data, to_run_biggish_data)
+  # randomize for more accurate progress bar:
+  set.seed(1)
+  to_run <- to_run[sample(seq_len(nrow(to_run)), size = nrow(to_run), replace = FALSE),]
 }
 
 to_run$seed <- to_run$iter * 29212
@@ -357,12 +372,13 @@ nrow(to_run)
 system.time({
   out <- purrr::pmap_dfr(
     to_run,
-    sim_fit_time
+    sim_fit_time,
+    .progress = "timing"
   )
 })
 
-saveRDS(out, file = "analysis/timing-cache-parallel-2023-03-15.rds")
-out <- readRDS("analysis/timing-cache-parallel-2023-03-15.rds")
+saveRDS(out, file = "analysis/timing-cache-2024-06-10-standard-large.rds")
+out <- readRDS("analysis/timing-cache-2024-06-10-standard-large.rds")
 
 out_long <- tidyr::pivot_longer(
   out,
@@ -379,13 +395,14 @@ clean_names <- tribble(
 )
 clean_names$model_clean <- factor(clean_names$model_clean, levels = clean_names$model_clean)
 out_long <- left_join(out_long, clean_names)
-out_long <- out_long %>%
-  group_by(model_clean, cutoff) %>%
+out_long <- out_long |>
+  group_by(model_clean, cutoff) |>
   mutate(mean_mesh_n = paste0("Mesh n = ", round(mean(mesh_n))))
 out_long$mean_mesh_n <- as.factor(out_long$mean_mesh_n)
 out_long$mean_mesh_n <- forcats::fct_reorder(out_long$mean_mesh_n, -out_long$cutoff)
-out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) %>%
-  summarise(lwr = quantile(time, probs = 0.025), upr = quantile(time, probs = 0.975), time = mean(time), mean_mesh_n = mean(mesh_n))
+filter(out_long,is.na(time), model != "mgcv_disc") |> as.data.frame()
+out_long_sum <- group_by(out_long, model_clean, n_obs, cutoff, max.edge) |>
+  summarise(lwr = quantile(time, probs = 0.1, na.rm = TRUE), upr = quantile(time, probs = 0.9, na.rm = TRUE), time = mean(time, na.rm = TRUE), mean_mesh_n = mean(mesh_n, na.rm = TRUE))
 
 cols <- RColorBrewer::brewer.pal(6, "Dark2")
 colour_vect <- c(
@@ -395,50 +412,45 @@ colour_vect <- c(
   "mgcv::bam\n(discretize = TRUE) SPDE" = cols[2]
 )
 
-leg <- tribble(
-  ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 173, 0.26,
-  "inlabru EB", 173, 3.5,
-  "spaMM", 500, 2.0,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
-)
-
-leg <- tribble(
-  ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 290, 0.40,
-  "inlabru EB", 155, 3.8,
-  "spaMM", 442, 1.95,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 155, 5
-)
-
-g <- out_long_sum %>%
+gg <- out_long_sum |>
+  mutate(n_obs = paste0(formatC(n_obs, format = "d", big.mark=","), " rows of data")) |>
+  mutate(n_obs = gsub("^1,0", "(a) 1,0", n_obs)) |>
+  mutate(n_obs = gsub("^10,0", "(b) 10,0", n_obs)) |>
+  mutate(n_obs = gsub("^100,0", "(c) 100,0", n_obs)) |>
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean),
     alpha = 0.2,
     colour = NA
   ) +
-  geom_line(lwd = 0.7) +
+  geom_line(lwd = 0.7, na.rm = TRUE) +
   scale_x_log10(breaks = c(250, 500, 1000)) +
   theme_sleek() +
   theme(panel.grid.major = element_line(colour = "grey90")) +
-  theme(legend.position = c(0.4, 0.85)) +
-  geom_text(aes(label = model_clean), data = leg, hjust = 0) +
+  theme(legend.position.inside = c(0.4, 0.85)) +
   scale_fill_manual(values = colour_vect) +
   scale_colour_manual(values = colour_vect) +
   labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0, 5.9)) +
-  theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
-print(g)
+  coord_cartesian(expand = FALSE, ylim = c(0.08, 14)) +
+  theme(panel.spacing.x = unit(20, "pt"), legend.position = "top") +
+  facet_grid(~n_obs)
+ggsave("figs/timing-spatial-multipanel.pdf", width = 7, height = 3)
 
-.width <- 5
-ggsave("figs/timing-spatial-2023-03-16-xkcd.pdf", width = .width, height = .width / 1.3)
+gg + scale_y_log10() +
+  scale_x_log10() +
+  coord_cartesian(expand = FALSE, ylim = c(0.08, 17))
+ggsave("figs/timing-spatial-multipanel-log.pdf", width = 7, height = 3)
 
 cat("inlabru to sdmTMB timing ratios\n")
-x <- filter(
-  out_long_sum,
-  model_clean == "inlabru EB"
-)$time /
-  filter(out_long_sum, model_clean == "sdmTMB")$time
-round(x, 1)
+
+out_long_sum <- ungroup(out_long_sum)
+x1 <- filter(out_long_sum, model_clean == "inlabru EB")
+x2 <- filter(out_long_sum, model_clean == "sdmTMB")
+x3 <- data.frame(rename(x1, inla_time = time), select(x2, sdmTMB_time = time)) |>
+  mutate(ratio = inla_time / sdmTMB_time)
+x3
+
+x3 |>
+  ggplot(aes(mean_mesh_n, ratio, colour = factor(n_obs))) + geom_line() +
+  ylim(0, NA)
 
 sessionInfo()

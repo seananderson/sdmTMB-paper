@@ -1,11 +1,10 @@
-RUN_SPIN <- TRUE
+RUN_SPIN <- T
 
 setwd(here::here())
 setwd("doc/paper-jss/")
+unlink("reprex", force = TRUE, recursive = TRUE)
 dir.create("reprex", showWarnings = FALSE)
 
-# Needed! otherwise can't find chunk option objects
-new_deltas <- TRUE
 knitr::purl("sdmTMB-paper.Rnw", documentation = 1L)
 
 system("mv sdmTMB-paper.R reprex/sdmTMB-paper.R")
@@ -59,36 +58,35 @@ d <- do_replace("snow <- read", "snow <- readRDS(\"snow-data.rds\")")
 # d[grep("knitr::include_graphics\\(owl", d)]
 # d <- do_replace("knitr::include_graphics\\(owl", "# knitr::include_graphics(owl)")
 
-d[grep("data/ne_10m_lakes", d)]
-d <- gsub("data/ne_10m_lakes", "ne_10m_lakes", d)
+# d[grep("data/ne_10m_lakes", d)]
+# d <- gsub("data/ne_10m_lakes", "ne_10m_lakes", d)
 
-d[grep("lakes <- sf::st_read", d)]
-d <- do_replace("lakes <- sf::st_read", "lakes <- sf::st_read(\"ne_10m_lakes\", quiet = TRUE)")
+# d[grep("lakes <- sf::st_read", d)]
+# d <- do_replace("lakes <- sf::st_read", "lakes <- sf::st_read(\"ne_10m_lakes\", quiet = TRUE)")
+#
+# d[grep("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", d)]
+# d <- do_replace("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", "if (!file.exists(\"ne_10m_lakes\")) {")
+#
+# d[grep("here::here\\(\"ne_10m_lakes.zip\"\\)", d)]
+# d <- gsub("here::here\\(\"ne_10m_lakes.zip\"\\)", "\"ne_10m_lakes.zip\"", d)
+# d <- gsub("here::here\\(\"ne_10m_lakes\"\\)", "\"ne_10m_lakes\"", d)
 
-d[grep("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", d)]
-d <- do_replace("file.exists\\(here::here\\(\"ne_10m_lakes\\\"", "if (!file.exists(\"ne_10m_lakes\")) {")
 
-d[grep("here::here\\(\"ne_10m_lakes.zip\"\\)", d)]
-d <- gsub("here::here\\(\"ne_10m_lakes.zip\"\\)", "\"ne_10m_lakes.zip\"", d)
-d <- gsub("here::here\\(\"ne_10m_lakes\"\\)", "\"ne_10m_lakes\"", d)
+d[grep("here::here\\(\"data\\/ne_10m_lakes\\.shp\"\\)", d)]
+d[grep("here::here\\(\"data\"\\)", d)]
+# d <- do_replace("here::here\\(\"ne_10m_lakes.shp\"\\)", "\"ne_10m_lakes.shp\"")
+d <- gsub("here::here\\(\"data\\/ne_10m_lakes\\.shp\"\\)", "\"ne_10m_lakes.shp\"", d)
+d <- do_replace("here::here\\(\"data\"\\)", "\".\"")
+
+# if (!file.exists(here::here("ne_10m_lakes.shp"))) {
+#   lakes <- rnaturalearth::ne_download(
+#     scale = 10, type = "lakes", category = "physical",
+#     destdir = here::here("data")
+#   )
+# }
+
 
 d <- c(d, "sessionInfo()")
-
-d[grepl("here::", d)]
-
-i <- grep("dog-update-old, ", d) + 1
-j <- grep("## fit_dpl <- update", d)
-for (s in i:j) {
-  d[s] <- gsub("^## ", "", d[s])
-}
-
-i <- grep("dog-update,", d) - 1
-j <- grep("dog-update-old,", d) - 2
-d <- c(d[1:i], "if (new_deltas) {", d[(i+1):(j-1)], "}", d[(j):length(d)])
-
-i <- grep("dog-update-old,", d) - 1
-j <- grep("----dog-aic,", d) - 2
-d <- c(d[1:i], "if (!new_deltas) {", d[(i+1):(j-1)], "}", d[(j):length(d)])
 
 i <- grep("inlabrufit-timing", d) + 1
 j <- grep("bru_max_iter = 1, num.threads = \"1:1\"", d) + 2
@@ -110,11 +108,11 @@ system("cp ~/src/sdmTMB-paper/data/SNOW_data.rds ~/src/sdmTMB-paper/doc/paper-js
 system("rm reprex/sdmTMB-paper.R")
 
 setwd("reprex")
-if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-main.R\")'")
+# if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-main.R\")'")
 
 d <- readLines(here::here("analysis/timing.R"))
 writeLines(d, "replication-code-timing.R")
-if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
+# if (RUN_SPIN) system("R -e 'knitr::spin(\"replication-code-timing.R\")'")
 #
 # d <- readLines(here::here("analysis/pcod-fig.R"))
 # # d <- gsub('silent = TRUE', 'silent = FALSE', d)

@@ -36,6 +36,12 @@ library(dplyr)
 library(sdmTMB)
 
 
+## ----check-version, echo=FALSE, cache=FALSE, eval=TRUE--------------------
+if (packageVersion("sdmTMB") < "0.6.0") {
+  stop("Please install a version of sdmTMB >= 0.6.0.", call. = FALSE)
+}
+
+
 ## ----matern-range, warning=FALSE, message=FALSE, fig.width=9, out.width="\\textwidth", fig.asp=0.33, fig.align='center', fig.cap="Example Gaussian random fields for two range values. The range describes the distance at which spatial correlation decays to $\\approx 0.13$ in coordinate units (i.e., the distance at which two points are effectively independent). Panel (a) shows a shorter range than panel (b), which results in a ``wigglier'' surface. Panel (c) shows the Mat\\'ern function for these two range values. The dashed horizontal line shows a correlation of 0.13."----
 predictor_dat <- expand.grid(
   x = seq(0, 1, length.out = 100),
@@ -108,7 +114,7 @@ sim_g3 <- ggplot(df, aes(x, cor, col = as.factor(range), group = as.factor(range
   scale_colour_manual(values = blues) +
   geom_hline(yintercept = 0.13, col = "grey50", lty = 2) +
   scale_x_continuous(breaks = r) +
-  theme(legend.position = c(0.7, 0.7)) +
+  theme(legend.position = "inside", legend.position.inside = c(0.7, 0.7)) +
   ggtitle("(c) Matérn correlation function")
 
 cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
@@ -123,8 +129,8 @@ cowplot::plot_grid(sim_g1, sim_g2, sim_g3, align = "h", ncol = 3L)
 
 
 ## ----remotes, eval=FALSE, echo=TRUE---------------------------------------
-## install.packages("remotes")
-## remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
+## install.packages("pak")
+## pak::pkg_install("pbs-assess/sdmTMB", dependencies = TRUE)
 
 
 ## ----libs, warning=FALSE, message=FALSE, echo=TRUE, cache=FALSE-----------
@@ -203,21 +209,15 @@ tidy(fit_bin, conf.int = TRUE)
 tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 
-## ----morans, echo=FALSE, results='hide'-----------------------------------
-test_autocor <- function(obj) {
-  set.seed(1)
-  s <- simulate(obj, nsim = 500)
-  pr <- predict(obj, type = "response")$est
-  r <- DHARMa::createDHARMa(
-    simulatedResponse = s,
-    observedResponse = pcod$present,
-    fittedPredictedResponse = pr
-  )
-  DHARMa::testSpatialAutocorrelation(r, x = pcod$X, y = pcod$Y, plot = FALSE)
-}
-(t_no_rf <- test_autocor(fit_bin))
-(t_rf <- test_autocor(fit_bin_rf))
-p_rf <- round(t_rf$p.value, 2)
+## ----morans, echo=TRUE----------------------------------------------------
+inv_dist_matrix <- 1 / as.matrix(dist(pcod[,c("X", "Y"), ]))
+diag(inv_dist_matrix) <- 0
+set.seed(1)
+r_bin <- residuals(fit_bin, type = "mle-mvn")
+set.seed(1)
+r_bin_rf <- residuals(fit_bin_rf, type = "mle-mvn")
+ape::Moran.I(r_bin, weight = inv_dist_matrix)$p.value
+ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 
 
 ## ----pcod-aic, eval=TRUE, echo=TRUE, results='markup'---------------------
@@ -278,7 +278,7 @@ dat
 dat <- add_utm_columns(dat, c("lon", "lat"),
   units = "km", utm_crs = 32609)
 dat$log_depth <- log(dat$depth)
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), n_knots = 200)
 
 
 ## ----dog-mesh2, eval=FALSE------------------------------------------------
@@ -299,33 +299,16 @@ fit_tw <- sdmTMB(
   spatial = "on",
   spatiotemporal = "iid",
   anisotropy = TRUE,
+  extra_time = seq(min(dat$year), max(dat$year)),
   silent = FALSE
 )
 
 
-## ----check-version, results='hide', echo=FALSE, include=FALSE-------------
-# delta_poisson_link_gamma() deprecated in favor of delta_gamma(type = "poisson-link")
-new_deltas <- packageVersion("sdmTMB") > '0.4.2.9000'
-
-
-if (new_deltas) {
-## ----dog-update, results='hide', message=FALSE, warning=FALSE, echo=new_deltas, eval=new_deltas, include=new_deltas----
-fit_dg <- update(fit_tw, family = delta_gamma(),
-  spatiotemporal = list("off", "iid"))
-fit_dl <- update(fit_dg, family = delta_lognormal())
-fit_dpg <- update(fit_dg, family = delta_gamma(type = "poisson-link"))
-fit_dpl <- update(fit_dg, family = delta_lognormal(type = "poisson-link"))
-}
-
-
-if (!new_deltas) {
-## ----dog-update-old, results='hide', message=FALSE, warning=FALSE, echo=!new_deltas, eval=!new_deltas, include=!new_deltas----
-fit_dg <- update(fit_tw, family = delta_gamma(),
-  spatiotemporal = list("off", "iid"))
-fit_dl <- update(fit_dg, family = delta_lognormal())
-fit_dpg <- update(fit_dg, family = delta_poisson_link_gamma())
-fit_dpl <- update(fit_dg, family = delta_poisson_link_lognormal())
-}
+## ----dog-update, results='hide', message=FALSE, warning=FALSE, echo=TRUE, eval=TRUE----
+fit_dg <- update(fit_tw, family = delta_gamma())
+fit_dl <- update(fit_tw, family = delta_lognormal())
+fit_dpg <- update(fit_tw, family = delta_gamma(type = "poisson-link"))
+fit_dpl <- update(fit_tw, family = delta_lognormal(type = "poisson-link"))
 
 
 ## ----dog-aic, echo=TRUE---------------------------------------------------
@@ -336,7 +319,7 @@ AIC(fit_tw, fit_dg, fit_dl, fit_dpg, fit_dpl) |>
 
 ## ----dog-ar1, results='hide', echo=TRUE-----------------------------------
 fit_dpl_iso <- update(fit_dpl, anisotropy = FALSE)
-fit_dpl_ar1 <- update(fit_dpl, spatiotemporal = list("off", "ar1"))
+fit_dpl_ar1 <- update(fit_dpl, spatiotemporal = "ar1")
 
 
 ## ----dog-aci2, echo=TRUE--------------------------------------------------
@@ -344,21 +327,19 @@ AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 
 
 ## ----dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the units that the X-Y coordinates are modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from the center (zero).", out.width="4in"----
-plot_anisotropy(fit_dpl)
-
-
-## ----dog-ar1-2, echo=TRUE, results="hide"---------------------------------
-fit_dpl_ar1_only <- update(fit_dpl_ar1, spatial = list("on", "off"))
-
-
-## ----dog-aic3, echo=TRUE--------------------------------------------------
-AIC(fit_dpl_ar1_only, fit_dpl_ar1, fit_dpl)
+plot_anisotropy(fit_dpl_ar1)
 
 
 ## ----dog-print, echo=TRUE-------------------------------------------------
-fit <- fit_dpl_ar1_only
+fit <- fit_dpl_ar1
 sanity(fit)
 summary(fit)
+
+
+## ----dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.", fig.asp=0.68, echo=TRUE, out.width="4in"----
+set.seed(42)
+s <- simulate(fit, nsim = 500, type = "mle-mvn")
+dharma_residuals(s, fit, test_uniformity = TRUE)
 
 
 ## ----dog-grid, echo=TRUE--------------------------------------------------
@@ -390,21 +371,21 @@ plot_map <- function(dat, column) {
 g_nonrf <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(est_non_rf1) +
   scale_fill_viridis_c(trans = "log10") +
-  ggtitle("(a) Non-random-field components; first delta model")
+  ggtitle("(a) Non-random-field components; 1st linear predictor")
 
 
 ## ----dog-plot2, echo=FALSE------------------------------------------------
 g_omega <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(omega_s1) +
   scale_fill_gradient2() +
-  ggtitle("(b) Spatial random field; first delta model")
+  ggtitle("(b) Spatial random field; 1st linear predictor")
 
 
 ## ----dog-plot3, echo=FALSE------------------------------------------------
 g_eps <- pred |> filter(year %in% c(2004, 2022)) |>
   plot_map(epsilon_st2) +
   scale_fill_gradient2() +
-  ggtitle("(c) Spatiotemporal random field; second delta model")
+  ggtitle("(c) Spatiotemporal random field; 2nd linear predictor")
 
 
 ## ----dog-plot4, echo=FALSE------------------------------------------------
@@ -415,7 +396,7 @@ g_est <- pred |> filter(year %in% c(2004, 2022)) |>
   ggtitle("(d) Overall prediction")
 
 
-## ----dog-wcvi-pred, fig.asp = 0.8, fig.cap="Example prediction elements from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field elements (here, a smoother for bottom depth and the time-varying year effect) from the first delta model component, (b) \\code{omega\\_s1} refers to the spatial random field from the first delta model component, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second delta model component, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are constrained to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in"----
+## ----dog-wcvi-pred, fig.asp = 0.8, fig.cap= "Example prediction elements from the spatiotemporal model of Pacific Dogfish biomass density. Throughout, two example years are shown. (a) \\code{est\\_non\\_rf1} refers to the prediction from all non-random-field elements (here, a smoother for bottom depth and the time-varying year effect) from the first linear predictor, (b) \\code{omega\\_s1} refers to the spatial random field from the first linear predictor, (c) \\code{epsilon\\_st2} refers to spatiotemporal random fields from the second linear predictor, and (d) \\code{est} refers to the overall prediction estimate combining all effects. The spatial random field is constant through time (i.e., the two panels in b are identical) and represents static biotic or abiotic features not included as covariates (e.g., habitat). The spatiotemporal random fields are different each time step and here are constrained to follow an AR(1) process. They represent temporal variability in the spatial patterning of Pacific Spiny Dogfish (e.g., resulting from movement or local changes in population density).", fig.width=9, out.width="6in"----
 cowplot::plot_grid(
   g_nonrf,
   g_omega,
@@ -448,8 +429,9 @@ ggplot(pred_depth, aes(
 
 
 ## ----dog-index, echo=TRUE-------------------------------------------------
+grid$area <- 4 # 2 km x 2 km
 pred2 <- predict(fit, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(pred2, bias_correct = TRUE, area = rep(4, nrow(grid)))
+ind <- get_index(pred2, bias_correct = TRUE, area = grid$area)
 
 
 ## ----dog-index-plot, echo=FALSE, fig.cap="Area-weighted index of relative biomass over time for Pacific Spiny Dogfish. Dots and line segments represent means and 95\\% confidence intervals.", out.width="4in"----
@@ -471,14 +453,13 @@ select(snow, X, Y, year, year_f, nao, count) |> head()
 mesh_snow <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
 fit_owl <- sdmTMB(
   count ~ 1 + nao + (1 | year_f),
-  spatial_varying = ~ nao,
+  spatial_varying = ~ 0 + nao,
   time = "year",
   data = snow,
   mesh = mesh_snow,
   family = nbinom2(link = "log"),
   spatial = "on",
   spatiotemporal = "iid",
-  reml = TRUE,
   silent = FALSE
 )
 
@@ -496,21 +477,22 @@ tidy(fit_owl, conf.int = TRUE)
 
 
 ## ----owl-p, message=FALSE, echo=FALSE, eval=FALSE, cache=TRUE-------------
-## # not currently including, but might be helpful
-## snow <- predict(fit_owl, newdata = snow)
-## snow |> select(X, Y, year, nao, count, est, omega_s, epsilon_st, zeta_s_nao) |>
-##   head(n = 2)
+## pred_snow <- predict(fit_owl, newdata = snow)
+## pred_snow |>
+##   select(X, Y, year, nao, count, est, omega_s, epsilon_st, zeta_s_nao) |>
+##   head()
 
 
 ## ----zeta-effect, message=FALSE, echo=TRUE, eval=TRUE, cache=TRUE---------
-zeta_s <- predict(fit_owl, newdata = snow, nsim = 200, sims_var = "zeta_s")
+set.seed(42)
+zeta_s <- predict(fit_owl, newdata = snow, nsim = 300, sims_var = "zeta_s")
 dim(zeta_s)
-sims <- spread_sims(fit_owl, nsim = 200)
+sims <- spread_sims(fit_owl, nsim = 300)
 dim(sims)
 combined <- sims$nao + t(zeta_s)
 snow$nao_effect <- exp(apply(combined, 2, median))
-snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.1))
-snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
+snow$nao_effect_lwr <- exp(apply(combined, 2, quantile, probs = 0.025))
+snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.975))
 
 
 ## ----owl-plot-basic, echo=TRUE, eval=FALSE--------------------------------
@@ -518,35 +500,38 @@ snow$nao_effect_upr <- exp(apply(combined, 2, quantile, probs = 0.9))
 
 
 ## ----shapes, echo=FALSE---------------------------------------------------
-if (!file.exists("ne_10m_lakes")) {
-  zip_file <- paste0("https://www.naturalearthdata.com/http//www.naturalearthdata.com/",
-    "download/10m/physical/ne_10m_lakes.zip")
-  download.file(zip_file, destfile = "ne_10m_lakes.zip")
-  unzip("ne_10m_lakes.zip", exdir = "ne_10m_lakes")
+if (!file.exists("ne_10m_lakes.shp")) {
+  lakes <- rnaturalearth::ne_download(
+    scale = 10, type = "lakes", category = "physical",
+"."
+  )
 }
 
 
 ## ----shapes-read, echo=FALSE----------------------------------------------
 Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
-coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") %>%
+coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf") |>
   sf::st_transform(crs = Albers)
-lakes <- sf::st_read("ne_10m_lakes", quiet = TRUE)
-lakes <- lakes[lakes$scalerank == 0, ] %>% sf::st_transform(crs = Albers)
+lakes <- sf::st_read("ne_10m_lakes.shp", quiet = TRUE)
+lakes <- lakes[lakes$scalerank == 0, ] |> sf::st_transform(crs = Albers)
 land <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
-land <- land %>% sf::st_transform(crs = Albers)
+land <- land |> sf::st_transform(crs = Albers)
 
 
 ## ----owl-proj2------------------------------------------------------------
-# project to get nice axis limits
 snow2 <- snow |> mutate(X = X * 100000, Y = Y * 100000)
 snow2 <- snow2 |> mutate(x = X, y = Y) |>
   sf::st_as_sf(coords = c("x", "y"), crs = Albers)
 
 
 ## ----owl-plot-fancy, echo=FALSE, eval=TRUE, fig.cap="Spatially varying effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual Christmas Bird Counts from 1979--2020 in Canada and the US. The effect is multiplicative on owl count per NAO unit. In the west, the lower bound of values overlaps 1 implying no effect, whereas in the southeast the effect becomes positive. Point size is scaled to the mean counts in each location.", fig.width=5, fig.asp=1, fig.pos="htbp", fig.align='center'----
-nao_effect_df <- select(snow2, X, Y, count, nao_effect, nao_effect_lwr, nao_effect_upr) |>
+nao_effect_df <- snow2 |>
   group_by(X, Y) |>
-  summarise_all(mean)
+  summarise(
+    count = mean(count), nao_effect = mean(nao_effect),
+    nao_effect_lwr = mean(nao_effect_lwr), nao_effect_upr = mean(nao_effect_upr),
+    .groups = "drop"
+  )
 
 snow_g1 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white", lwd = 0.35) +
@@ -567,17 +552,27 @@ snow_g1 <- ggplot(data = nao_effect_df) +
   labs(colour = "NAO effect\non Snowy Owl counts") +
   theme_bw() +
   theme(
-    legend.position = c(0.25, 0.17),
+    legend.position = "inside",
+    legend.position.inside = c(0.25, 0.17),
     legend.title = element_text(size = 9, hjust = 0),
     plot.margin = unit(c(0, 0.5, 0, 0), "cm"),
     panel.background = element_rect(fill = "grey90", colour = NA),
-    panel.grid.major = element_line(colour = "white", size = 0.5),
+    panel.grid.major = element_line(colour = "white", linewidth = 0.5),
     legend.background = element_rect(fill = "transparent", colour = NA),
     legend.box.background = element_rect(fill = "transparent", colour = NA),
     plot.title = element_text(size = 10, hjust = -0.15),
     axis.title = element_blank()
   )
 
+th <- theme(
+    legend.position = "none",
+    panel.background = element_rect(fill = "grey90", colour = NA),
+    panel.grid.major = element_line(colour = "white", linewidth = 0.5),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.box.background = element_rect(fill = "transparent", colour = NA),
+    plot.title = element_text(size = 10), axis.ticks = element_blank(),
+    axis.title = element_blank(), axis.text = element_blank()
+  )
 
 snow_g2 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white", lwd = 0.35) +
@@ -592,17 +587,9 @@ snow_g2 <- ggplot(data = nao_effect_df) +
   scale_colour_viridis_c(
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
-  ggtitle(paste0("(b) Lower 80% CI: ", round(min(snow$nao_effect_lwr), 2), " to ", round(max(snow$nao_effect_lwr), 2))) +
+  ggtitle(paste0("(b) Lower 95% CI: ", round(min(snow$nao_effect_lwr), 2), " to ", round(max(snow$nao_effect_lwr), 2))) +
   theme_bw() +
-  theme(
-    legend.position = "none",
-    panel.background = element_rect(fill = "grey90", colour = NA),
-    panel.grid.major = element_line(colour = "white", size = 0.5),
-    legend.background = element_rect(fill = "transparent", colour = NA),
-    legend.box.background = element_rect(fill = "transparent", colour = NA),
-    plot.title = element_text(size = 10), axis.ticks = element_blank(),
-    axis.title = element_blank(), axis.text = element_blank()
-  )
+  th
 
 snow_g3 <- ggplot(data = nao_effect_df) +
   geom_sf(data = land, fill = "white", colour = "white", lwd = 0.35) +
@@ -617,17 +604,9 @@ snow_g3 <- ggplot(data = nao_effect_df) +
   scale_colour_viridis_c(
     limit = c(min(snow$nao_effect_lwr), max(snow$nao_effect_upr))
   ) +
-  ggtitle(paste0("(c) Upper 80% CI: ", round(min(snow$nao_effect_upr), 2), " to ", round(max(snow$nao_effect_upr), 2))) +
+  ggtitle(paste0("(c) Upper 95% CI: ", round(min(snow$nao_effect_upr), 2), " to ", round(max(snow$nao_effect_upr), 2))) +
   theme_bw() +
-  theme(
-    legend.position = "none",
-    panel.background = element_rect(fill = "grey90", colour = NA),
-    panel.grid.major = element_line(colour = "white", size = 0.5),
-    legend.background = element_rect(fill = "transparent", colour = NA),
-    legend.box.background = element_rect(fill = "transparent", colour = NA),
-    plot.title = element_text(size = 10), axis.ticks = element_blank(),
-    axis.title = element_blank(), axis.text = element_blank()
-  )
+  th
 
 bottom_row <- cowplot::plot_grid(snow_g2, snow_g3, label_size = 12)
 cowplot::plot_grid(snow_g1, bottom_row, ncol = 1, rel_heights = c(2.18, 1))
