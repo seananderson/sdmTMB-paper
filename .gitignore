@@ -33,3 +33,7 @@ doc/preprint3
 doc/paper-jss/reprex/
 doc/paper-jss/reprex-V1
 doc/paper-jss/sdmTMB-paper-concordance.tex
+doc/paper-jss/reprex-V2/*
+*.soc
+*.loc
+data/ne_10*
