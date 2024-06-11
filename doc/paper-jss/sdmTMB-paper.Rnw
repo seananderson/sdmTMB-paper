@@ -11,7 +11,8 @@
 
 \usepackage[utf8]{inputenc}
 
-% temp: track changes
+\usepackage{changes}
+% \usepackage[final]{changes}
 \usepackage{changes}
 
 %% new custom commands
@@ -1919,7 +1920,8 @@ fit_bam <- bam(
 )
 @
 
-% \clearpage
-% \input{../../../sdmTMB-paper-response/response2}
+\clearpage
+\input{../../../sdmTMB-paper-response/response2}
+\clearpage
 
 \end{document}
