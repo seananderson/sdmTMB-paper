@@ -1,0 +1,833 @@
+\begin{thebibliography}{108}
+\newcommand{\enquote}[1]{``#1''}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem[{Aitchison(1955)}]{aitchison1955}
+Aitchison J (1955).
+\newblock \enquote{On the Distribution of a Positive Random Variable Having a
+  Discrete Probability Mass at the Origin.}
+\newblock \emph{Journal of the American Statistical Association},
+  \textbf{50}(271), 901.
+\newblock \doi{10.2307/2281175}.
+
+\bibitem[{Akaike(1974)}]{akaike1974}
+Akaike H (1974).
+\newblock \enquote{A New Look at the Statistical Model Identification.}
+\newblock \emph{IEEE Transactions on Automatic Control}, \textbf{19}(6),
+  716--723.
+
+\bibitem[{Bachl \emph{et~al.}(2019)Bachl, Lindgren, Borchers, and
+  Illian}]{bachl2019}
+Bachl FE, Lindgren F, Borchers DL, Illian JB (2019).
+\newblock \enquote{\pkg{inlabru}: An \proglang{R} Package for {{Bayesian}}
+  Spatial Modelling from Ecological Survey Data.}
+\newblock \emph{Methods in Ecology and Evolution}, \textbf{10}(6), 760--766.
+\newblock \doi{10.1111/2041-210X.13168}.
+
+\bibitem[{Bakka \emph{et~al.}(2018)Bakka, Rue, Fuglstad, Riebler, Bolin,
+  Illian, Krainski, Simpson, and Lindgren}]{bakka2018review}
+Bakka H, Rue H, Fuglstad GA, Riebler A, Bolin D, Illian J, Krainski E, Simpson
+  D, Lindgren F (2018).
+\newblock \enquote{Spatial modeling with \proglang{R}-\pkg{INLA}: A review.}
+\newblock \emph{Wiley Interdisciplinary Reviews: Computational Statistics},
+  \textbf{10}(6), e1443.
+
+\bibitem[{Bakka \emph{et~al.}(2019)Bakka, Vanhatalo, Illian, Simpson, and
+  Rue}]{bakka2019}
+Bakka H, Vanhatalo J, Illian J, Simpson D, Rue H (2019).
+\newblock \enquote{Non-Stationary {{Gaussian}} Models with Physical Barriers.}
+\newblock \emph{arXiv:1608.03787 [stat]}.
+\newblock \eprint{1608.03787}.
+
+\bibitem[{Banerjee \emph{et~al.}(2008)Banerjee, Gelfand, Finley, and
+  Sang}]{banerjee2008}
+Banerjee S, Gelfand AE, Finley AO, Sang H (2008).
+\newblock \enquote{Gaussian Predictive Process Models for Large Spatial Data
+  Sets.}
+\newblock \emph{Journal of the Royal Statistical Society B}, \textbf{70}(4),
+  825--848.
+
+\bibitem[{Barnett \emph{et~al.}(2021)Barnett, Ward, and Anderson}]{barnett2021}
+Barnett LAK, Ward EJ, Anderson SC (2021).
+\newblock \enquote{Improving Estimates of Species Distribution Change by
+  Incorporating Local Trends.}
+\newblock \emph{Ecography}, \textbf{44}(3), 427--439.
+\newblock \doi{10.1111/ecog.05176}.
+
+\bibitem[{Barrowman and Myers(2000)}]{barrowman2000}
+Barrowman N, Myers RA (2000).
+\newblock \enquote{Still More Spawner-Recruitment Curves: The Hockey Stick and
+  its Generalizations.}
+\newblock \emph{Canadian Journal of Fisheries and Aquatic Sciences},
+  \textbf{57}, 665--676.
+
+\bibitem[{Bates \emph{et~al.}(2015)Bates, M{\"a}chler, Bolker, and
+  Walker}]{bates2015}
+Bates D, M{\"a}chler M, Bolker B, Walker S (2015).
+\newblock \enquote{Fitting Linear Mixed-Effects Models Using \pkg{lme4}.}
+\newblock \emph{Journal of Statistical Software}, \textbf{67}(1), 1--48.
+\newblock \doi{10.18637/jss.v067.i01}.
+
+\bibitem[{Bates \emph{et~al.}(2024)Bates, Maechler, and Jagan}]{Matrix}
+Bates D, Maechler M, Jagan M (2024).
+\newblock \emph{Matrix: Sparse and Dense Matrix Classes and Methods}.
+\newblock R package version 1.7-0,
+  \urlprefix\url{https://CRAN.R-project.org/package=Matrix}.
+
+\bibitem[{Bengtsson(2021)}]{bengtsson2021future}
+Bengtsson H (2021).
+\newblock \enquote{A Unifying Framework for Parallel and Distributed Processing
+  in \proglang{R} using Futures.}
+\newblock \emph{The R Journal}, \textbf{13}(2), 208--227.
+\newblock \doi{10.32614/RJ-2021-048}.
+\newblock \urlprefix\url{https://doi.org/10.32614/RJ-2021-048}.
+
+\bibitem[{Bivand \emph{et~al.}(2014)Bivand, Gómez-Rubio, and Rue}]{bivand2014}
+Bivand RS, Gómez-Rubio V, Rue H (2014).
+\newblock \enquote{Approximate Bayesian inference for spatial econometrics
+  models.}
+\newblock \emph{Spatial Statistics}, \textbf{9}, 146--165.
+\newblock ISSN 2211-6753.
+\newblock \doi{https://doi.org/10.1016/j.spasta.2014.01.002}.
+\newblock Revealing Intricacies in Spatial and Spatio-Temporal Data: Papers
+  from the Spatial Statistics 2013 Conference,
+  \urlprefix\url{https://www.sciencedirect.com/science/article/pii/S2211675314000037}.
+
+\bibitem[{Blackford \emph{et~al.}(2002)Blackford, Petitet, Pozo, Remington,
+  Whaley, Demmel, Dongarra, Duff, Hammarling, Henry \emph{et~al.}}]{blas}
+Blackford LS, Petitet A, Pozo R, Remington K, Whaley RC, Demmel J, Dongarra J,
+  Duff I, Hammarling S, Henry G, \emph{et~al.} (2002).
+\newblock \enquote{An updated set of basic linear algebra subprograms (BLAS).}
+\newblock \emph{ACM Transactions on Mathematical Software}, \textbf{28}(2),
+  135--151.
+
+\bibitem[{{Breivik} \emph{et~al.}(2021){Breivik}, {Aanes}, {Søvik}, {Aglen},
+  {Mehl}, and {Johnsen}}]{breivik2021}
+{Breivik} O, {Aanes} F, {Søvik} G, {Aglen} A, {Mehl} S, {Johnsen} E (2021).
+\newblock \enquote{Predicting Abundance Indices in Areas Without Coverage with
+  a Latent Spatio-temporal Gaussian Model.}
+\newblock \emph{ICES Journal of Marine Science}, p. fsab073.
+\newblock \doi{10.1093/icesjms/fsab073}.
+
+\bibitem[{Brooks \emph{et~al.}(2017)Brooks, Kristensen, {van Benthem},
+  Magnusson, Berg, Nielsen, Skaug, Maechler, and Bolker}]{brooks2017}
+Brooks ME, Kristensen K, {van Benthem} KJ, Magnusson A, Berg CW, Nielsen A,
+  Skaug HJ, Maechler M, Bolker BM (2017).
+\newblock \enquote{\pkg{glmmTMB} Balances Speed and Flexibility among Packages
+  for Zero-Inflated Generalized Linear Mixed Modeling.}
+\newblock \emph{The R Journal}, \textbf{9}(2), 378--400.
+
+\bibitem[{Bürkner(2017)}]{brms}
+Bürkner PC (2017).
+\newblock \enquote{\pkg{brms}: An \proglang{R} Package for {Bayesian}
+  Multilevel Models Using \proglang{Stan}.}
+\newblock \emph{Journal of Statistical Software}, \textbf{80}(1), 1--28.
+\newblock \doi{10.18637/jss.v080.i01}.
+
+\bibitem[{Carpenter \emph{et~al.}(2017)Carpenter, Gelman, Hoffman, Lee,
+  Goodrich, Betancourt, Brubaker, Guo, Li, and Riddell}]{carpenter2017}
+Carpenter B, Gelman A, Hoffman MD, Lee D, Goodrich B, Betancourt M, Brubaker M,
+  Guo J, Li P, Riddell A (2017).
+\newblock \enquote{\proglang{Stan}: A Probabilistic Programming Language.}
+\newblock \emph{Journal of Statistical Software}, \textbf{76}(1).
+\newblock \doi{10.18637/jss.v076.i01}.
+
+\bibitem[{Chil{\'e}s and Delfiner(1999)}]{chiles1999}
+Chil{\'e}s JP, Delfiner P (1999).
+\newblock \emph{Geostatistics: Modeling Spatial Uncertainty}.
+\newblock {John Wiley \& Sons}.
+
+\bibitem[{Cressie(1993)}]{cressie1993}
+Cressie N (1993).
+\newblock \emph{{Statistics for Spatial Data}}.
+\newblock {John Wiley \& Sons}.
+
+\bibitem[{Cressie and Wikle(2011)}]{cressie2011}
+Cressie NAC, Wikle CK (2011).
+\newblock \emph{Statistics for Spatio-Temporal Data}.
+\newblock Wiley Series in Probability and Statistics. {John Wiley \& Sons},
+  {Hoboken, N.J}.
+
+\bibitem[{Datta \emph{et~al.}(2016)Datta, Banerjee, Finley, and
+  Gelfand}]{datta2016}
+Datta A, Banerjee S, Finley AO, Gelfand AE (2016).
+\newblock \enquote{Hierarchical Nearest-Neighbor {{Gaussian}} Process Models
+  for Large Geostatistical Datasets.}
+\newblock \emph{J. Am. Stat. Assoc.}, \textbf{111}(514), 800--812.
+\newblock \doi{10.1080/01621459.2015.1044091}.
+
+\bibitem[{Diggle and Ribeiro(2007)}]{diggle2007}
+Diggle PJ, Ribeiro PJ (2007).
+\newblock \emph{Model-Based Geostatistics}.
+\newblock {Springer-Verlag}.
+
+\bibitem[{Dormann \emph{et~al.}(2007)Dormann, McPherson, Araújo, Bivand,
+  Bolliger, Carl, Davies, Hirzel, Jetz, Kissling, Kühn, Ohlemüller,
+  Peres‐Neto, Reineking, Schröder, Schurr, and Wilson}]{dormann2007}
+Dormann CF, McPherson JM, Araújo MB, Bivand R, Bolliger J, Carl G, Davies RG,
+  Hirzel A, Jetz W, Kissling WD, Kühn I, Ohlemüller R, Peres‐Neto PR,
+  Reineking B, Schröder B, Schurr FM, Wilson R (2007).
+\newblock \enquote{Methods to Account for Spatial Autocorrelation in the
+  Analysis of Species Distributional Data: A Review.}
+\newblock \emph{Ecography}, \textbf{30}(5), 609--628.
+\newblock \doi{10.1111/j.2007.0906-7590.05171.x}.
+
+\bibitem[{Dunn and Smyth(1996)}]{dunn1996}
+Dunn PK, Smyth GK (1996).
+\newblock \enquote{Randomized {{Quantile Residuals}}.}
+\newblock \emph{Journal of Computational and Graphical Statistics},
+  \textbf{5}(3), 236--244.
+\newblock \doi{10.1080/10618600.1996.10474708}.
+
+\bibitem[{Elhorst(2010)}]{elhorst2010}
+Elhorst JP (2010).
+\newblock \enquote{Spatial {{Panel Data Models}}.}
+\newblock In MM~Fischer, A~Getis (eds.), \emph{Handbook of {{Applied Spatial
+  Analysis}}: {{Software Tools}}, {{Methods}} and {{Applications}}}, pp.
+  377--407. {Springer}, {Berlin, Heidelberg}.
+\newblock ISBN 978-3-642-03647-7.
+\newblock \doi{10.1007/978-3-642-03647-7_19}.
+
+\bibitem[{Elhorst(2012)}]{elhorst2012}
+Elhorst JP (2012).
+\newblock \enquote{Dynamic Spatial Panels: Models, Methods, and Inferences.}
+\newblock \emph{Journal of Geographical Systems}, \textbf{14}(1), 5--28.
+\newblock ISSN 1435-5930, 1435-5949.
+\newblock \doi{10.1007/s10109-011-0158-4}.
+
+\bibitem[{Finley \emph{et~al.}(2007)Finley, Banerjee, and Carlin}]{finley2007}
+Finley AO, Banerjee S, Carlin BP (2007).
+\newblock \enquote{\pkg{spBayes}: An \proglang{R} Package for {{Univariate}}
+  and {{Multivariate Hierarchical Point}}-Referenced {{Spatial Models}}.}
+\newblock \emph{Journal of Statistical Software}, \textbf{19}(4).
+\newblock \doi{10.18637/jss.v019.i04}.
+
+\bibitem[{Finley \emph{et~al.}(2015)Finley, Banerjee, and
+  E.~Gelfand}]{finley2015}
+Finley AO, Banerjee S, E~Gelfand A (2015).
+\newblock \enquote{\pkg{spBayes}: An \proglang{R} Package for Univariate and
+  Multivariate Hierarchical Point-Referenced Spatial Models.}
+\newblock \emph{Journal of Statistical Software}, \textbf{63}(13).
+\newblock \doi{10.18637/jss.v063.i13}.
+
+\bibitem[{Finley \emph{et~al.}(2022)Finley, Datta, and Banerjee}]{finley2022}
+Finley AO, Datta A, Banerjee S (2022).
+\newblock \enquote{\pkg{spNNGP} \proglang{R} Package for Nearest Neighbor
+  {Gaussian} Process Models.}
+\newblock \emph{Journal of Statistical Software}, \textbf{103}(5).
+\newblock \doi{10.18637/jss.v103.i05}.
+
+\bibitem[{Fuglstad \emph{et~al.}(2019)Fuglstad, Simpson, Lindgren, and
+  Rue}]{fuglstad2019}
+Fuglstad GA, Simpson D, Lindgren F, Rue H (2019).
+\newblock \enquote{Constructing {{Priors}} That {{Penalize}} the {{Complexity}}
+  of {{Gaussian Random Fields}}.}
+\newblock \emph{Journal of the American Statistical Association},
+  \textbf{114}(525), 445--452.
+\newblock \doi{10.1080/01621459.2017.1415907}.
+
+\bibitem[{Gay(1990)}]{gay1990}
+Gay DM (1990).
+\newblock \enquote{Usage Summary for Selected Optimization Routines.}
+\newblock \emph{Computing Science Technical Report}, \textbf{153}, 1--21.
+
+\bibitem[{Geisser and Eddy(1979)}]{geisser1979}
+Geisser S, Eddy WF (1979).
+\newblock \enquote{A Predictive Approach to Model Selection.}
+\newblock \emph{Journal of the American Statistical Association},
+  \textbf{74}(365), 153--160.
+\newblock ISSN 0162-1459, 1537-274X.
+\newblock \doi{10.1080/01621459.1979.10481632}.
+
+\bibitem[{Gelfand and Banerjee(2017)}]{gelfand2017}
+Gelfand AE, Banerjee S (2017).
+\newblock \enquote{Bayesian Modeling and Analysis of Geostatistical Data.}
+\newblock \emph{Annual Review of Statistics and Its Application},
+  \textbf{4}(1), 245--266.
+\newblock \doi{10.1146/annurev-statistics-060116-054155}.
+
+\bibitem[{Gittleman and Kot(1990)}]{gittleman1990}
+Gittleman JL, Kot M (1990).
+\newblock \enquote{{Adaptation: Statistics and a Null Model for Estimating
+  Phylogenetic Effects}.}
+\newblock \emph{Systematic Biology}, \textbf{39}(3), 227--241.
+\newblock \doi{10.2307/2992183}.
+
+\bibitem[{Greven and Kneib(2010)}]{greven2010}
+Greven S, Kneib T (2010).
+\newblock \enquote{On the Behaviour of Marginal and Conditional {{AIC}} in
+  Linear Mixed Models.}
+\newblock \emph{Biometrika}, \textbf{97}(4), 773--789.
+\newblock ISSN 1464-3510, 0006-3444.
+\newblock \doi{10.1093/biomet/asq042}.
+
+\bibitem[{Gr{\"u}ss and Thorson(2019)}]{gruss2019multiple}
+Gr{\"u}ss A, Thorson JT (2019).
+\newblock \enquote{Developing Spatio-Temporal Models Using Multiple Data Types
+  for Evaluating Population Trends and Habitat Usage.}
+\newblock \emph{ICES Journal of Marine Science}, \textbf{76}(6), 1748--1761.
+\newblock \doi{10.1093/icesjms/fsz075}.
+
+\bibitem[{Hartig(2021)}]{dharma}
+Hartig F (2021).
+\newblock \emph{\pkg{DHARMa}: Residual Diagnostics for Hierarchical
+  (Multi-Level/Mixed) Regression Models}.
+\newblock \proglang{R} package version 0.4.4,
+  \urlprefix\url{https://CRAN.R-project.org/package=DHARMa}.
+
+\bibitem[{Haskard(2007)}]{haskard2007}
+Haskard KA (2007).
+\newblock \emph{An Anisotropic {{Matern}} Spatial Covariance Model: {{REML}}
+  Estimation and Properties}.
+\newblock {PhD}, The University of Adelaide.
+
+\bibitem[{Hastie and Tibshirani(1993)}]{hastie1993}
+Hastie T, Tibshirani R (1993).
+\newblock \enquote{Varying-{{Coefficient Models}}.}
+\newblock \emph{Journal of the Royal Statistical Society. Series B
+  (Methodological)}, \textbf{55}(4), 757--796.
+\newblock ISSN 0035-9246.
+\newblock \eprint{2345993}.
+
+\bibitem[{Heaton \emph{et~al.}(2019)Heaton, Datta, Finley, Furrer, Guinness,
+  Guhaniyogi, Gerber, Gramacy, Hammerling, Katzfuss, Lindgren, Nychka, Sun, and
+  {Zammit-Mangion}}]{heaton2019}
+Heaton MJ, Datta A, Finley AO, Furrer R, Guinness J, Guhaniyogi R, Gerber F,
+  Gramacy RB, Hammerling D, Katzfuss M, Lindgren F, Nychka DW, Sun F,
+  {Zammit-Mangion} A (2019).
+\newblock \enquote{A Case Study Competition Among Methods for Analyzing Large
+  Spatial Data.}
+\newblock \emph{Journal of Agriculture And Biology}, \textbf{24}(3), 398--425.
+\newblock \doi{10.1007/s13253-018-00348-w}.
+
+\bibitem[{Hilbe(2011)}]{hilbe2011}
+Hilbe JM (2011).
+\newblock \emph{Negative {{Binomial Regression}}}.
+\newblock {Cambridge University Press}.
+
+\bibitem[{Krainski \emph{et~al.}(2018)Krainski, {G{\'o}mez-Rubio}, Bakka,
+  Lenzi, {Castro-Camilo}, Simpson, Lindgren, and Rue}]{krainski2018}
+Krainski E, {G{\'o}mez-Rubio} V, Bakka H, Lenzi A, {Castro-Camilo} D, Simpson
+  D, Lindgren F, Rue H (2018).
+\newblock \emph{Advanced Spatial Modeling with Stochastic Partial Differential
+  Equations Using {{R}} and {{INLA}}}.
+\newblock {Chapman and Hall/CRC}.
+\newblock \urlprefix\url{https://becarioprecario.bitbucket.io/spde-gitbook}.
+
+\bibitem[{Kristensen(2023)}]{rtmb}
+Kristensen K (2023).
+\newblock \emph{\pkg{RTMB}: \proglang{R} Bindings for \pkg{TMB}}.
+\newblock \proglang{R} package version 1.2,
+  \urlprefix\url{https://CRAN.R-project.org/package=RTMB}.
+
+\bibitem[{Kristensen \emph{et~al.}(2016)Kristensen, Nielsen, Berg, Skaug, and
+  Bell}]{kristensen2016}
+Kristensen K, Nielsen A, Berg CW, Skaug H, Bell BM (2016).
+\newblock \enquote{\pkg{TMB}: Automatic Differentiation and {{Laplace}}
+  Approximation.}
+\newblock \emph{Journal of Statistical Software}, \textbf{70}(5), 1--21.
+\newblock \doi{10.18637/jss.v070.i05}.
+
+\bibitem[{Latimer \emph{et~al.}(2009)Latimer, Banerjee, Sang~Jr, Mosher, and
+  Silander~Jr}]{latimer2009}
+Latimer AM, Banerjee S, Sang~Jr H, Mosher ES, Silander~Jr JA (2009).
+\newblock \enquote{Hierarchical Models Facilitate Spatial Analysis of Large
+  Data Sets: A Case Study on Invasive Plant Species in the Northeastern {United
+  States}.}
+\newblock \emph{Ecology Letters}, \textbf{12}(2), 144--154.
+\newblock \doi{10.1111/j.1461-0248.2008.01270.x}.
+
+\bibitem[{Lee and Yu(2010)}]{lee2010}
+Lee LF, Yu J (2010).
+\newblock \enquote{Estimation of Spatial Autoregressive Panel Data Models with
+  Fixed Effects.}
+\newblock \emph{Journal of Econometrics}, \textbf{154}(2), 165--185.
+
+\bibitem[{Legendre and Fortin(1989)}]{legendre1989a}
+Legendre P, Fortin MJ (1989).
+\newblock \enquote{Spatial Pattern and Ecological Analysis.}
+\newblock \emph{Vegetatio}, \textbf{80}(2), 107--138.
+\newblock \doi{10.1007/BF00048036}.
+
+\bibitem[{Li and Wood(2020)}]{li2020a}
+Li Z, Wood SN (2020).
+\newblock \enquote{Faster Model Matrix Crossproducts for Large Generalized
+  Linear Models with Discretized Covariates.}
+\newblock \emph{Statistics and Computing}, \textbf{30}(1), 19--25.
+\newblock \doi{10.1007/s11222-019-09864-2}.
+
+\bibitem[{Liaw and Wiener(2002)}]{liaw2002}
+Liaw A, Wiener M (2002).
+\newblock \enquote{Classification and Regression by \pkg{randomForest}.}
+\newblock \emph{\proglang{R} News}, \textbf{2}(3), 18--22.
+
+\bibitem[{Lindgren(2023)}]{fmesher}
+Lindgren F (2023).
+\newblock \emph{\pkg{fmesher}: Triangle Meshes and Related Geometry Tools}.
+\newblock \proglang{R} package version 0.1.2,
+  \urlprefix\url{https://CRAN.R-project.org/package=fmesher}.
+
+\bibitem[{Lindgren \emph{et~al.}(2022)Lindgren, Bolin, and
+  Rue}]{lindgren2022ten}
+Lindgren F, Bolin D, Rue H (2022).
+\newblock \enquote{The {{SPDE}} Approach for {{Gaussian}} and Non-{{Gaussian}}
+  Fields: 10 Years and Still Running.}
+\newblock \emph{Spatial Statistics}, \textbf{50}, 100599.
+\newblock ISSN 22116753.
+\newblock \doi{10.1016/j.spasta.2022.100599}.
+
+\bibitem[{Lindgren and Rue(2015)}]{lindgren2015}
+Lindgren F, Rue H (2015).
+\newblock \enquote{Bayesian Spatial Modelling with \proglang{R}-\pkg{INLA}.}
+\newblock \emph{Journal of Statistical Software}, \textbf{63}(1), 1--25.
+\newblock \doi{10.18637/jss.v063.i19}.
+
+\bibitem[{Lindgren \emph{et~al.}(2011)Lindgren, Rue, and
+  Lindstr{\"o}m}]{lindgren2011}
+Lindgren F, Rue H, Lindstr{\"o}m J (2011).
+\newblock \enquote{An Explicit Link between {{Gaussian}} Fields and {{Gaussian
+  Markov}} Random Fields: The Stochastic Partial Differential Equation
+  Approach.}
+\newblock \emph{Journal of the Royal Statistical Society B}, \textbf{73}(4),
+  423--498.
+\newblock \doi{10.1111/j.1467-9868.2011.00777.x}.
+
+\bibitem[{Lüdecke(2018)}]{ggeffects}
+Lüdecke D (2018).
+\newblock \enquote{\pkg{ggeffects}: Tidy Data Frames of Marginal Effects from
+  Regression Models.}
+\newblock \emph{Journal of Open Source Software}, \textbf{3}(26), 772.
+\newblock \doi{10.21105/joss.00772}.
+
+\bibitem[{Mat{\'e}rn(1986)}]{matern1986}
+Mat{\'e}rn B (1986).
+\newblock \emph{Spatial {{Variation}}}.
+\newblock 2nd edition. {Springer-Verlag}, {New York, NY}.
+
+\bibitem[{McCullagh and Nelder(1989)}]{mccullagh1989}
+McCullagh P, Nelder JA (1989).
+\newblock \emph{Generalized Linear Models}.
+\newblock Chapman {\&} Hall.
+
+\bibitem[{Miller \emph{et~al.}(2019)Miller, Glennie, and Seaton}]{miller2019}
+Miller DL, Glennie R, Seaton AE (2019).
+\newblock \enquote{Understanding the {{Stochastic Partial Differential
+  Equation}} Approach to Smoothing.}
+\newblock \emph{Journal of Agricultural, Biological and Environmental
+  Statistics}.
+\newblock \doi{10.1007/s13253-019-00377-z}.
+
+\bibitem[{Millon \emph{et~al.}(2014)Millon, Petty, Little, Gimenez, Cornulier,
+  and Lambin}]{millon2014}
+Millon A, Petty SJ, Little B, Gimenez O, Cornulier T, Lambin X (2014).
+\newblock \enquote{Dampening {{Prey Cycle Overrides}} the {{Impact}} of
+  {{Climate Change}} on {{Predator Population Dynamics}}: {{A Long}}-{{Term
+  Demographic Study}} on {{Tawny Owls}}.}
+\newblock \emph{Global Change Biology}, \textbf{20}(6), 1770--1781.
+\newblock \doi{10.1111/gcb.12546}.
+
+\bibitem[{Monnahan and Kristensen(2018)}]{monnahan2018}
+Monnahan CC, Kristensen K (2018).
+\newblock \enquote{{No-U-turn Sampling for Fast Bayesian Inference in
+  \pkg{ADMB} and \pkg{TMB}: Introducing the \pkg{adnuts} and \pkg{tmbstan}
+  \proglang{R} Packages}.}
+\newblock \emph{PLOS ONE}, \textbf{13}(5).
+\newblock \doi{10.1371/journal.pone.0197954}.
+
+\bibitem[{Moraga \emph{et~al.}(2021)Moraga, Dean, Inoue, Morawiecki, Noureen,
+  and Wang}]{moraga2021}
+Moraga P, Dean C, Inoue J, Morawiecki P, Noureen SR, Wang F (2021).
+\newblock \enquote{Bayesian spatial modelling of geostatistical data using INLA
+  and SPDE methods: A case study predicting malaria risk in Mozambique.}
+\newblock \emph{Spatial and Spatio-temporal Epidemiology}, \textbf{39}, 100440.
+\newblock ISSN 1877-5845.
+\newblock \doi{https://doi.org/10.1016/j.sste.2021.100440}.
+\newblock
+  \urlprefix\url{https://www.sciencedirect.com/science/article/pii/S1877584521000393}.
+
+\bibitem[{{National Audubon Society}(2021)}]{cbc}
+{National Audubon Society} (2021).
+\newblock \enquote{The {Christmas} Bird Count Historical Results.}
+\newblock \urlprefix\url{www.christmasbirdcount.org}.
+
+\bibitem[{Osgood-Zimmerman and Wakefield(2023)}]{osgood-zimmerman2023}
+Osgood-Zimmerman A, Wakefield J (2023).
+\newblock \enquote{A Statistical Review of {{Template Model Builder}}: A
+  Flexible Tool for Spatial Modelling.}
+\newblock \emph{International Statistical Review}, \textbf{91}(2), 318--342.
+\newblock \doi{10.1111/insr.12534}.
+
+\bibitem[{Paradis and Schliep(2019)}]{ape}
+Paradis E, Schliep K (2019).
+\newblock \enquote{ape 5.0: an environment for modern phylogenetics and
+  evolutionary analyses in {R}.}
+\newblock \emph{Bioinformatics}, \textbf{35}, 526--528.
+\newblock \doi{10.1093/bioinformatics/bty633}.
+
+\bibitem[{Parisa~Naseri and Tabatabaei(2022)}]{naseri2022}
+Parisa~Naseri HAM, Tabatabaei SM (2022).
+\newblock \enquote{Integrated nested Laplace approximation method for
+  hierarchical Bayesian inference of spatial model with application to
+  functional magnetic resonance imaging data.}
+\newblock \emph{Communications in Statistics - Theory and Methods},
+  \textbf{51}(8), 2414--2437.
+\newblock \doi{10.1080/03610926.2020.1776327}.
+\newblock \eprint{https://doi.org/10.1080/03610926.2020.1776327},
+  \urlprefix\url{https://doi.org/10.1080/03610926.2020.1776327}.
+
+\bibitem[{Pebesma(2018)}]{pebesma2018}
+Pebesma E (2018).
+\newblock \enquote{{Simple Features for \proglang{R}: Standardized Support for
+  Spatial Vector Data}.}
+\newblock \emph{{The R Journal}}, \textbf{10}(1), 439--446.
+\newblock \doi{10.32614/RJ-2018-009}.
+
+\bibitem[{Phillips \emph{et~al.}(2006)Phillips, Anderson, and
+  Schapire}]{phillips2006}
+Phillips SJ, Anderson RP, Schapire RE (2006).
+\newblock \enquote{Maximum Entropy Modeling of Species Geographic
+  Distributions.}
+\newblock \emph{Ecological Modelling}, \textbf{190}(3), 231--259.
+\newblock \doi{10.1016/j.ecolmodel.2005.03.026}.
+
+\bibitem[{{\proglang{R} Core Team}(2024)}]{r2024}
+{\proglang{R} Core Team} (2024).
+\newblock \emph{\proglang{R}: A Language and Environment for Statistical
+  Computing}.
+\newblock \proglang{R} Foundation for Statistical Computing, Vienna, Austria.
+\newblock \urlprefix\url{https://www.R-project.org/}.
+
+\bibitem[{Roberts \emph{et~al.}(2017)Roberts, Bahn, Ciuti, Boyce, Elith,
+  {Guillera-Arroita}, Hauenstein, {Lahoz-Monfort}, Schr{\"o}der, Thuiller,
+  Warton, Wintle, Hartig, and Dormann}]{roberts2017}
+Roberts DR, Bahn V, Ciuti S, Boyce MS, Elith J, {Guillera-Arroita} G,
+  Hauenstein S, {Lahoz-Monfort} JJ, Schr{\"o}der B, Thuiller W, Warton DI,
+  Wintle BA, Hartig F, Dormann CF (2017).
+\newblock \enquote{Cross-Validation Strategies for Data with Temporal, Spatial,
+  Hierarchical, or Phylogenetic Structure.}
+\newblock \emph{Ecography}, \textbf{40}(8), 913--929.
+\newblock ISSN 09067590.
+\newblock \doi{10.1111/ecog.02881}.
+
+\bibitem[{Robillard \emph{et~al.}(2016)Robillard, Therrien, Gauthier, Clark,
+  and Bêty}]{robillard2016}
+Robillard A, Therrien JF, Gauthier G, Clark KM, Bêty J (2016).
+\newblock \enquote{Pulsed Resources at Tundra Breeding Sites Affect Winter
+  Irruptions at Temperate Latitudes of a Top Predator, the Snowy Owl.}
+\newblock \emph{Oecologia}, \textbf{181}(2), 423--433.
+\newblock \doi{10.1007/s00442-016-3588-3}.
+
+\bibitem[{Robinson \emph{et~al.}(2022)Robinson, Hayes, and Couch}]{broom}
+Robinson D, Hayes A, Couch S (2022).
+\newblock \emph{\pkg{broom}: Convert Statistical Objects into Tidy Tibbles}.
+\newblock \proglang{R} package version 1.0.1,
+  \urlprefix\url{https://CRAN.R-project.org/package=broom}.
+
+\bibitem[{Rousset and Ferdy(2014)}]{rousset2014}
+Rousset F, Ferdy JB (2014).
+\newblock \enquote{Testing Environmental and Genetic Effects in the Presence of
+  Spatial Autocorrelation.}
+\newblock \emph{Ecography}, \textbf{37}(8), 781--790.
+\newblock \doi{10.1111/ecog.00566}.
+
+\bibitem[{Rue and Held(2005)}]{rue2005gmrf}
+Rue H, Held L (2005).
+\newblock \emph{{Gaussian {Markov} Random Fields: Theory and Applications}}.
+\newblock CRC Press.
+
+\bibitem[{Rue \emph{et~al.}(2009)Rue, Martino, and Chopin}]{rue2009}
+Rue H, Martino S, Chopin N (2009).
+\newblock \enquote{Approximate {{Bayesian}} Inference for Latent {{Gaussian}}
+  Models by Using Integrated Nested {{Laplace}} Approximations.}
+\newblock \emph{Journal of the Royal Statistical Society B}, \textbf{71}(2),
+  319--392.
+\newblock \doi{10.1111/j.1467-9868.2008.00700.x}.
+
+\bibitem[{S{\"a}fken \emph{et~al.}(2021)S{\"a}fken, R{\"u}gamer, Kneib, and
+  Greven}]{safken2021}
+S{\"a}fken B, R{\"u}gamer D, Kneib T, Greven S (2021).
+\newblock \enquote{Conditional {{Model Selection}} in {{Mixed-Effects Models}}
+  with {{{\textbf{cAIC4}}}}.}
+\newblock \emph{Journal of Statistical Software}, \textbf{99}(8).
+\newblock \doi{10.18637/jss.v099.i08}.
+
+\bibitem[{{Shelton} \emph{et~al.}(2014){Shelton}, {Thorson}, {Ward}, and
+  {Feist}}]{shelton2014}
+{Shelton} A, {Thorson} J, {Ward} E, {Feist} B (2014).
+\newblock \enquote{Spatial Semiparametric Models Improve Estimates of Species
+  Abundance and Distribution.}
+\newblock \emph{Canadian Journal of Fisheries and Aquatic Sciences},
+  \textbf{71}(11), 1655--1666.
+\newblock \doi{10.1139/cjfas-2013-0508}.
+
+\bibitem[{Simpson \emph{et~al.}(2012)Simpson, Lindgren, and Rue}]{simpson2012}
+Simpson D, Lindgren F, Rue H (2012).
+\newblock \enquote{In Order to Make Spatial Statistics Computationally
+  Feasible, We Need to Forget about the Covariance Function.}
+\newblock \emph{Environmetrics}, \textbf{23}(1), 65--74.
+\newblock \doi{10.1002/env.1137}.
+
+\bibitem[{Simpson \emph{et~al.}(2017)Simpson, Rue, Riebler, Martins, and
+  Sørbye}]{simpson2017}
+Simpson D, Rue H, Riebler A, Martins TG, Sørbye SH (2017).
+\newblock \enquote{{Penalising Model Component Complexity: A Principled,
+  Practical Approach to Constructing Priors}.}
+\newblock \emph{Statistical Science}, \textbf{32}(1), 1 -- 28.
+\newblock \doi{10.1214/16-STS576}.
+
+\bibitem[{Smith(1985)}]{smith1985}
+Smith JQ (1985).
+\newblock \enquote{Diagnostic Checks of Non-Standard Time Series Models.}
+\newblock \emph{Journal of Forecasting}, \textbf{4}(3), 283--291.
+\newblock \doi{10.1002/for.3980040305}.
+
+\bibitem[{{Stan Development Team}(2022)}]{rstan}
+{Stan Development Team} (2022).
+\newblock \emph{\pkg{rstan}: The \proglang{R} Interface to \proglang{Stan}}.
+\newblock \proglang{R} package version 2.21.7,
+  \urlprefix\url{https://mc-stan.org/}.
+
+\bibitem[{Thorson(2018)}]{thorson2018poisson}
+Thorson JT (2018).
+\newblock \enquote{Three Problems with the Conventional Delta-Model for Biomass
+  Sampling Data, and a Computationally Efficient Alternative.}
+\newblock \emph{Canadian Journal of Fisheries and Aquatic Sciences},
+  \textbf{75}(9), 1369--1382.
+\newblock \doi{10.1139/cjfas-2017-0266}.
+
+\bibitem[{Thorson(2019{\natexlab{a}})}]{thorson2019}
+Thorson JT (2019{\natexlab{a}}).
+\newblock \enquote{Guidance for Decisions Using the {{Vector Autoregressive
+  Spatio}}-{{Temporal}} \pkg{VAST}) Package in Stock, Ecosystem, Habitat and
+  Climate Assessments.}
+\newblock \emph{Fisheries Research}, \textbf{210}, 143--161.
+\newblock \doi{10.1016/j.fishres.2018.10.013}.
+
+\bibitem[{Thorson(2019{\natexlab{b}})}]{thorson2019d}
+Thorson JT (2019{\natexlab{b}}).
+\newblock \enquote{Measuring the Impact of Oceanographic Indices on Species
+  Distribution Shifts: The Spatially Varying Effect of Cold-Pool Extent in the
+  Eastern {{Bering Sea}}.}
+\newblock \emph{Limnology and Oceanography}, \textbf{64}(6), 2632--2645.
+\newblock \doi{10.1002/lno.11238}.
+
+\bibitem[{Thorson(2024)}]{thorson2024cAIC}
+Thorson JT (2024).
+\newblock \enquote{Measuring complexity for hierarchical models using effective
+  degrees of freedom.}
+\newblock \emph{Ecology}, \textbf{In press}.
+
+\bibitem[{Thorson \emph{et~al.}(2024)Thorson, Anderson, Goddard, and
+  Rooper}]{thorson2024tinyvast}
+Thorson JT, Anderson SC, Goddard P, Rooper CN (2024).
+\newblock \enquote{\pkg{tinyVAST}: \proglang{R} package with an expressive
+  interface to specify lagged and simultaneous effects in multivariate
+  spatio-temporal models.}
+\newblock \emph{arXiv:2401.10193 [stat.ME]}.
+\newblock \doi{10.48550/arXiv.2401.10193}.
+\newblock \eprint{2401.10193}.
+
+\bibitem[{Thorson \emph{et~al.}(2023)Thorson, Barnes, Friedman, Morano, and
+  Siple}]{thorson2023SVC}
+Thorson JT, Barnes CL, Friedman ST, Morano JL, Siple MC (2023).
+\newblock \enquote{Spatially Varying Coefficients Can Improve Parsimony and
+  Descriptive Power for Species Distribution Models.}
+\newblock \emph{Ecography}, p. e06510.
+\newblock \doi{10.1111/ecog.06510}.
+
+\bibitem[{Thorson \emph{et~al.}(2020)Thorson, Cheng, Hermann, Ianelli, Litzow,
+  O'Leary, and Thompson}]{thorson2020}
+Thorson JT, Cheng W, Hermann AJ, Ianelli JN, Litzow MA, O'Leary CA, Thompson GG
+  (2020).
+\newblock \enquote{Empirical Orthogonal Function Regression: {Linking}
+  Population Biology to Spatial Varying Environmental Conditions Using Climate
+  Projections.}
+\newblock \emph{Global Change Biology}, \textbf{26}(8), 4638--4649.
+\newblock \doi{10.1111/gcb.15149}.
+
+\bibitem[{Thorson \emph{et~al.}(2016)Thorson, Ianelli, Larsen, Ries,
+  Scheuerell, Szuwalski, and Zipkin}]{thorson2016}
+Thorson JT, Ianelli JN, Larsen EA, Ries L, Scheuerell MD, Szuwalski C, Zipkin
+  EF (2016).
+\newblock \enquote{Joint Dynamic Species Distribution Models: A Tool for
+  Community Ordination and Spatio-Temporal Monitoring.}
+\newblock \emph{Global Ecology and Biogeography}, \textbf{25}(9), 1144--1158.
+\newblock \doi{10.1111/geb.12464}.
+
+\bibitem[{Thorson and Kristensen(2016)}]{thorson2016bias}
+Thorson JT, Kristensen K (2016).
+\newblock \enquote{Implementing a Generic Method for Bias Correction in
+  Statistical Models Using Random Effects, with Spatial and Population Dynamics
+  Examples.}
+\newblock \emph{Fisheries Research}, \textbf{175}, 66--74.
+\newblock \doi{10.1016/j.fishres.2015.11.016}.
+
+\bibitem[{Thorson and Kristensen(2024)}]{thorsonkristensen2024}
+Thorson JT, Kristensen K (2024).
+\newblock \emph{Spatio-{Temporal Models} for {Ecologists}}.
+\newblock CRC Press, Boca Raton, FL.
+
+\bibitem[{Thorson \emph{et~al.}(2015{\natexlab{a}})Thorson, Scheuerell,
+  Shelton, See, Skaug, and Kristensen}]{thorson2015}
+Thorson JT, Scheuerell MD, Shelton AO, See KE, Skaug HJ, Kristensen K
+  (2015{\natexlab{a}}).
+\newblock \enquote{Spatial Factor Analysis: a New Tool for Estimating Joint
+  Species Distributions and Correlations in Species Range.}
+\newblock \emph{Methods in Ecology and Evolution}, \textbf{6}(6), 627--637.
+\newblock \doi{10.1111/2041-210X.12359}.
+
+\bibitem[{Thorson \emph{et~al.}(2015{\natexlab{b}})Thorson, Shelton, Ward, and
+  Skaug}]{thorson2015ices}
+Thorson JT, Shelton AO, Ward EJ, Skaug HJ (2015{\natexlab{b}}).
+\newblock \enquote{Geostatistical delta-generalized linear mixed models improve
+  precision for estimated abundance indices for {West} {Coast} groundfishes.}
+\newblock \emph{ICES Journal of Marine Science: Journal du Conseil},
+  \textbf{72}(5), 1297--1310.
+\newblock \doi{10.1093/icesjms/fsu243}.
+
+\bibitem[{Thorson \emph{et~al.}(2015{\natexlab{c}})Thorson, Skaug, Kristensen,
+  Shelton, Ward, Harms, and Benante}]{thorson2015ecology}
+Thorson JT, Skaug HJ, Kristensen K, Shelton AO, Ward EJ, Harms JH, Benante JA
+  (2015{\natexlab{c}}).
+\newblock \enquote{The Importance of Spatial Models for Estimating the Strength
+  of Density Dependence.}
+\newblock \emph{Ecology}, \textbf{96}(5), 1202--1212.
+\newblock \doi{10.1890/14-0739.1}.
+
+\bibitem[{Thygesen \emph{et~al.}(2017)Thygesen, Albertsen, Berg, Kristensen,
+  and Nielsen}]{thygesen2017a}
+Thygesen UH, Albertsen CM, Berg CW, Kristensen K, Nielsen A (2017).
+\newblock \enquote{Validation of Ecological State Space Models Using the
+  {{Laplace}} Approximation.}
+\newblock \emph{Environmental and Ecological Statistics}, \textbf{24}(2),
+  317--339.
+\newblock \doi{10.1007/s10651-017-0372-4}.
+
+\bibitem[{Tweedie(1984)}]{tweedie1984}
+Tweedie MCK (1984).
+\newblock \enquote{An Index Which Distinguishes between Some Important
+  Exponential Families.}
+\newblock In JK~Gosh, J~Roy (eds.), \emph{Statistics: {{Applications}} and
+  {{New Directions}}. {{Proceedings}} of the {{Indian Statistical Institute
+  Golden Jubilee International Conference}}}, pp. 579--604. {Indian Statistical
+  Institute}, {Calcutta, India}.
+
+\bibitem[{Vehtari \emph{et~al.}(2017)Vehtari, Gelman, and Gabry}]{vehtari2017}
+Vehtari A, Gelman A, Gabry J (2017).
+\newblock \enquote{Practical {{Bayesian}} Model Evaluation Using Leave-One-out
+  Cross-Validation and {{WAIC}}.}
+\newblock \emph{Statistics and Computing}, \textbf{27}(5), 1413--1432.
+\newblock \doi{10.1007/s11222-016-9696-4}.
+
+\bibitem[{Ver~Hoef \emph{et~al.}(2018)Ver~Hoef, Peterson, Hooten, Hanks, and
+  Fortin}]{verhoef2018}
+Ver~Hoef JM, Peterson EE, Hooten MB, Hanks EM, Fortin MJ (2018).
+\newblock \enquote{Spatial Autoregressive Models for Statistical Inference from
+  Ecological Data.}
+\newblock \emph{Ecological Monographs}, \textbf{88}(1), 36--59.
+\newblock \doi{10.1002/ecm.1283}.
+
+\bibitem[{Waagepetersen(2006)}]{waagepetersen2006}
+Waagepetersen R (2006).
+\newblock \enquote{A {{Simulation-Based Goodness-of-Fit Test}} for {{Random
+  Effects}} in {{Generalized Linear Mixed Models}}.}
+\newblock \emph{Scandinavian Journal of Statistics}, \textbf{33}(4), 721--731.
+\newblock ISSN 0303-6898.
+\newblock \eprint{4616954}.
+
+\bibitem[{Wall(2004)}]{wall2004}
+Wall MM (2004).
+\newblock \enquote{A Close Look at the Spatial Structure Implied by the {{CAR}}
+  and {{SAR}} Models.}
+\newblock \emph{Journal of Statistical Planning and Inference},
+  \textbf{121}(2), 311--324.
+\newblock \doi{10.1016/S0378-3758(03)00111-3}.
+
+\bibitem[{Ward \emph{et~al.}(2022)Ward, Barnett, Anderson, Commander, and
+  Essington}]{ward2022}
+Ward EJ, Barnett LAK, Anderson SC, Commander CJC, Essington TE (2022).
+\newblock \enquote{Incorporating Non-Stationary Spatial Variability into
+  Dynamic Species Distribution Models.}
+\newblock \emph{ICES Journal of Marine Science}, \textbf{79}(9), 2422--2429.
+\newblock \doi{10.1093/icesjms/fsac179}.
+
+\bibitem[{Whittle(1954)}]{whittle1954}
+Whittle P (1954).
+\newblock \enquote{On {{Stationary Processes}} in the {{Plane}}.}
+\newblock \emph{Biometrika}, \textbf{41}(3/4), 434.
+\newblock ISSN 00063444.
+\newblock \doi{10.2307/2332724}.
+\newblock \eprint{2332724}.
+
+\bibitem[{Wickham(2016)}]{ggplot2}
+Wickham H (2016).
+\newblock \emph{ggplot2: Elegant Graphics for Data Analysis}.
+\newblock Springer-Verlag New York.
+\newblock ISBN 978-3-319-24277-4.
+\newblock \urlprefix\url{https://ggplot2.tidyverse.org}.
+
+\bibitem[{Wood(2017)}]{wood2017a}
+Wood S (2017).
+\newblock \emph{Generalized Additive Models: An Introduction with
+  \proglang{R}}.
+\newblock 2nd edition. {Chapman and Hall/CRC}.
+
+\bibitem[{Wood and Scheipl(2020)}]{wood2020}
+Wood S, Scheipl F (2020).
+\newblock \emph{\pkg{gamm4}: {Generalized Additive Mixed Models} using
+  \pkg{mgcv} and \pkg{lme4}}.
+\newblock \proglang{R} package version 0.2-6,
+  \urlprefix\url{https://CRAN.R-project.org/package=gamm4}.
+
+\bibitem[{Wood \emph{et~al.}(2015)Wood, Goude, and Shaw}]{wood2015}
+Wood SN, Goude Y, Shaw S (2015).
+\newblock \enquote{Generalized Additive Models for Large Data Sets.}
+\newblock \emph{Journal of the Royal Statistical Society Series C: Applied
+  Statistics}, \textbf{64}(1), 139--155.
+\newblock \doi{10.1111/rssc.12068}.
+
+\bibitem[{Wood \emph{et~al.}(2017)Wood, Li, Shaddick, and Augustin}]{wood2017b}
+Wood SN, Li Z, Shaddick G, Augustin NH (2017).
+\newblock \enquote{Generalized Additive Models for Gigadata: Modeling the
+  {{U}}.{{K}}. Black Smoke Network Daily Data.}
+\newblock \emph{Journal of the American Statistical Association},
+  \textbf{112}(519), 1199--1210.
+\newblock \doi{10.1080/01621459.2016.1195744}.
+
+\bibitem[{Xianyi \emph{et~al.}(2012)Xianyi, Qian, and Yunquan}]{openblas}
+Xianyi Z, Qian W, Yunquan Z (2012).
+\newblock \enquote{Model-driven Level 3 {BLAS} Performance Optimization on
+  {Loongson 3A} Processor.}
+\newblock In \emph{2012 {IEEE} 18th {International Conference on Parallel and
+  Distributed Systems}}, pp. 684--691.
+\newblock \doi{10.1109/ICPADS.2012.97}.
+
+\bibitem[{Zhang \emph{et~al.}(2015)Zhang, Czado, and Sigloch}]{zhang2015}
+Zhang R, Czado C, Sigloch K (2015).
+\newblock \enquote{{Bayesian Spatial Modelling for High Dimensional Seismic
+  Inverse Problems}.}
+\newblock \emph{Journal of the Royal Statistical Society Series C: Applied
+  Statistics}, \textbf{65}(2), 187--213.
+\newblock ISSN 0035-9254.
+\newblock \doi{10.1111/rssc.12118}.
+\newblock
+  \eprint{https://academic.oup.com/jrsssc/article-pdf/65/2/187/49365270/jrsssc\_65\_2\_187.pdf},
+  \urlprefix\url{https://doi.org/10.1111/rssc.12118}.
+
+\bibitem[{Zheng and Cadigan(2021)}]{zheng2021}
+Zheng N, Cadigan N (2021).
+\newblock \enquote{Frequentist Delta-Variance Approximations with Mixed-Effects
+  Models and {{TMB}}.}
+\newblock \emph{Computational Statistics \& Data Analysis}, \textbf{160},
+  107227.
+\newblock ISSN 0167-9473.
+\newblock \doi{10.1016/j.csda.2021.107227}.
+
+\end{thebibliography}
