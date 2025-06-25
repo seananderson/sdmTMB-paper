@@ -1092,10 +1092,10 @@ We then have the second model component (lognormal) with a similar summary struc
 We can check simulation-based randomized quantile residuals from our chosen model via the \pkg{DHARMa} package \citep{dharma}.
 To do that, we simulate from our model with the \fct{simulate.sdmTMB} method and pass those simulations to a helper function \fct{dharma\_residuals}.
 
-<<dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.", fig.asp=0.68, echo=TRUE, out.width="4in">>=
+<<dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package.", fig.asp=0.68, echo=TRUE, out.width="4in">>=
 set.seed(42)
 s <- simulate(fit, nsim = 500, type = "mle-mvn")
-dharma_residuals(s, fit, test_uniformity = TRUE)
+dharma_residuals(s, fit)
 @
 
 The quantile-quantile plot suggests that under the model assumptions, the (transformed) residuals are reasonably consistent with an independent uniform(0, 1) distribution.

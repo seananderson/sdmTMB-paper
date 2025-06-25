@@ -324,7 +324,7 @@ summary(fit)
 ## ----dog-residuals, fig.cap="Simulation-based randomized quantile residuals from the \\pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.", fig.asp=0.68, echo=TRUE, out.width="4in"----
 set.seed(42)
 s <- simulate(fit, nsim = 500, type = "mle-mvn")
-dharma_residuals(s, fit, test_uniformity = TRUE)
+dharma_residuals(s, fit)
 
 
 ## ----dog-grid, echo=TRUE--------------------------------------------------
