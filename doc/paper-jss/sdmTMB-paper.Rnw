@@ -69,7 +69,7 @@ Random Fields}
 
 
 \Abstract{
-Geostatistical \added{spatial} or spatiotemporal data are common across scientific fields.
+Geostatistical spatial or spatiotemporal data are common across scientific fields.
 % and the dimensions of these data continue to grow in space and time.
 However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian Markov random fields (GMRFs), are computationally intensive and challenging for many users to implement.
 Here, we introduce the \R\ package \sdmTMB, which extends the flexible interface familiar to users of \pkg{lme4}, \pkg{glmmTMB}, and \pkg{mgcv} to include spatial and spatiotemporal latent GMRFs using an SPDE-(stochastic partial differential equation) based approach.
@@ -77,7 +77,7 @@ SPDE matrices are constructed with \pkg{fmesher} and estimation is conducted via
 We describe the model and explore case studies that illustrate \sdmTMB's flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), hurdle models, cross-validation and anisotropy (directionally dependent spatial correlation).
 % Additional functionality includes break-point effects, out-of-sample cross validation, and priors.
 Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that \sdmTMB\ can be an order of magnitude faster than \INLA.
-We hope \sdmTMB \deleted{'s accessible interface} will help open this useful class of models to a wider field of geostatistical analysts.
+We hope \sdmTMB 's accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
 }
 
 %% - \Keywords{} with LaTeX markup, at least one required
@@ -520,7 +520,7 @@ Beyond the main formula, \fct{sdmTMB} accepts one-sided formulas for coefficient
 Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ model are constructed internally (Figure~\ref{fig:flowchart}).
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
-The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} \added{\citep{Matrix}} as \added{an} interface to the \pkg{Eigen} library in \proglang{C++}.
+The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} \citep{Matrix} as an interface to the \pkg{Eigen} library in \proglang{C++}.
 % TODO Jim:  I recommend adding a citation to package Matrix ( Bates D, Maechler M, Jagan M (2023). _Matrix: Sparse and Dense Matrix Classes and Methods_. R package version 1.6-4, <https://CRAN.R-project.org/package=Matrix>.)), as central dependency of TMB, given the detailed description of the dependency stack. If really motivated, you could also add the reference for Eigen (Guennebaud G, Jacob B, et al. (2010). “Eigen v3.” http://eigen.tuxfamily.org), although it's less clear what citation to use.
 The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \Rev{A6} \fct{stats::optimHess} \citep{gay1990, r2024}.
 Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
@@ -532,7 +532,7 @@ After rapid model exploration with maximum likelihood, one can optionally pass a
 
 A fitted model summary can be viewed with \fct{print} or \fct{summary} and a set of basic ``sanity'' checks can be run with \fct{sanity}.
 \fct{tidy} returns parameter estimates in standard data frame formats similar to \pkg{broom} \citep{broom}.
-\Rev{A7}\added{Other} standard methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
+\Rev{A7}Other standard methods are also available such as \fct{fixef}, \fct{confint}, and \fct{vcov}.
 
 Prediction on fitted or new data is accomplished with \fct{predict} (\code{?predict.sdmTMB}).
 In this paragraph, we include relevant \fct{predict} arguments in parentheses.
@@ -548,7 +548,7 @@ and whether to use MCMC samples from a \pkg{tmbstan} model fit (\code{mcmc\_samp
 
 A variety of model evaluation tools are available.
 A \fct{residuals} method calculates various types of residuals.
-\added{The default is a form of randomized quantile \citep{dunn1996} or probability integral transform \citep{smith1985} residuals.}
+The default is a form of randomized quantile \citep{dunn1996} or probability integral transform \citep{smith1985} residuals.
 New observations can be simulated from a fitted model with \fct{simulate} or new data can be simulated without a fitted model (``de novo'') with \fct{sdmTMB\_simulate}.
 \fct{sdmTMB\_cv} facilitates cross validation.
 
@@ -624,19 +624,17 @@ As an alternative to the CRAN version, the development version can be installed 
 
 <<remotes, eval=FALSE, echo=TRUE>>=
 install.packages("pak")
-pak::pkg_install("pbs-assess/sdmTMB", dependencies = TRUE)
+pak::pak("pbs-assess/sdmTMB", dependencies = TRUE)
 @
 
 Additional utilities, which require heavier package dependencies (such as \INLA\ and \pkg{rstan}) and are used by only a subset of users, are maintained in the \pkg{sdmTMBextra} package at\\
 \url{https://github.com/pbs-assess/sdmTMBextra}
 
-\added{
 Users willing to replace the default \R\ \pkg{BLAS} (Basic Linear Algebra Subprograms) \citep{blas}
 % and \pkg{LAPACK} \citep{lapack}
 library with an optimized version \citep[e.g., \pkg{openBLAS};][]{openblas}
 can expect up to an order of magnitude increase in model fitting speed for complex models.
 Suggestions are included in the package README file.
-}
 
 \section{Example: spatial species distribution modelling}\label{pcod}
 
@@ -701,7 +699,7 @@ See \citet{krainski2018} chapters 2.6 and 2.7 for guidance on mesh construction.
 
 We can visualize the mesh object with the associated plotting method (Figure~\ref{fig:dog-binomial-mesh2}).
 Our mesh has 563 (\code{mesh\_pcod2\$mesh\$n}) vertices.
-\added{Mesh complexity has a large influence} on the speed of fitting these models.
+Mesh complexity has a large influence on the speed of fitting these models.
 
 % https://haakonbakkagit.github.io/btopic104.html
 % https://becarioprecario.bitbucket.io/spde-gitbook/index.html
@@ -808,11 +806,9 @@ tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 
 \subsection{Checking the effect of including a random field}
 
-\added{
 We can test for spatial autocorrelation with a visual inspection or a statistical test of the residuals.
 Here, we demonstrate an approach using an implementation of Moran's I from the \pkg{ape} package \citep{gittleman1990, ape}.
 \Rev{A3}We set \code{type = "mle-mvn"} to denote setting fixed effects at their maximum likelihood estimate (MLE) but taking a single draw from the approximate (multivariate normal) distribution of the random effects \citep{waagepetersen2006, thygesen2017a}.
-}
 
 <<morans, echo=TRUE>>=
 inv_dist_matrix <- 1 / as.matrix(dist(pcod[,c("X", "Y"), ]))
@@ -826,10 +822,8 @@ ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 @
 
 % We omit example code for Moran's I calculation for brevity but include it in the code supplement.
-\added{
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field suggesting that residual spatial autocorrelation is alleviated by including the random field.
 The specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals.
-}
 
 We can also see that the marginal Akaike information criterion (AIC) \citep{akaike1974} of the model with spatial random fields is lower:
 
@@ -837,18 +831,14 @@ We can also see that the marginal Akaike information criterion (AIC) \citep{akai
 AIC(fit_bin_rf, fit_bin)
 @
 
-\added{
 \Rev{A1}Caution is warranted in performing model selection via marginal AIC for models involving penalized smoothing (spatial or otherwise) \citep[e.g.][]{greven2010, safken2021}.
 In marginal AIC calculation, the degrees of freedom is based on the number of fixed effects and does not account for the degree of random effect penalization as conditional AIC would.
 Methods to estimate effective degrees of freedom for similar models were recently demonstrated in \citet{thorson2024cAIC}, but are not yet included in \sdmTMB.
-}
 
 \subsection{Comparing models with cross validation}
 
-\added{
 As an alternative to AIC, we can conduct model comparison with cross validation.
 \sdmTMB\ includes the helper function \fct{sdmTMB\_cv} to facilitate this.
-}
 We will do 10-fold cross validation with the folds constructed randomly.
 We will set the seed each time to ensure the folds are consistent.
 Using the \code{fold\_ids} argument, we could supply our own folds and conduct spatially blocked cross validation \citep[][]{roberts2017}.
@@ -872,29 +862,23 @@ cv_bin <- sdmTMB_cv(present ~ poly(log(depth), 2),
 )
 @
 
-\added{
 We can then calculate any performance metric of interest for comparison.
 \Rev{A2}A common metric would be the log score or log predictive (likelihood) density (lpd) of the left-out data \citep[][]{geisser1979, vehtari2017},
-}
 
-\added{
 $$
 \mathrm{lpd} = \sum_{i=1}^{n} \log \mathcal{L} (\widehat{y_i} | y_i),
 $$
-}
 
-\added{
 where $n$ represents the number of left-out data points, $\log \mathcal{L}$ is a symbol for log likelihood, $y_i$ represents left-out data point $i$, and $\widehat{y_i}$ represents the prediction for left-out data point $i$ with the fixed effects at their MLEs and random effects at their empirical Bayes estimates.
-}
 
-Indeed, the log likelihood predictive density \added{for the left-out data} is considerably \added{higher} for the model that includes random fields indicating better out-of-sample predictions:
+Indeed, the log likelihood predictive density for the left-out data is considerably higher for the model that includes random fields indicating better out-of-sample predictions:
 
 <<pcod-cv-out, eval=TRUE, echo=TRUE, results='markup'>>=
 cv_bin_rf$sum_loglik
 cv_bin$sum_loglik
 @
 
-In practice, we would repeat this procedure several times to ensure the rank order is \added{insensitive} to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
+In practice, we would repeat this procedure several times to ensure the rank order is insensitive to the randomly chosen folds and, if it was, consider averaging across multiple folds or increasing the number of folds.
 
 \subsection{Making predictions on new data}
 
@@ -987,7 +971,7 @@ The temporally varying intercepts \(\gamma_t\) are modeled as a stationary AR(1)
 \end{aligned}
 \]
 where \(\rho_\gamma\) represents the correlation between intercepts \(\gamma\) at time $t-1$ and $t$ and $\sigma^2_{\gamma}$ represents the marginal variance of this process.
-\added{We include the argument \code{extra\_time}, which represents all time steps to include in the latent process (and all time steps for which we may wish to predict), such that autoregressive processes are applied to equally spaced annual time steps.}
+We include the argument \code{extra\_time}, which represents all time steps to include in the latent process (and all time steps for which we may wish to predict), such that autoregressive processes are applied to equally spaced annual time steps.
 
 We can fit this model as:
 
@@ -1034,7 +1018,7 @@ In an applied situation, we would inspect the distribution of the residuals and 
 
 \subsection{Adding AR(1) random fields and comparing isotropic correlation}\label{sec:dogar1}
 
-We next test two additional model formulations: making the spatial correlation isotropic (the default) instead of anisotropic, and structuring the spatiotemporal random fields as AR(1) to allow spatiotemporal \added{patterns} to \added{partially} persist from year to year.
+We next test two additional model formulations: making the spatial correlation isotropic (the default) instead of anisotropic, and structuring the spatiotemporal random fields as AR(1) to allow spatiotemporal patterns to partially persist from year to year.
 
 The AR(1) fields can be represented as
 \[
@@ -1058,19 +1042,15 @@ AIC(fit_dpl_ar1, fit_dpl, fit_dpl_iso)
 
 We find that the anisotropic AR(1) is favoured. It makes sense that anisotropy is important here given the elongated shape of the continental shelf with a rapid transition to deeper water. We can use \fct{plot\_anisotropy} to visually inspect the anisotropy (Figure~\ref{fig:dog-aniso}).
 
-\added{
 As an example of estimation time for these complex spatiotemporal models, the Tweedie model (\code{fit\_tw}), Poisson-link delta-lognormal model (\code{fit\_dpl}), and Poisson-link delta-lognormal model with autogressive random fields (\code{fit\_dpl\_ar1}) took approximately 10, 30, and 90 seconds to fit, respectfully, on an Apple MacBook Pro with an M2 Pro processor and with Apple's \pkg{vecLib} implementation of \pkg{BLAS} in \R\ 4.4.0.
-}
 
 <<dog-aniso, echo=TRUE, fig.cap= "A visualization of anisotropy from the function \\code{plot\\_anisotropy()}. Ellipses are centered at coordinates of zero in the units that the X-Y coordinates are modeled. The ellipses show the spatial and spatiotemporal range (distance at which correlation is effectively independent) in any direction from the center (zero).", out.width="4in">>=
 plot_anisotropy(fit_dpl_ar1)
 @
 
 \Rev{A4}
-\deleted{
 On inspecting the model output with \fct{summary}, we notice that the spatial random field SD in the positive model component has become very small once AR(1) spatiotemporal fields were added.
 We therefore consider a model where these are turned off in the second component of the delta model and choose this model for further evaluation.
-}
 
 \subsection{Inspecting the model}
 
@@ -1228,7 +1208,7 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 
 In our final example, we demonstrate a model with spatially varying coefficient (SVC) effects and illustrate combining uncertainty from parameters by working with draws from the joint parameter precision matrix.
 SVC models are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function \citep{hastie1993, thorson2023SVC}.
-\deleted{In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.}
+In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
@@ -1363,9 +1343,7 @@ ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 Overall, we find a weak average positive effect of annual mean NAO on overall counts with a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
 At some locations, the lower CI on the exponentiated effect is above 1.
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
-\deleted{
 However, if we recalculated the CI at a 95\% level (not shown) the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
-}
 
 <<shapes, echo=FALSE>>=
 if (!file.exists(here::here("data/ne_10m_lakes.shp"))) {
@@ -1561,8 +1539,8 @@ $^{10}$Hurdle models possible by fitting components separately.
 \label{tab:functionality}
 \end{table}
 
-We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1,000, \added{10,000, or 100,000 data points} with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
-Our test was restricted to one core and default \R\ algebra libraries \added{using \R\ 4.4.0 and \pkg{Matrix} version 1.7.0.
+We ran a simple speed comparison between \sdmTMB, \INLA/\pkg{inlabru}, \pkg{spaMM}, and \pkg{mgcv} for fitting an SPDE spatial random field model to 1,000, 10,000, or 100,000 data points with Gaussian error across a range of mesh resolutions (Figure~\ref{fig:timing}, Appendix \ref{app:speed}).
+Our test was restricted to one core and default \R\ algebra libraries using \R\ 4.4.0 and \pkg{Matrix} version 1.7.0.
 With up to 10,000 rows of data, \sdmTMB\ was fastest at approximately a three- to 13-fold speed increase over \INLA/\pkg{inlabru} (Figure~\ref{fig:timing}a--b).
 At larger sample sizes, \pkg{inlabru} was more affected by mesh resolution than \sdmTMB\ (Figure~\ref{fig:timing}c).
 \pkg{mgcv} was most affected by mesh resolution (Figure~\ref{fig:timing})---timing was on par or faster than the other packages at low ($\approx$~200) mesh resolutions but much slower as mesh complexity grew into commonly used ranges.
@@ -1571,7 +1549,6 @@ The \fct{bam} function here uses numerical methods optimized for large datasets,
 The standard \fct{gam} function was approximately 60 times slower than \fct{bam} for the largest dataset with the most complex mesh (not shown).
 \pkg{spaMM} scaled well to large datasets with high mesh resolutions (Figure~\ref{fig:timing}c), but to our knowledge can only fit spatial GMRFs.
 At low mesh resolutions, a large portion of the differences in timing are likely a result of initial model processing and not estimation itself.
-}
 Speed increases can allow for more rapid and thorough model exploration and experimentation with this class of computationally intensive models.
 For users ultimately interested in Bayesian inference, the approximate Bayesian inference offered by \INLA/\pkg{inlabru} is likely to be faster than passing the same model from \sdmTMB/\pkg{VAST} to \pkg{tmbstan} for full MCMC-based Bayesian inference.
 
@@ -1579,14 +1556,14 @@ For users ultimately interested in Bayesian inference, the approximate Bayesian 
 \centering
 \includegraphics[width=\textwidth]{../../figs/timing-spatial-multipanel.pdf}
 \caption[]{
-Comparison of time to fit an SPDE spatial random field model with an intercept, one fixed-effect predictor, Gaussian error, and a sequence of SPDE resolutions to \added{three dataset sizes}.
+Comparison of time to fit an SPDE spatial random field model with an intercept, one fixed-effect predictor, Gaussian error, and a sequence of SPDE resolutions to three dataset sizes.
 Lines represent means and ribbons 90\% quantiles across 50 random iterations.
 \pkg{VAST} and \pkg{tinyVAST} should be similar to \sdmTMB\ and so are not shown.
-\pkg{inlabru} \added{(version 2.10.1)} used the empirical Bayes integration strategy and Gaussian approximation with \code{bru\_max\_iter = 1}, and the \fct{like} formulation.
-\pkg{mgcv} \added{(version 1.9.1)} used \fct{bam}, \code{method = `fREML'}, and discretized covariates \citep{miller2019}.
-Note that \pkg{spaMM} \added{(version 4.4.16)} only fits spatial, not spatiotemporal, models.
+\pkg{inlabru} (version 2.10.1) used the empirical Bayes integration strategy and Gaussian approximation with \code{bru\_max\_iter = 1}, and the \fct{like} formulation.
+\pkg{mgcv} (version 1.9.1) used \fct{bam}, \code{method = `fREML'}, and discretized covariates \citep{miller2019}.
+Note that \pkg{spaMM} (version 4.4.16) only fits spatial, not spatiotemporal, models.
 All platforms were restricted to one core and could be faster with parallel computation or optimized algebra libraries.
-\added{See Figure~\ref{fig:timing2} for a version with log-log axes.}
+See Figure~\ref{fig:timing2} for a version with log-log axes.
 }
 \label{fig:timing}
 \end{figure}
@@ -1600,7 +1577,7 @@ Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} and \pkg{tinyVAST} are the sole options for fitting some multivariate models; alternatively, because these packages focus on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs will likely find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be calculated using other packages post hoc).
-Overall, \deleted{we think there is value in that} \sdmTMB\ unites functionality useful in many applied settings into a single package.
+Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
 
 % \textbf{TODO add paragraph here on uniting functionality not available in any one package?}
 
@@ -1669,7 +1646,7 @@ We did this by setting the \code{max.edge} argument, which controls the largest 
 We tested values of \code{max.edge} of 0.06, 0.075, 0.1, 0.15, and 0.2.
 In Figure~\ref{fig:timing}, we report on the x-axis the number of mesh nodes (``vertices'') that result from each of these meshes.
 
-We simulated 1,000, \added{10,000, or 100,000} spatial observations with both x and y coordinates from uniform(0, 1) distributions (Figure~\ref{fig:sim-dat-plot-timing}).
+We simulated 1,000, 10,000, or 100,000 spatial observations with both x and y coordinates from uniform(0, 1) distributions (Figure~\ref{fig:sim-dat-plot-timing}).
 Each iteration generated unique coordinates, predictor data, Gaussian random field values, and observation error.
 The Gaussian random field was parameterized with a range of 0.5 and marginal standard deviation of 0.2.
 The model included an intercept with a value of 0.2 and a normal(0, 1) predictor with an associated coefficient of -0.4.
@@ -1682,9 +1659,7 @@ The models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-cor
 \centering
 \includegraphics[width=\textwidth]{../../figs/timing-spatial-multipanel-log.pdf}
 \caption[]{
-  \added{
   Same as Figure~\ref{fig:timing} but with both axes log distributed.
-}
 }
 \label{fig:timing2}
 \end{figure}
