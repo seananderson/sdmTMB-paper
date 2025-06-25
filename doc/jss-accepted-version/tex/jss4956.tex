@@ -20,8 +20,6 @@
 
 \usepackage[utf8]{inputenc}
 
-% \usepackage{changes}
-\usepackage[final]{changes}
 \usepackage{changes}
 
 %% new custom commands
@@ -74,7 +72,7 @@ SPDE matrices are constructed with \pkg{fmesher} and estimation is conducted via
 We describe the model and explore case studies that illustrate \sdmTMB's flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), hurdle models, cross-validation and anisotropy (directionally dependent spatial correlation).
 % Additional functionality includes break-point effects, out-of-sample cross validation, and priors.
 Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that \sdmTMB\ can be an order of magnitude faster than \INLA.
-We hope \sdmTMB \deleted{'s accessible interface} will help open this useful class of models to a wider field of geostatistical analysts.
+We hope \sdmTMB 's accessible interface will help open this useful class of models to a wider field of geostatistical analysts.
 }
 
 %% - \Keywords{} with LaTeX markup, at least one required
@@ -139,7 +137,6 @@ We hope \sdmTMB \deleted{'s accessible interface} will help open this useful cla
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \begin{document}
 
-
 \clearpage
 
 \section{Introduction}\label{introduction}
@@ -202,7 +199,7 @@ constrained by some function that defines the rate at which spatial covariance d
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=\textwidth]{Figures/matern-range-1} 
+{\centering \includegraphics[width=\textwidth]{Figures/matern-range-1}
 
 }
 
@@ -558,7 +555,7 @@ R> plot(mesh_pcod2)
 \end{Sinput}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=3in]{Figures/dog-binomial-mesh2-1} 
+{\centering \includegraphics[width=3in]{Figures/dog-binomial-mesh2-1}
 
 }
 
@@ -737,6 +734,7 @@ R> ape::Moran.I(r_bin_rf, weight = inv_dist_matrix)$p.value
 \end{Soutput}
 \end{Schunk}
 
+% We omit example code for Moran's I calculation for brevity but include it in the code supplement.
 We see strong evidence for spatial autocorrelation for the model without a random field (p $<$ 0.01) but a lack of evidence for spatial correlation after including a random field suggesting that residual spatial autocorrelation is alleviated by including the random field.
 The specific p-value is dependent on the seed due to the randomization in the randomized quantile residuals.
 
@@ -845,7 +843,7 @@ R> select(p, X, Y, depth, est, est_non_rf, omega_s) |>
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=6.1in]{Figures/pcod-predict-maps-1} 
+{\centering \includegraphics[width=6.1in]{Figures/pcod-predict-maps-1}
 
 }
 
@@ -1025,7 +1023,7 @@ R> plot_anisotropy(fit_dpl_ar1)
 \end{Sinput}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=4in]{Figures/dog-aniso-1} 
+{\centering \includegraphics[width=4in]{Figures/dog-aniso-1}
 
 }
 
@@ -1033,11 +1031,8 @@ R> plot_anisotropy(fit_dpl_ar1)
 \end{figure}
 \end{Schunk}
 
-
-\deleted{
 On inspecting the model output with \fct{summary}, we notice that the spatial random field SD in the positive model component has become very small once AR(1) spatiotemporal fields were added.
 We therefore consider a model where these are turned off in the second component of the delta model and choose this model for further evaluation.
-}
 
 \subsection{Inspecting the model}
 
@@ -1161,7 +1156,7 @@ R> dharma_residuals(s, fit)
 \end{Sinput}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=4in]{Figures/dog-residuals-1} 
+{\centering \includegraphics[width=4in]{Figures/dog-residuals-1}
 
 }
 
@@ -1226,7 +1221,7 @@ We suppress that code for brevity.
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=6in]{Figures/dog-wcvi-pred-1} 
+{\centering \includegraphics[width=6in]{Figures/dog-wcvi-pred-1}
 
 }
 
@@ -1254,7 +1249,7 @@ R> pred_depth <- predict(
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=4in]{Figures/dog-depth-plot-1} 
+{\centering \includegraphics[width=4in]{Figures/dog-depth-plot-1}
 
 }
 
@@ -1278,7 +1273,7 @@ R> ind <- get_index(pred2, bias_correct = TRUE, area = grid$area)
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=4in]{Figures/dog-index-plot-1} 
+{\centering \includegraphics[width=4in]{Figures/dog-index-plot-1}
 
 }
 
@@ -1292,7 +1287,7 @@ R> ind <- get_index(pred2, bias_correct = TRUE, area = grid$area)
 
 In our final example, we demonstrate a model with spatially varying coefficient (SVC) effects and illustrate combining uncertainty from parameters by working with draws from the joint parameter precision matrix.
 SVC models are a class of models in which coefficients are allowed to vary spatially constrained by some smooth function \citep{hastie1993, thorson2023SVC}.
-\deleted{In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.}
+In addition, we illustrate using restricted maximum likelihood (REML), which integrates over both the fixed and random effects.
 
 Snowy Owls (\emph{Bubo scandiacus}) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid-latitudes of North America in much greater numbers in some winters than others.
 The reasons for this interannual variation in the number of individuals migrating south are not well understood but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities \citep{robillard2016}.
@@ -1484,9 +1479,7 @@ R> ggplot(snow, aes(X, Y)) + geom_point(aes(colour = nao_effect))
 Overall, we find a weak average positive effect of annual mean NAO on overall counts with a southeast to northwest gradient in the intensity of the effect (Figure~\ref{fig:owl-plot-fancy}).
 At some locations, the lower CI on the exponentiated effect is above 1.
 This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by the NAO.
-\deleted{
 However, if we recalculated the CI at a 95\% level (not shown) the full range of estimates for the lower CI would be below 1 meaning that at an alpha level of 0.05, we cannot conclude that the effect of NAO at an annual scale differs significantly from 1.
-}
 
 
 
@@ -1497,7 +1490,7 @@ However, if we recalculated the CI at a 95\% level (not shown) the full range of
 \begin{Schunk}
 \begin{figure}[htbp]
 
-{\centering \includegraphics[width=4in]{Figures/owl-plot-fancy-1} 
+{\centering \includegraphics[width=4in]{Figures/owl-plot-fancy-1}
 
 }
 
@@ -1601,7 +1594,7 @@ For users ultimately interested in Bayesian inference, the approximate Bayesian 
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=\textwidth]{Figures/timing-spatial-multipanel}
+\includegraphics[width=\textwidth]{Figures/timing-spatial-multipanel.pdf}
 \caption[]{
 Comparison of time to fit an SPDE spatial random field model with an intercept, one fixed-effect predictor, Gaussian error, and a sequence of SPDE resolutions to three dataset sizes.
 Lines represent means and ribbons 90\% quantiles across 50 random iterations.
@@ -1624,7 +1617,7 @@ Users familiar with \INLA\ will find \pkg{inlabru} approachable.
 Users familiar with \pkg{mgcv} can adapt \pkg{mgcv} to fit similar models with custom code \citep{miller2019} and \INLA/\pkg{inlabru} and \pkg{mgcv} are also general purpose modelling packages.
 \pkg{VAST} and \pkg{tinyVAST} are the sole options for fitting some multivariate models; alternatively, because these packages focus on multivariate delta models and fisheries applications, users fitting ``simple'' univariate spatial/spatiotemporal GLMMs will likely find \sdmTMB\ more straightforward.
 Users looking for calculation, with uncertainty, of derived variables such as area-weighted population indexes, may favour \sdmTMB\ or \pkg{VAST} (although such quantities can be calculated using other packages post hoc).
-Overall, \deleted{we think there is value in that} \sdmTMB\ unites functionality useful in many applied settings into a single package.
+Overall, we think there is value in that \sdmTMB\ unites functionality useful in many applied settings into a single package.
 
 While our examples focused on applications to ecological data, the SPDE approach and the functionality of \sdmTMB\ has applications in many other fields.
 Examples include spatial models of disease spread \citep{moraga2021}, spatial econometric models of quantities such as housing prices \citep{bivand2014}, analyzing medical imaging data such as MRI scans \citep{naseri2022}, and geophysical models of seismic waves following earthquakes \citep{zhang2015}.
@@ -1682,6 +1675,7 @@ Christmas Bird Count data for the Snowy Owl example were provided by National Au
 \appendix
 
 \section{Speed testing related packages}\label{app:speed}
+
 Here, we describe the methods underlying the speed testing in Figure~\ref{fig:timing}.
 We generated a mesh that was consistent across simulated data sets for a given mesh resolution (Figure~\ref{fig:mesh-vis-timing}).
 We did this by setting the \code{max.edge} argument, which controls the largest allowed triangle edge length.
@@ -1705,7 +1699,6 @@ The models were fit on a 2023 16 inch M2 MacBook Pro with an Apple M2 Pro 10-cor
 }
 \label{fig:timing2}
 \end{figure}
-
 
 \clearpage
 
@@ -1754,7 +1747,7 @@ R> predictor_dat <- data.frame(
 +    a1 = rnorm(n_obs)
 +  )
 R> mesh_sdmTMB <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), mesh = mesh)
-R> 
+R>
 R> sim_dat <- sdmTMB_simulate(
 +    formula = ~ 1 + a1,
 +    data = predictor_dat,
@@ -1773,7 +1766,7 @@ R> sim_dat <- sdmTMB_simulate(
 \begin{Schunk}
 \begin{figure}[ht]
 
-{\centering \includegraphics[width=4in]{Figures/sim-dat-plot-timing-1} 
+{\centering \includegraphics[width=4in]{Figures/sim-dat-plot-timing-1}
 
 }
 
@@ -1806,7 +1799,7 @@ R> spde <- INLA::inla.spde2.pcmatern(
 +    prior.range = c(0.05, 0.05),
 +    prior.sigma = c(2, 0.05)
 +  )
-R> 
+R>
 R> fit_spaMM <- fitme(
 +    observed ~ a1 + IMRF(1 | X + Y, model = spde),
 +    family = gaussian(),
@@ -1844,8 +1837,6 @@ R> fit_bru <- bru(
 
 \subsection[Example mgcv model fit]{Example \pkg{mgcv} model fit}
 
-
-
 First define \fct{smooth.construct.spde.smooth.spec} and \fct{Predict.matrix.spde.smooth} from the supplement of \citet{miller2019}, then:
 
 \begin{Schunk}
@@ -1866,4 +1857,3 @@ R> fit_bam <- bam(
 \end{Schunk}
 
 \end{document}
-
