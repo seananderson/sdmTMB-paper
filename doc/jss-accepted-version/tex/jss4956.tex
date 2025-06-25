@@ -281,7 +281,7 @@ The spatiotemporal random fields represent latent variables causing spatial corr
 
 \subsection{Additional model components}
 
-In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or adding random intercepts by grouping factors (Figure~\ref{fig:diagram}).
+In practice, the above models can become considerably more complex by, for example, letting coefficients vary though time, letting coefficients vary through space \citep{hastie1993} as random fields, or adding random intercepts or slopes by grouping factors (Figure~\ref{fig:diagram}).
 All these components are additive in link space.
 Adopting the notation ``main'' for main effects, ``tvc'' for time-varying coefficients, and ``svc'' for spatially varying coefficients, a more complex model could be written as
 \[
@@ -390,7 +390,7 @@ Fitting is accomplished with \fct{sdmTMB}, which has arguments similar to \pkg{g
 Observation distributions and links are specified with standard \R\ family functions (e.g., \fct{binomial}) plus several \sdmTMB-specific families not available in the \R\ stats library (e.g., \fct{nbinom2}, \fct{delta\_lognormal}, see \code{?sdmTMB::Families}).
 
 The \sdmTMB\ formula syntax (\code{formula} argument) follows a standard format that is similar to \pkg{glmmTMB}, \pkg{lme4}, and \pkg{mgcv}.
-In addition to standard main effects, the user can include random intercepts (e.g., \code{+ (1 | group)}), threshold shaped hockey-stick models \fct{breakpt} \citep{barrowman2000}, logistic functions \fct{logistic}, and penalized smoothers \fct{s} for generalized additive models, GAMS \citep{wood2017a}.
+In addition to standard main effects, the user can include random intercepts and slopes (e.g., \code{+ (1 + x | group)}), threshold shaped hockey-stick models \fct{breakpt} \citep{barrowman2000}, logistic functions \fct{logistic}, and penalized smoothers \fct{s} for generalized additive models, GAMS \citep{wood2017a}.
 Penalized smoothers use the same \fct{s} and \fct{t2} syntax as in \pkg{mgcv} \citep{wood2017a}.
 Supported functionality includes bivarate smoothers \code{s(x, y)},
 smoothers varying by continuous or categorical variables \code{s(x1, by = x2)},
@@ -402,7 +402,7 @@ Once the user makes a call to \fct{sdmTMB}, input data structures for a \TMB\ mo
 If needed, data structures required to implement penalized smoothers are constructed with \fct{smooth2random} from \pkg{mgcv} \citep{wood2017a}, similarly to \pkg{gamm4} \citep{wood2020} and \pkg{brms} \citep{brms}.
 \fct{sdmTMB} formats data, establishes parameter starting values, and constructs an objective function with derivatives based on a compiled \proglang{C++} template written for \TMB.
 The objective function returns the marginal log likelihood and its gradient, integrating over random effects with the Laplace approximation \citep{kristensen2016} and efficient using sparse-matrix computation provided by \pkg{Matrix} \citep{Matrix} as an interface to the \pkg{Eigen} library in \proglang{C++}.
-The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using A6 \fct{stats::optimHess} \citep{gay1990, r2024}.
+The negative marginal log likelihood is minimized via the non-linear optimization routine \fct{stats::nlminb} \citep{gay1990} in \R\ with additional optimization carried out via a Newton optimization step to find the Hessian using \fct{stats::optimHess} \citep{gay1990, r2024}.
 Random effect values are returned at values that maximize the likelihood conditional on the fixed effects at their maximum marginal likelihood (i.e., plug-in or empirical Bayes estimates); however,
 it is also possible to apply an ``epsilon'' estimator \citep{thorson2016bias}, which corrects for bias arising from the variance and skewness of random effects when calculating an estimator as a non-linear transformation or random effects (see Section \ref{index-bias-correct} for an example).
 Standard errors on all parameters and derived quantities---including those involving random effects---are calculated using the generalized delta method \citep{kristensen2016, zheng2021}.
@@ -419,7 +419,7 @@ whether to return predictions on the link or response scale (\code{type}),
 whether to return standard errors (\code{se\_fit},
 which can be slow if conditioned on random fields),
 whether to condition on the random fields (\code{re\_form}),
-whether to condition on the random intercepts (\code{re\_form\_iid}),
+whether to condition on the random intercepts and slopes (\code{re\_form\_iid}),
 which delta model linear predictor to use (\code{model}),
 whether to take draws from the joint parameter precision matrix (\code{nsim}),
 and whether to use MCMC samples from a \pkg{tmbstan} model fit (\code{mcmc\_samples}).
@@ -647,7 +647,8 @@ Formula: present ~ poly(log(depth), 2)
 Mesh: mesh_pcod2 (isotropic covariance)
 Data: pcod
 Family: binomial(link = 'logit')
- 
+
+Conditional model:
                      coef.est coef.se
 (Intercept)             -0.44    0.42
 poly(log(depth), 2)1   -75.72    9.30
@@ -677,8 +678,8 @@ R> tidy(fit_bin_rf, conf.int = TRUE)
   term                 estimate std.error conf.low conf.high
   <chr>                   <dbl>     <dbl>    <dbl>     <dbl>
 1 (Intercept)            -0.439     0.424    -1.27     0.393
-2 poly(log(depth), 2)1  -75.7       9.30    -94.0    -57.5  
-3 poly(log(depth), 2)2 -110.        9.27   -128.     -91.6  
+2 poly(log(depth), 2)1  -75.7       9.30    -94.0    -57.5
+3 poly(log(depth), 2)2 -110.        9.27   -128.     -91.6
 \end{Soutput}
 \begin{Sinput}
 R> tidy(fit_bin, conf.int = TRUE)
@@ -688,8 +689,8 @@ R> tidy(fit_bin, conf.int = TRUE)
   term                 estimate std.error conf.low conf.high
   <chr>                   <dbl>     <dbl>    <dbl>     <dbl>
 1 (Intercept)            -0.426    0.0573   -0.538    -0.314
-2 poly(log(depth), 2)1  -31.7      3.03    -37.6     -25.8  
-3 poly(log(depth), 2)2  -66.9      4.09    -74.9     -58.9  
+2 poly(log(depth), 2)1  -31.7      3.03    -37.6     -25.8
+3 poly(log(depth), 2)2  -66.9      4.09    -74.9     -58.9
 \end{Soutput}
 \end{Schunk}
 
@@ -704,7 +705,7 @@ R> tidy(fit_bin_rf, effects = "ran_pars", conf.int = TRUE)
 # A tibble: 2 x 5
   term    estimate std.error conf.low conf.high
   <chr>      <dbl>     <dbl>    <dbl>     <dbl>
-1 range      41.4      9.38     26.6      64.6 
+1 range      41.4      9.38     26.6      64.6
 2 sigma_O     1.69     0.233     1.29      2.22
 \end{Soutput}
 \end{Schunk}
@@ -1057,7 +1058,8 @@ Data: dat
 Family: delta_lognormal(link1 = 'log', link2 = 'log', type = 'poisson-link')
 
 Delta/hurdle model 1: -----------------------------------
-Family: binomial(link = 'log') 
+Family: binomial(link = 'log')
+Conditional model:
             coef.est coef.se
 (Intercept)     2.35    0.53
 slog_depth      0.20    0.67
@@ -1087,6 +1089,7 @@ Time-varying parameters:
 (Intercept)-2020    -0.26    0.53
 (Intercept)-2021    -0.38    0.60
 (Intercept)-2022    -0.30    0.53
+rho-(Intercept)      0.85    0.28
 
 Spatiotemporal AR1 correlation (rho): 0.74
 Matérn anisotropic range (spatial): 17.5 to 183.6 at 130 deg.
@@ -1094,7 +1097,8 @@ Spatial SD: 0.82
 Spatiotemporal marginal AR1 SD: 1.34
 
 Delta/hurdle model 2: -----------------------------------
-Family: lognormal(link = 'log') 
+Family: lognormal(link = 'log')
+Conditional model:
             coef.est coef.se
 (Intercept)     2.20    0.20
 slog_depth      0.11    0.24
@@ -1124,6 +1128,7 @@ Time-varying parameters:
 (Intercept)-2020    -0.30    0.35
 (Intercept)-2021    -0.41    0.24
 (Intercept)-2022    -0.20    0.25
+rho-(Intercept)      0.62    0.40
 
 Dispersion parameter: 1.10
 Spatiotemporal AR1 correlation (rho): 0.22
@@ -1152,7 +1157,7 @@ To do that, we simulate from our model with the \fct{simulate.sdmTMB} method and
 \begin{Sinput}
 R> set.seed(42)
 R> s <- simulate(fit, nsim = 500, type = "mle-mvn")
-R> dharma_residuals(s, fit, test_uniformity = TRUE)
+R> dharma_residuals(s, fit)
 \end{Sinput}
 \begin{figure}[ht]
 
@@ -1160,7 +1165,7 @@ R> dharma_residuals(s, fit, test_uniformity = TRUE)
 
 }
 
-\caption[Simulation-based randomized quantile residuals from the \pkg{DHARMa} package]{Simulation-based randomized quantile residuals from the \pkg{DHARMa} package. The statistical test is a two-sided Kolmogorov-Smirnov test of the null hypothesis that the residuals are drawn from a uniform(0, 1) distribution.}\label{fig:dog-residuals}
+\caption[Simulation-based randomized quantile residuals from the \pkg{DHARMa} package]{Simulation-based randomized quantile residuals from the \pkg{DHARMa} package.}\label{fig:dog-residuals}
 \end{figure}
 \end{Schunk}
 
@@ -1197,10 +1202,10 @@ R> pred <- predict(fit, newdata = grid, type = "response")
 R> names(pred)
 \end{Sinput}
 \begin{Soutput}
- [1] "X"           "Y"           "depth"       "year"        "log_depth"  
- [6] "est1"        "est2"        "est_non_rf1" "est_non_rf2" "est_rf1"    
+ [1] "X"           "Y"           "depth"       "year"        "log_depth"
+ [6] "est1"        "est2"        "est_non_rf1" "est_non_rf2" "est_rf1"
 [11] "est_rf2"     "omega_s1"    "omega_s2"    "epsilon_st1" "epsilon_st2"
-[16] "est"        
+[16] "est"
 \end{Soutput}
 \end{Schunk}
 
@@ -1385,14 +1390,17 @@ Mesh: mesh_snow (isotropic covariance)
 Time column: year
 Data: snow
 Family: nbinom2(link = 'log')
- 
+
+Random intercepts and/or slopes:
+
+Conditional model:
+     Groups        Name    Variance    Std.Dev.
+     year_f (Intercept)        0.09        0.30
+
+Conditional model:
             coef.est coef.se
 (Intercept)    -3.23    5.44
 nao             0.36    0.22
-
-Random intercepts:
-       Std. Dev.
-year_f       0.3
 
 Dispersion parameter: 0.46
 Matérn range: 25.21
@@ -1417,7 +1425,7 @@ R> tidy(fit_owl, conf.int = TRUE)
 # A tibble: 2 x 5
   term        estimate std.error conf.low conf.high
   <chr>          <dbl>     <dbl>    <dbl>     <dbl>
-1 (Intercept)   -3.23      5.44  -13.9        7.42 
+1 (Intercept)   -3.23      5.44  -13.9        7.42
 2 nao            0.356     0.224  -0.0828     0.795
 \end{Soutput}
 \end{Schunk}
@@ -1634,10 +1642,8 @@ There are several planned future additions to the \sdmTMB\ model structure.
 % Although we may introduce basic multivariate response modelling, we intend \sdmTMB\ to focus on univariate responses given \pkg{tinyVAST}'s focus on related models in a multivariate context.
 A subset of features to be added include
 (1) the ability to specify observation-specific likelihoods to integrate different data types \citep[e.g.,][]{gruss2019multiple},
-(2) inclusion of a dispersion formula similar to \pkg{glmmTMB},
-(3) inclusion of random slopes to complement the existing random intercepts,
-and
-(4) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base is written in \R\ rather than \proglang{C++}.
+(2) inclusion of a dispersion formula similar to \pkg{glmmTMB}, and
+(3) integration with the \pkg{RTMB} \citep{rtmb} package so that the model code base is written in \R\ rather than \proglang{C++}.
 % (5) conditional autoregressive models as an alternative to random fields for large datasets that are already areal in nature.
 % another feature that could be added is 3D models, e.g. https://doi.org/10.1016/j.spasta.2023.100750
 
