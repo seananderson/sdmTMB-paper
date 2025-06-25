@@ -1872,7 +1872,8 @@ smooth.construct.spde.smooth.spec <- function(object, data, knots) {
     if (!inherits(object$xt$mesh, "inla.mesh")) stop("xt must be NULL or an inla.mesh object")
     mesh <- object$xt$mesh
   }
-  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
+
+  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, loc = x))
   inlamats <- INLA::inla.mesh.fem(mesh)
   object$S <- list()
   object$S[[1]] <- as.matrix(inlamats$c1)
@@ -1906,7 +1907,6 @@ Predict.matrix.spde.smooth <- function(object, data) {
 First define \fct{smooth.construct.spde.smooth.spec} and \fct{Predict.matrix.spde.smooth} from the supplement of \citet{miller2019}, then:
 
 <<mgcvfit-timing, echo=TRUE, eval=TRUE>>=
-class(mesh) <- "inla.mesh"
 fit_bam <- bam(
   observed ~ a1 + s(X, Y,
     bs = "spde", k = mesh$n,

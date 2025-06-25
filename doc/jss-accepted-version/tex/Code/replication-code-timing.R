@@ -100,7 +100,7 @@ smooth.construct.spde.smooth.spec <- function(object, data, knots) {
     if (!inherits(object$xt$mesh, "inla.mesh")) stop("xt must be NULL or an inla.mesh object")
     mesh <- object$xt$mesh
   }
-  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, x))
+  object$X <- as.matrix(INLA::inla.spde.make.A(mesh, loc = x))
   inlamats <- INLA::inla.mesh.fem(mesh)
   object$S <- list()
   object$S[[1]] <- as.matrix(inlamats$c1)
